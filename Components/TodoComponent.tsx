@@ -35,7 +35,6 @@ const TodoComponent = () => {
 
         const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
             setSession(session);
-            console.log('Auth state changed, new session:', session);
             if (session) {
                 fetchProfile(session.user.id, session);
             }
@@ -47,8 +46,6 @@ const TodoComponent = () => {
     }, []);
 
     const fetchProfile = async (userId: string, session: Session) => {
-        console.log('Fetching profile for userId:', userId);
-        console.log('Session data:', session);  // Add this line to log session data
         const { data, error } = await supabase
             .from('users')
             .select('id, email, full_name, avatar_url')
@@ -86,7 +83,6 @@ const TodoComponent = () => {
         } else if (error) {
             console.error('Error fetching profile:', error.message);
         } else {
-            console.log('Fetched profile:', data);
             setProfile(data);
         }
     };

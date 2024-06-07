@@ -19,8 +19,42 @@ const AuthInputContainer = styled("div")({
 
   "& input": {
     padding: "1rem",
-    borderRadius: "12px",
-  }
+    borderRadius: "8px",
+    border: "1px solid #E7E7E7",
+
+    "&:focus": {
+      outline: "none",
+    },
+  },
+});
+
+const SocialContainer = styled("div")({
+  padding: "1rem",
+
+  "& button": {
+    width: "100%",
+    padding: "0.8rem",
+    borderRadius: "8px",
+    border: "1px solid #E7E7E7",
+    backgroundColor: "transparent",
+    cursor: "pointer",
+
+    "&:hover": {
+        backgroundColor: "#F9F9F9",
+    }
+  },
+
+  "& .social-login-flex": {
+    display: "flex",
+    gap: "12px",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+});
+
+const LogoImage = styled("img")({
+  width: "1.6rem",
+  height: "1.6rem",
 });
 
 const AuthForm: React.FC = () => {
@@ -47,9 +81,11 @@ const AuthForm: React.FC = () => {
         .eq("email", email)
         .single();
 
-      if (userError) {
-        alert("사용자를 찾을 수 없습니다.");
-        console.error("Error fetching user provider:", userError.message);
+      if (email == "") {
+        alert("이메일을을 입력해주세요.");
+        return;
+      } else if (password == "") {
+        alert("비밀번호를 입력해주세요.");
         return;
       }
 
@@ -133,12 +169,14 @@ const AuthForm: React.FC = () => {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="이메일"
+          autoComplete="new-password"
         />
         <input
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="비밀번호"
+          autoComplete="new-password"
         />
         {authType === "signup" && (
           <>
@@ -147,12 +185,14 @@ const AuthForm: React.FC = () => {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="비밀번호 확인"
+              autoComplete="new-password"
             />
             <input
               type="text"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               placeholder="닉네임"
+              autoComplete="new-password"
             />
           </>
         )}
@@ -164,14 +204,24 @@ const AuthForm: React.FC = () => {
             setAuthType(authType === "signin" ? "signup" : "signin")
           }
         >
-          {authType === "signin" ? "회원가입으로 전환" : "로그인으로 전환"}
+          {authType === "signin" ? "회원가입하기" : "로그인하기"}
         </button>
       </AuthInputContainer>
-      <div>
-        <button onClick={() => handleSocialLogin("google")}>
-          Sign in with Google
-        </button>
-      </div>
+      {authType === "signin" && (
+        <SocialContainer>
+          <button onClick={() => handleSocialLogin("google")}>
+            <div className="social-login-flex">
+              <LogoImage
+                src="/google-logo.png"
+                alt="google"
+                width={250}
+                height={250}
+              />
+              <p style={{ alignItems: 'center', fontSize: "1rem", margin: '0', color: '#6A6A6A' }}>Google로 시작하기</p>
+            </div>
+          </button>
+        </SocialContainer>
+      )}
     </LoginSiginupContainer>
   );
 };

@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@components/lib/supabaseClient';
 import AuthForm from '@components/Components/AuthForm';
-import TodoComponent from '@components/Components/TodoComponent';
+
 import { Session } from '@supabase/supabase-js';
+import TodoComponent from '@components/Components/TodoComponent';
 
 const MainHome = () => {
     const [session, setSession] = useState<Session | null>(null);
@@ -28,9 +29,9 @@ const MainHome = () => {
     }, []);
 
     return (
-        <div>
+        <>
             {!session ? <AuthForm /> : <TodoComponent />}
-        </div>
+        </>
     );
 };
 

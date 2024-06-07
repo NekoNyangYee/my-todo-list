@@ -1,4 +1,4 @@
-/** @type {import('next').NextConfig} */
+import { withPigment } from "@pigment-css/nextjs-plugin";
 const nextConfig = {
     reactStrictMode: true,
     images: {
@@ -6,4 +6,4 @@ const nextConfig = {
     },
 };
 
-export default nextConfig;
+export default withPigment(nextConfig);

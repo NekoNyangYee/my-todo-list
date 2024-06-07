@@ -4,8 +4,19 @@ import React, { useEffect, useState } from "react";
 import { supabase } from "@components/lib/supabaseClient";
 import AuthForm from "./AuthForm";
 import { Session } from "@supabase/supabase-js";
-import Image from 'next/image';
+import { styled } from "@pigment-css/react";
 
+const HeaderFlexBox = styled("div")({
+    display: 'flex',
+    gap: '12px',
+})
+
+const ProfileImage = styled('img')({
+    width: '40px',
+    height: '40px',
+    borderRadius: '50%',
+    margin: 'auto 0'
+})
 const TodoComponent = () => {
     const [session, setSession] = useState<Session | null>(null);
     const [profile, setProfile] = useState<any>(null);
@@ -96,18 +107,17 @@ const TodoComponent = () => {
                 <AuthForm />
             ) : (
                 <div>
-                    <p>sssss</p>
                     {profile ? (
-                        <div>
-                            <p>Welcome, {profile.full_name}</p>
+                        <HeaderFlexBox>
+                            <p><strong>{profile.full_name}</strong> 님, 환영합니다.</p>
                             {profile.avatar_url ? (
-                                <Image src={profile.avatar_url} alt="Profile Picture" width={250} height={250} />
+                                <ProfileImage src={profile.avatar_url} alt="Profile Picture" width={250} height={250} />
                             ) : (
-                                <Image src="./profile.svg" alt="Profile Picture" width={250} height={250} />
+                                <ProfileImage src="./profile.svg" alt="Profile Picture" width={250} height={250} />
                             )}
-                        </div>
+                        </HeaderFlexBox>
                     ) : (
-                        <p>Loading profile...</p>
+                        <p>프로필 불러오는 중...</p>
                     )}
                     <button onClick={handleLogout}>로그아웃</button>
                 </div>

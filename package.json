@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@pigment-css/react": "^0.0.12",
     "@supabase/supabase-js": "^2.43.4",
     "next": "14.2.3",
     "react": "^18",
@@ -16,6 +17,7 @@
     "zustand": "^4.5.2"
   },
   "devDependencies": {
+    "@pigment-css/nextjs-plugin": "^0.0.12",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",

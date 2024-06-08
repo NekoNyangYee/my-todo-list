@@ -1,19 +1,19 @@
-import { create } from 'zustand'
+import { create } from 'zustand';
 
 interface AuthStore {
-    email: string
-    setEmail: (email: string) => void
-    password: string
-    setPassword: (password: string) => void
-    authType: 'signin' | 'signup'
-    setAuthType: (authType: 'signin' | 'signup') => void
-    confirmPassword: string
-    setConfirmPassword: (confirmPassword: string) => void
-    fullName: string
-    setFullName: (fullName: string) => void
+    email: string;
+    setEmail: (email: string) => void;
+    password: string;
+    setPassword: (password: string) => void;
+    authType: 'signin' | 'signup';
+    setAuthType: (authType: 'signin' | 'signup') => void;
+    confirmPassword: string;
+    setConfirmPassword: (confirmPassword: string) => void;
+    fullName: string;
+    setFullName: (fullName: string) => void;
 }
 
-const useAuthStore = create<AuthStore>((set) => ({
+export const useAuthStore = create<AuthStore>((set) => ({
     email: '',
     setEmail: (email) => set({ email }),
     password: '',
@@ -24,6 +24,4 @@ const useAuthStore = create<AuthStore>((set) => ({
     setConfirmPassword: (confirmPassword) => set({ confirmPassword }),
     fullName: '',
     setFullName: (fullName) => set({ fullName }),
-}))
-
-export default useAuthStore
+}));

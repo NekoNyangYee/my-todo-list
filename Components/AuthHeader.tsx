@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { supabase } from "@components/lib/supabaseClient";
+import { supabase } from "../lib/supabaseClient";
 import AuthForm from "./AuthForm";
 import { Session } from "@supabase/supabase-js";
 import { styled } from "@pigment-css/react";
@@ -76,7 +76,6 @@ const ProfileInfoContainer = styled('div')({
     display: 'flex',
     flexDirection: 'row-reverse',
     gap: '12px',
-    padding: '12px',
     borderRadius: '8px',
 });
 
@@ -151,6 +150,7 @@ const AuthHeader = () => {
     };
 
     const handleLogout = async () => {
+        alert('로그아웃 되었습니다.');
         const { error } = await supabase.auth.signOut();
         if (error) {
             console.error("Error signing out:", error.message);
@@ -174,7 +174,7 @@ const AuthHeader = () => {
                                 {profile.avatar_url ? (
                                     <ProfileImage src={profile.avatar_url} alt="Profile Picture" width={250} height={250} />
                                 ) : (
-                                    <ProfileImage src="./profile.svg" alt="Profile Picture" width={250} height={250} />
+                                    <ProfileImage src="./user.svg" alt="Profile Picture" width={250} height={250} />
                                 )}
                             </HeaderFlexBox>
                         ) : (

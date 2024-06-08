@@ -1,25 +1,112 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useTodoStore } from '@components/Store/useAuthTodoStore';
-import { supabase } from '@components/lib/supabaseClient';
+import { useTodoStore } from '../Store/useAuthTodoStore';
+import { supabase } from '../lib/supabaseClient';
+import { styled, keyframes } from '@pigment-css/react';
+
+const TodoContainer = styled('div')({
+    display: 'flex',
+    justifyContent: 'space-between',
+    gap: '12px',
+    width: '100%',
+    maxWidth: '972px',
+    margin: '0 auto',
+    padding: '12px',
+
+    "& ul": {
+        padding: 0,
+        margin: 0,
+    },
+
+    "& li": {
+        listStyle: 'none',
+    },
+
+    '@media (max-width: 1224px)': {
+        maxWidth: '90%',
+        flexDirection: 'column',
+    }
+});
+
+const ProgressTodoContainer = styled('div')({
+    width: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+});
+
+const ComplecatedTodoContainer = styled('div')({
+    width: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+});
+
+const rotateAdd = keyframes({
+    'from': {
+        transform: 'rotate(0deg)',
+    },
+    'to': {
+        transform: 'rotate(135deg)',
+    }
+
+});
+
+const rotateCancel = keyframes({
+    'from': {
+        transform: 'rotate(135deg)',
+    },
+    'to': {
+        transform: 'rotate(0deg)',
+    }
+
+});
+
+
+const AddToDoBtn = styled('button')<{ isOpen: boolean }>({
+    padding: '12px',
+    backgroundColor: '#0075FF',
+    color: '#fff',
+    border: 'none',
+    cursor: 'pointer',
+    borderRadius: '50%',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: '8px',
+
+    '& img': {
+        width: '28px',
+        height: '28px',
+        animation: (props) => props.isOpen ? `${rotateAdd} 0.1s ease forwards` : `${rotateCancel} 0.1s ease forwards`,
+    },
+});
+
 
 const TodoComponent = () => {
     const { todos, inputs, addInput, setInput, setTodos, resetInputs } = useTodoStore();
-    const [showInput, setShowInput] = useState(false);
+    const [showInput, setShowInput] = useState<boolean>(false);
 
     const handleInputChange = (index: number, value: string) => {
         setInput(index, value);
     };
 
     const saveTodos = async () => {
+        alert('저장되었습니다.')
+        const nonEmptyInputs: Array<string> = inputs.filter(input => input.trim() !== '');
+        if (nonEmptyInputs.length === 0) {
+            alert('할 일을 입력해주세요.');
+            return;
+        }
+
         const { data: { session } } = await supabase.auth.getSession();
         const user = session?.user;
         if (!user) return;
 
         const { data, error } = await supabase
             .from('todos')
-            .insert(inputs.map(content => ({
+            .insert(nonEmptyInputs.map(content => ({
                 user_id: user.id,
                 content,
                 is_complete: false,
@@ -72,63 +159,67 @@ const TodoComponent = () => {
     }, []);
 
     return (
-        <div>
-            <h1>Todo List</h1>
-            <h2>In Progress</h2>
-            {todos.filter(todo => !todo.is_complete).length === 0 ? (
-                <p>No todos in progress.</p>
-            ) : (
-                <ul>
-                    {todos.filter(todo => !todo.is_complete).map((todo) => (
-                        <li key={todo.id}>
-                            <input
-                                type="checkbox"
-                                checked={todo.is_complete}
-                                onChange={() => toggleTodo(todo.id, todo.is_complete)}
-                            />
-                            {todo.content}
-                        </li>
-                    ))}
-                </ul>
-            )}
-            <h2>Completed</h2>
-            {todos.filter(todo => todo.is_complete).length === 0 ? (
-                <p>No completed todos.</p>
-            ) : (
-                <ul>
-                    {todos.filter(todo => todo.is_complete).map((todo) => (
-                        <li key={todo.id}>
-                            <input
-                                type="checkbox"
-                                checked={todo.is_complete}
-                                onChange={() => toggleTodo(todo.id, todo.is_complete)}
-                            />
-                            {todo.content}
-                        </li>
-                    ))}
-                </ul>
-            )}
-            <div>
-                {!showInput && (
-                    <button onClick={() => setShowInput(true)}>+</button>
-                )}
-                {showInput && (
-                    <>
-                        {inputs.map((input, index) => (
-                            <div key={index}>
+        <TodoContainer>
+            <ProgressTodoContainer>
+                <h2>진행 중인 일정</h2>
+                {todos.filter(todo => !todo.is_complete).length === 0 ? (
+                    <p>현재 진행 중인 일정이 없어요.</p>
+                ) : (
+                    <ul>
+                        {todos.filter(todo => !todo.is_complete).map((todo) => (
+                            <li key={todo.id}>
                                 <input
-                                    type="text"
-                                    value={input}
-                                    onChange={(e) => handleInputChange(index, e.target.value)}
+                                    type="checkbox"
+                                    checked={todo.is_complete}
+                                    onChange={() => toggleTodo(todo.id, todo.is_complete)}
                                 />
-                            </div>
+                                {todo.content}
+                            </li>
                         ))}
-                        <button onClick={addInput}>Add Todo</button>
-                        <button onClick={saveTodos}>Save Todos</button>
-                    </>
+                    </ul>
                 )}
-            </div>
-        </div>
+                <div>
+                    <AddToDoBtn onClick={() => setShowInput(!showInput)} isOpen={showInput}>
+                        <img src="/add.svg" alt="Add Todo" />
+                    </AddToDoBtn>
+                    {showInput && (
+                        <>
+                            {inputs.map((input, index) => (
+                                <div key={index}>
+                                    <input
+                                        type="text"
+                                        value={input}
+                                        placeholder='할 일을 입력해주세요.'
+                                        onChange={(e) => handleInputChange(index, e.target.value)}
+                                    />
+                                </div>
+                            ))}
+                            <button onClick={addInput}>일정 추가</button>
+                            <button onClick={saveTodos}>저장</button>
+                        </>
+                    )}
+                </div>
+            </ProgressTodoContainer>
+            <ComplecatedTodoContainer>
+                <h2>완료된 일정</h2>
+                {todos.filter(todo => todo.is_complete).length === 0 ? (
+                    <p>완료된 할 일이 없어요.</p>
+                ) : (
+                    <ul>
+                        {todos.filter(todo => todo.is_complete).map((todo) => (
+                            <li key={todo.id}>
+                                <input
+                                    type="checkbox"
+                                    checked={todo.is_complete}
+                                    onChange={() => toggleTodo(todo.id, todo.is_complete)}
+                                />
+                                {todo.content}
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </ComplecatedTodoContainer>
+        </TodoContainer>
     );
 };
 

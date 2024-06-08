@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import useAuthStore from "@components/Store/authStore";
+import { useAuthStore } from "../Store/authStore";
 import { supabase } from "../lib/supabaseClient";
 import { updateProfile } from "../lib/updateProfile";
 import { styled } from "@pigment-css/react";

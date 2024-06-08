@@ -252,7 +252,7 @@ const AuthForm: React.FC = () => {
     <LoginSiginupContainer>
       <MainLobySectionContainer>
         <MainLogoImage src="/web-logo-profile.svg" alt="logo" width={250} height={250} />
-        <p>매일매일 계획없이 사시나요?<br />이 곳 투두 리스트에서 하루를 기록해보세요.</p>
+        <p>매일매일 계획없이 사시나요?<br />투두 리스트에서 하루를 기록해보세요.</p>
       </MainLobySectionContainer>
       <LoginAuthContainer>
         <h2>{authType === "signin" ? "로그인" : "회원가입"}</h2>

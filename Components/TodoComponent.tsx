@@ -7,8 +7,8 @@ import { styled, keyframes } from '@pigment-css/react';
 
 const TodoContainer = styled('div')({
     display: 'flex',
-    justifyContent: 'space-between',
-    gap: '12px',
+    justifyContent: 'center',
+    gap: '12rem',
     width: '100%',
     maxWidth: '972px',
     margin: '0 auto',
@@ -30,17 +30,25 @@ const TodoContainer = styled('div')({
 });
 
 const ProgressTodoContainer = styled('div')({
-    width: '100%',
+    flex: 1, // 동일한 flex-grow 값을 설정하여 같은 너비를 갖도록 함
     display: 'flex',
     flexDirection: 'column',
     gap: '12px',
+    border: '1px solid #E7E7E7',
+    borderRadius: '12px',
+    padding: '1rem',
+    boxSizing: 'border-box',
 });
 
 const ComplecatedTodoContainer = styled('div')({
-    width: '100%',
+    flex: 1, // 동일한 flex-grow 값을 설정하여 같은 너비를 갖도록 함
     display: 'flex',
     flexDirection: 'column',
     gap: '12px',
+    border: '1px solid #E7E7E7',
+    borderRadius: '12px',
+    padding: '1rem',
+    boxSizing: 'border-box',
 });
 
 const rotateAdd = keyframes({
@@ -50,7 +58,6 @@ const rotateAdd = keyframes({
     'to': {
         transform: 'rotate(135deg)',
     }
-
 });
 
 const rotateCancel = keyframes({
@@ -60,9 +67,7 @@ const rotateCancel = keyframes({
     'to': {
         transform: 'rotate(0deg)',
     }
-
 });
-
 
 const AddToDoBtn = styled('button')<{ isOpen: boolean }>({
     padding: '12px',
@@ -72,9 +77,8 @@ const AddToDoBtn = styled('button')<{ isOpen: boolean }>({
     cursor: 'pointer',
     borderRadius: '50%',
     display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
     gap: '8px',
+    marginLeft: 'auto',
 
     '& img': {
         width: '28px',
@@ -83,21 +87,111 @@ const AddToDoBtn = styled('button')<{ isOpen: boolean }>({
     },
 });
 
+const fadeInModal = keyframes({
+    'from': {
+        opacity: 0,
+        transform: 'scale(0.9)',
+    },
+    'to': {
+        opacity: 1,
+        transform: 'scale(1)',
+    }
+});
+
+const fadeOutModal = keyframes({
+    'from': {
+        opacity: 1,
+        transform: 'scale(1)',
+    },
+    'to': {
+        opacity: 0,
+        transform: 'scale(0.9)',
+    }
+});
+
+const AddToDoBtnContainer = styled('div')({
+    position: 'relative',
+    justifyContent: 'flex-end',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+});
+
+const ModalOverlay = styled('div')({
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backdropFilter: 'blur(4px)',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+});
+
+const ModalContent = styled('div')<{ isOpen: boolean }>({
+    background: 'white',
+    padding: '1rem 1rem 0',
+    borderRadius: '12px',
+    maxWidth: '572px',
+    width: '100%',
+    maxHeight: '80vh',
+    overflowY: 'auto',
+    display: 'flex',
+    flexDirection: 'column',
+    animation: (props) => props.isOpen ? `${fadeInModal} 0.2s ease forwards` : `${fadeOutModal} 0.2s ease forwards`,
+
+    "@media (max-width: 1224px)": {
+        maxWidth: '70%',
+    }
+});
+
+const ToDoInputContainer = styled('div')({
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+
+    '& input': {
+        width: '100%',
+        padding: '1rem',
+        borderRadius: '8px',
+        border: '1px solid #E7E7E7',
+        outline: 'none',
+        boxSizing: 'border-box',
+        fontSize: '1rem',
+    },
+});
+
+const TodoSaveAndCancelBtnContainer = styled('div')({
+    display: 'flex',
+    gap: '12px',
+    justifyContent: 'flex-end',
+    marginTop: '1rem',
+    padding: '1rem 0',
+    boxSizing: 'border-box',
+    width: '100%',
+    position: 'sticky',
+    bottom: 0,
+    background: 'white',
+});
 
 const TodoComponent = () => {
     const { todos, inputs, addInput, setInput, setTodos, resetInputs } = useTodoStore();
     const [showInput, setShowInput] = useState<boolean>(false);
+    const [animateOut, setAnimateOut] = useState<boolean>(false);
 
     const handleInputChange = (index: number, value: string) => {
         setInput(index, value);
     };
 
     const saveTodos = async () => {
-        alert('저장되었습니다.')
         const nonEmptyInputs: Array<string> = inputs.filter(input => input.trim() !== '');
         if (nonEmptyInputs.length === 0) {
             alert('할 일을 입력해주세요.');
             return;
+        } else {
+            alert('저장되었습니다.');
         }
 
         const { data: { session } } = await supabase.auth.getSession();
@@ -117,9 +211,27 @@ const TodoComponent = () => {
             console.error('Error saving todos:', error);
         } else {
             console.log('Todos saved successfully:', data);
-            resetInputs(); // Reset inputs after saving
-            setShowInput(false); // Hide input after saving
-            fetchTodos(); // Refresh the todo list
+            resetInputs();
+            setAnimateOut(true); // 시작 애니메이션
+            setTimeout(() => {
+                setShowInput(false); // 애니메이션 완료 후 모달 닫기
+                setAnimateOut(false); // 애니메이션 상태 초기화
+            }, 100); // 애니메이션 시간과 맞추기
+            fetchTodos();
+        }
+    };
+
+    const deleteTodo = async (id: string) => {
+        const { data, error } = await supabase
+            .from('todos')
+            .delete()
+            .eq('id', id);
+
+        if (error) {
+            console.error('Error deleting todo:', error);
+        } else {
+            console.log('Todo deleted successfully:', data);
+            fetchTodos();
         }
     };
 
@@ -150,13 +262,22 @@ const TodoComponent = () => {
             console.error('Error updating todo:', error);
         } else {
             console.log('Todo updated successfully:', data);
-            fetchTodos(); // Refresh the todo list
+            fetchTodos();
         }
+    };
+
+    const closeModal = () => {
+        setAnimateOut(true); // 시작 애니메이션
+        setTimeout(() => {
+            setShowInput(false); // 애니메이션 완료 후 모달 닫기
+            setAnimateOut(false); // 애니메이션 상태 초기화
+        }, 100); // 애니메이션 시간과 맞추기
     };
 
     useEffect(() => {
         fetchTodos();
     }, []);
+
 
     return (
         <TodoContainer>
@@ -174,31 +295,40 @@ const TodoComponent = () => {
                                     onChange={() => toggleTodo(todo.id, todo.is_complete)}
                                 />
                                 {todo.content}
+                                <button onClick={() => deleteTodo(todo.id)}>삭제</button>
                             </li>
                         ))}
                     </ul>
                 )}
-                <div>
+                <AddToDoBtnContainer>
                     <AddToDoBtn onClick={() => setShowInput(!showInput)} isOpen={showInput}>
                         <img src="/add.svg" alt="Add Todo" />
                     </AddToDoBtn>
-                    {showInput && (
-                        <>
-                            {inputs.map((input, index) => (
-                                <div key={index}>
-                                    <input
-                                        type="text"
-                                        value={input}
-                                        placeholder='할 일을 입력해주세요.'
-                                        onChange={(e) => handleInputChange(index, e.target.value)}
-                                    />
-                                </div>
-                            ))}
-                            <button onClick={addInput}>일정 추가</button>
-                            <button onClick={saveTodos}>저장</button>
-                        </>
+                    {(showInput || animateOut) && (
+                        <ModalOverlay>
+                            <ModalContent isOpen={showInput && !animateOut}>
+                                <h2>할 일 추가</h2>
+                                <ToDoInputContainer>
+                                    {inputs.map((input, index) => (
+                                        <div key={index}>
+                                            <input
+                                                type="text"
+                                                value={input}
+                                                placeholder='할 일을 입력해주세요.'
+                                                onChange={(e) => handleInputChange(index, e.target.value)}
+                                            />
+                                        </div>
+                                    ))}
+                                </ToDoInputContainer>
+                                <button onClick={addInput}>일정 추가</button>
+                                <TodoSaveAndCancelBtnContainer>
+                                    <button onClick={closeModal}>취소</button>
+                                    <button onClick={saveTodos}>저장</button>
+                                </TodoSaveAndCancelBtnContainer>
+                            </ModalContent>
+                        </ModalOverlay>
                     )}
-                </div>
+                </AddToDoBtnContainer>
             </ProgressTodoContainer>
             <ComplecatedTodoContainer>
                 <h2>완료된 일정</h2>

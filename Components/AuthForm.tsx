@@ -67,6 +67,7 @@ const AuthInputContainer = styled("div")({
     backgroundSize: "1.4rem",
     backgroundPosition: "1rem center",
     zIndex: 10,
+    fontSize: "1rem",
 
     "&:focus": {
       outline: "none",

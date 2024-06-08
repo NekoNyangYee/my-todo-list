@@ -157,6 +157,13 @@ const AuthHeader = () => {
         } else {
             setSession(null);
             setProfile(null);
+            localStorage.removeItem('supabase.auth.token');
+
+            // 모든 쿠키 제거
+            document.cookie.split(";").forEach((cookie) => {
+                const name = cookie.trim().split("=")[0];
+                document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+            });
         }
     };
 

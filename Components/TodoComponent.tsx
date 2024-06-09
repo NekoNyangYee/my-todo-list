@@ -37,11 +37,12 @@ const ProgressTodoContainer = styled('div')({
     flex: 1, // 동일한 flex-grow 값을 설정하여 같은 너비를 갖도록 함
     display: 'flex',
     flexDirection: 'column',
+    justifyContent: 'space-between',
     gap: '12px',
-    border: '1px solid #E7E7E7',
     borderRadius: '12px',
     padding: '1rem',
     boxSizing: 'border-box',
+    backgroundColor: '#FFFFFF',
 });
 
 const ComplecatedTodoContainer = styled('div')({
@@ -49,10 +50,10 @@ const ComplecatedTodoContainer = styled('div')({
     display: 'flex',
     flexDirection: 'column',
     gap: '12px',
-    border: '1px solid #E7E7E7',
     borderRadius: '12px',
     padding: '1rem',
     boxSizing: 'border-box',
+    backgroundColor: '#FFFFFF',
 });
 
 const rotateAdd = keyframes({
@@ -204,10 +205,10 @@ const CancelBtn = styled('button')({
     borderRadius: '8px',
     outline: 'none',
     transition: 'background-color 0.2s, color 0.2s',
+    fontWeight: 'bold',
 
     '&:hover': {
-        backgroundColor: '#C1C1C1',
-        color: '#FFFFFF',
+        backgroundColor: '#D7D7D7',
     }
 });
 
@@ -221,6 +222,7 @@ const SaveTodoBtn = styled('button')({
     borderRadius: '8px',
     outline: 'none',
     transition: 'background-color 0.2s, color 0.2s',
+    fontWeight: 'bold',
 
     '&:hover': {
         backgroundColor: '#0055CC',
@@ -291,6 +293,9 @@ const DeleteTodoBtn = styled('button')({
     border: 'none',
     cursor: 'pointer',
     borderRadius: '50%',
+    width: '40px',
+    height: '40px',
+    transition: 'background-color 0.2s ease',
 
     '& img': {
         width: '24px',
@@ -300,6 +305,13 @@ const DeleteTodoBtn = styled('button')({
     '&:hover': {
         background: '#F7F7F7',
     }
+});
+
+const NoTodoListText = styled('p')({
+    color: '#A7A7A7',
+    fontSize: '1rem',
+    margin: 'auto',
+    textAlign: 'center',
 });
 
 const TodoComponent = () => {
@@ -440,7 +452,7 @@ const TodoComponent = () => {
             <ProgressTodoContainer>
                 <h2>진행 중인 일정</h2>
                 {todos.filter(todo => !todo.is_complete).length === 0 ? (
-                    <p>현재 진행 중인 일정이 없어요.</p>
+                    <NoTodoListText>현재 진행 중인 일정이 없어요.</NoTodoListText>
                 ) : (
                     <ul>
                         {todos.filter(todo => !todo.is_complete).map((todo) => (
@@ -499,7 +511,7 @@ const TodoComponent = () => {
             <ComplecatedTodoContainer>
                 <h2>완료된 일정</h2>
                 {todos.filter(todo => todo.is_complete).length === 0 ? (
-                    <p>완료된 할 일이 없어요.</p>
+                    <NoTodoListText>완료된 할 일이 없어요.</NoTodoListText>
                 ) : (
                     <ul>
                         {todos.filter(todo => todo.is_complete).map((todo) => (

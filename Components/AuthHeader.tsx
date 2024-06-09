@@ -1,16 +1,16 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import AuthForm from "./AuthForm";
 import { Session } from "@supabase/supabase-js";
-import { styled } from "@pigment-css/react";
+import { keyframes, styled } from "@pigment-css/react";
 import TodoComponent from "./TodoComponent";
 
 const HeaderFlexBox = styled("div")({
     display: 'flex',
     gap: '12px',
-})
+});
 
 const ProfileImage = styled('img')({
     width: '40px',
@@ -22,6 +22,7 @@ const ProfileImage = styled('img')({
 const MainLogoImage = styled('img')({
     width: '120px',
     height: '60px',
+    cursor: 'pointer',
 });
 
 const AuthHeaderContainer = styled('div')({
@@ -55,8 +56,8 @@ const UserInfoText = styled('p')({
 
 const LogOutBtn = styled('button')({
     padding: '8px 12px',
-    backgroundColor: '#0075FF',
-    color: 'white',
+    backgroundColor: '#FFB8B8',
+    color: '#C33C3C',
     border: 'none',
     borderRadius: '4px',
     cursor: 'pointer',
@@ -66,7 +67,8 @@ const LogOutBtn = styled('button')({
     transition: 'background-color 0.2s',
 
     '&:hover': {
-        backgroundColor: '#0055CC',
+        backgroundColor: '#FF4949',
+        color: '#FFFFFF',
     }
 });
 
@@ -77,9 +79,130 @@ const ProfileInfoContainer = styled('div')({
     borderRadius: '8px',
 });
 
+const fadeInModal = keyframes({
+    'from': {
+        opacity: 0,
+        transform: 'translateY(-20px)'
+    },
+    'to': {
+        opacity: 1,
+        transform: 'translateY(0)'
+    }
+});
+
+const fadeOutModal = keyframes({
+    'from': {
+        opacity: 1,
+        transform: 'translateY(0)'
+    },
+    'to': {
+        opacity: 0,
+        transform: 'translateY(-20px)'
+    }
+});
+
+const ModalOverlay = styled('div')({
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: 'rgba(0, 0, 0, 0.5)',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+    backdropFilter: 'blur(4px)',
+});
+
+const ModalContent = styled('div')<{ isModalOpen: boolean }>({
+    background: '#F6F8FC',
+    padding: '20px',
+    borderRadius: '12px',
+    maxWidth: '500px',
+    width: '100%',
+    boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
+    cursor: 'auto',  // 모달 내용 클릭 시 이벤트 전파 막기 위해 포인터 설정 해제
+    position: 'relative',
+    animation: (props) => props.isModalOpen ? `${fadeInModal} 0.2s ease forwards` : `${fadeOutModal} 0.2s ease forwards`,
+
+    "@media (max-width: 1224px)": {
+        maxWidth: '80%',
+    }
+});
+
+const CloseButton = styled('button')({
+    background: 'none',
+    border: 'none',
+    fontSize: '1.5rem',
+    cursor: 'pointer',
+    position: 'absolute',
+    top: '10px',
+    right: '10px',
+});
+
+const ProfileModalBtn = styled('button')({
+    padding: '0',
+    border: 'none',
+    backgroundColor: 'transparent',
+    cursor: 'pointer',
+    transition: 'transform 0.2s',
+
+    '&:hover': {
+        transform: 'scale(1.1)',
+    }
+});
+
+const ModalUserInfoText = styled('h2')({
+    color: '#6A6A6A',
+    textAlign: 'center',
+    margin: 'auto 0',
+});
+
+const ModalFlexBox = styled('div')({
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+});
+
+const ModalProfileImage = styled('img')({
+    width: '140px',
+    height: '140px',
+    borderRadius: '50%',
+    margin: 'auto',
+});
+
+const ModalInfoSettingContainer = styled('div')({
+    display: 'flex',
+    flexDirection: 'column',
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    gap: '12px',
+    marginTop: '20px',
+    padding: '20px',
+    borderRadius: '8px',
+});
+
 const AuthHeader = () => {
     const [session, setSession] = useState<Session | null>(null);
     const [profile, setProfile] = useState<any>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [animateOut, setAnimateOut] = useState<boolean>(false);
+    const modalRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
+                setIsModalOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
     useEffect(() => {
         const getSession = async () => {
@@ -169,11 +292,25 @@ const AuthHeader = () => {
         }
     };
 
+    const openModal = () => setIsModalOpen(true);
+    const closeModal = () => {
+        setAnimateOut(true);
+        setTimeout(() => {
+            setAnimateOut(false);
+            setIsModalOpen(false);
+        }, 100);
+    };
+
+    const handleOverlayClick = (event: React.MouseEvent) => {
+        if (event.target === event.currentTarget) {
+            closeModal();
+        }
+    };
 
     return (
         <>
             <AuthHeaderContainer>
-                <MainLogoImage src="./main-logo.svg" alt="Todo" width={150} height={150} />
+                <MainLogoImage src="./main-logo.svg" alt="Todo" />
                 {!session ? (
                     <AuthForm />
                 ) : (
@@ -181,19 +318,35 @@ const AuthHeader = () => {
                         {profile ? (
                             <HeaderFlexBox>
                                 <UserInfoText><strong>{profile.full_name}</strong> 님, 환영합니다.</UserInfoText>
-                                {profile.avatar_url ? (
-                                    <ProfileImage src={profile.avatar_url} alt="Profile Picture" width={250} height={250} />
-                                ) : (
-                                    <ProfileImage src="./user.svg" alt="Profile Picture" width={250} height={250} />
-                                )}
+                                <ProfileModalBtn onClick={openModal}>
+                                    <ProfileImage src={profile.avatar_url || "./user.svg"} alt="Profile Picture" width={250} height={250} />
+                                </ProfileModalBtn>
                             </HeaderFlexBox>
                         ) : (
                             <p>프로필 불러오는 중...</p>
                         )}
-                        <LogOutBtn onClick={handleLogout}>로그아웃</LogOutBtn>
                     </ProfileInfoContainer>
                 )}
             </AuthHeaderContainer>
+            {(isModalOpen || animateOut) && (
+                <ModalOverlay onClick={handleOverlayClick}>
+                    <ModalContent isModalOpen={isModalOpen && !animateOut}>
+                        <CloseButton onClick={closeModal}>&times;</CloseButton>
+                        {profile ? (
+                            <ModalFlexBox>
+                                <ModalProfileImage src={profile.avatar_url || "./user.svg"} alt="Profile Picture" width={250} height={250} />
+                                <ModalUserInfoText>{profile.full_name}</ModalUserInfoText>
+                            </ModalFlexBox>
+                        ) : (
+                            <p>프로필 불러오는 중...</p>
+                        )}
+                        <ModalInfoSettingContainer>
+                            <LogOutBtn onClick={handleLogout}>로그아웃</LogOutBtn>
+                        </ModalInfoSettingContainer>
+                    </ModalContent>
+                </ModalOverlay>
+            )}
+
             <TodoComponent />
         </>
     );

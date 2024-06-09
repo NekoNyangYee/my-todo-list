@@ -61,7 +61,7 @@ const AuthInputContainer = styled("div")({
   "& input": {
     padding: "1rem 46px",
     borderRadius: "8px",
-    border: "1px solid #E7E7E7",
+    border: "none",
     backgroundImage: "url('/email.svg')",
     backgroundRepeat: "no-repeat",
     backgroundSize: "1.4rem",
@@ -71,6 +71,7 @@ const AuthInputContainer = styled("div")({
 
     "&:focus": {
       outline: "none",
+      border: "1px solid #E7E7E7",
     },
 
     "&:nth-child(2)": {
@@ -92,8 +93,8 @@ const SocialContainer = styled("div")({
     width: "100%",
     padding: "0.8rem",
     borderRadius: "8px",
-    border: "1px solid #E7E7E7",
-    backgroundColor: "transparent",
+    border: "none",
+    backgroundColor: "#FFFFFF",
     cursor: "pointer",
     transition: "all 0.3s ease",
 

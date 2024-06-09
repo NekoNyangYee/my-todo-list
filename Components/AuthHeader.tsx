@@ -22,8 +22,6 @@ const ProfileImage = styled('img')({
 const MainLogoImage = styled('img')({
     width: '120px',
     height: '60px',
-    filter: 'drop-shadow(4px 4px 4px #C9C9C9)',
-
 });
 
 const AuthHeaderContainer = styled('div')({

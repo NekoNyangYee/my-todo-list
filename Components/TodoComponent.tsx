@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTodoStore } from '../Store/useAuthTodoStore';
 import { supabase } from '../lib/supabaseClient';
 import { styled, keyframes } from '@pigment-css/react';
@@ -146,10 +146,24 @@ const ModalContent = styled('div')<{ isOpen: boolean }>({
     flexDirection: 'column',
     animation: (props) => props.isOpen ? `${fadeInModal} 0.2s ease forwards` : `${fadeOutModal} 0.2s ease forwards`,
 
+    "&::-webkit-scrollbar": {
+        width: '8px',
+    },
+
+    "&::-webkit-scrollbar-thumb": {
+        backgroundColor: '#A9A9A9',
+        borderRadius: '8px',
+    },
+
+    "&::-webkit-scrollbar-track": {
+        background: 'transparent',
+    },
+
     "@media (max-width: 1224px)": {
         maxWidth: '80%',
     }
 });
+
 
 const ToDoInputContainer = styled('div')({
     display: 'flex',
@@ -261,6 +275,7 @@ const TodoListContentContainer = styled('div')({
     display: 'flex',
     alignItems: 'center',
     gap: '12px',
+    justifyContent: 'space-between',
 
     '& li': {
         display: 'flex',
@@ -291,6 +306,7 @@ const TodoComponent = () => {
     const { todos, inputs, addInput, setInput, setTodos, resetInputs } = useTodoStore();
     const [showInput, setShowInput] = useState<boolean>(false);
     const [animateOut, setAnimateOut] = useState<boolean>(false);
+    const modalContentRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (inputs.length < 3) {
@@ -298,6 +314,12 @@ const TodoComponent = () => {
             additionalInputs.forEach(() => addInput());
         }
     }, [inputs, addInput]);
+
+    useEffect(() => {
+        if (modalContentRef.current) {
+            modalContentRef.current.scrollTop = modalContentRef.current.scrollHeight;
+        }
+    }, [inputs]);
 
     const handleInputChange = (index: number, value: string) => {
         setInput(index, value);
@@ -389,6 +411,7 @@ const TodoComponent = () => {
         setTimeout(() => {
             setShowInput(false); // 애니메이션 완료 후 모달 닫기
             setAnimateOut(false); // 애니메이션 상태 초기화
+            resetInputs();
         }, 100); // 애니메이션 시간과 맞추기
     };
 
@@ -396,6 +419,21 @@ const TodoComponent = () => {
         fetchTodos();
     }, []);
 
+    const handleAddInput = () => {
+        if (inputs.length >= 20) {
+            alert('한번에 최대 20개까지 추가할 수 있어요.');
+        } else {
+            addInput();
+            setTimeout(() => {
+                if (modalContentRef.current) {
+                    modalContentRef.current.scrollTo({
+                        top: modalContentRef.current.scrollHeight,
+                        behavior: 'smooth',
+                    });
+                }
+            }, 100);
+        }
+    };
 
     return (
         <TodoContainer>
@@ -406,15 +444,14 @@ const TodoComponent = () => {
                 ) : (
                     <ul>
                         {todos.filter(todo => !todo.is_complete).map((todo) => (
-                            <TodoListContentContainer>
-                                <li key={todo.id}>
+                            <TodoListContentContainer key={todo.id}>
+                                <li>
                                     <input
                                         type="checkbox"
                                         checked={todo.is_complete}
                                         onChange={() => toggleTodo(todo.id, todo.is_complete)}
                                     />
                                     {todo.content}
-
                                 </li>
                                 <DeleteTodoBtn onClick={() => deleteTodo(todo.id)}>
                                     <img src="/delete.svg" alt="Delete Todo" />
@@ -429,7 +466,7 @@ const TodoComponent = () => {
                     </AddToDoBtn>
                     {(showInput || animateOut) && (
                         <ModalOverlay>
-                            <ModalContent isOpen={showInput && !animateOut}>
+                            <ModalContent isOpen={showInput && !animateOut} ref={modalContentRef}>
                                 <ModalTitleContainer>
                                     <h2>할 일 추가</h2>
                                     <p>오늘 해야 할 일을 추가해 보세요.<br />한번에 최대 20개까지 추가 가능해요.</p>
@@ -446,13 +483,7 @@ const TodoComponent = () => {
                                         </div>
                                     ))}
                                 </ToDoInputContainer>
-                                <AddTodoBtn onClick={() => {
-                                    if (inputs.length >= 20) {
-                                        alert('한번에 최대 20개까지 추가할 수 있어요.');
-                                    } else {
-                                        addInput();
-                                    }
-                                }}>
+                                <AddTodoBtn onClick={handleAddInput}>
                                     <img src="/add.svg" alt="Add Todo" />
                                     <p>할 일 항목 추가</p>
                                 </AddTodoBtn>

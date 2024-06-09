@@ -17,6 +17,9 @@ const TodoContainer = styled('div')({
     "& ul": {
         padding: 0,
         margin: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '12px',
     },
 
     "& li": {
@@ -26,6 +29,7 @@ const TodoContainer = styled('div')({
     '@media (max-width: 1224px)': {
         maxWidth: '90%',
         flexDirection: 'column',
+        gap: '2rem',
     }
 });
 
@@ -143,7 +147,7 @@ const ModalContent = styled('div')<{ isOpen: boolean }>({
     animation: (props) => props.isOpen ? `${fadeInModal} 0.2s ease forwards` : `${fadeOutModal} 0.2s ease forwards`,
 
     "@media (max-width: 1224px)": {
-        maxWidth: '70%',
+        maxWidth: '80%',
     }
 });
 
@@ -176,10 +180,94 @@ const TodoSaveAndCancelBtnContainer = styled('div')({
     background: 'white',
 });
 
+const CancelBtn = styled('button')({
+    padding: '12px 18px',
+    backgroundColor: '#E7E7E7',
+    color: '#AEAEAE',
+    fontSize: '0.8rem',
+    border: 'none',
+    cursor: 'pointer',
+    borderRadius: '8px',
+    outline: 'none',
+    transition: 'background-color 0.2s, color 0.2s',
+
+    '&:hover': {
+        backgroundColor: '#C1C1C1',
+        color: '#FFFFFF',
+    }
+});
+
+const SaveTodoBtn = styled('button')({
+    padding: '12px 18px',
+    backgroundColor: '#0075FF',
+    color: '#FFFFFF',
+    fontSize: '0.8rem',
+    border: 'none',
+    cursor: 'pointer',
+    borderRadius: '8px',
+    outline: 'none',
+    transition: 'background-color 0.2s, color 0.2s',
+
+    '&:hover': {
+        backgroundColor: '#0055CC',
+    }
+});
+
+const ModalTitleContainer = styled('div')({
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+    marginBottom: '1rem',
+
+    '& h2, & p': {
+        margin: '0'
+    },
+
+    '& p': {
+        color: '#6A6A6A',
+        fontSize: '0.9rem',
+    }
+});
+
+const AddTodoBtn = styled('button')({
+    display: 'flex',
+    gap: '8px',
+    justifyContent: 'center',
+    padding: '12px',
+    backgroundColor: '#0075FF',
+    color: '#fff',
+    border: 'none',
+    cursor: 'pointer',
+    borderRadius: '8px',
+    outline: 'none',
+    transition: 'background-color 0.2s',
+    margin: '1rem 0',
+
+    '& img': {
+        width: '20px',
+        height: '20px',
+    },
+
+    '& p': {
+        margin: 'auto 0',
+    },
+
+    '&:hover': {
+        backgroundColor: '#0055CC',
+    }
+});
+
 const TodoComponent = () => {
     const { todos, inputs, addInput, setInput, setTodos, resetInputs } = useTodoStore();
     const [showInput, setShowInput] = useState<boolean>(false);
     const [animateOut, setAnimateOut] = useState<boolean>(false);
+
+    useEffect(() => {
+        if (inputs.length < 3) {
+            const additionalInputs = Array(2 - inputs.length).fill('');
+            additionalInputs.forEach(() => addInput());
+        }
+    }, [inputs, addInput]);
 
     const handleInputChange = (index: number, value: string) => {
         setInput(index, value);
@@ -230,7 +318,7 @@ const TodoComponent = () => {
         if (error) {
             console.error('Error deleting todo:', error);
         } else {
-            console.log('Todo deleted successfully:', data);
+            console.log('할 일을 성공적으로 제거했어요.:', data);
             fetchTodos();
         }
     };
@@ -307,7 +395,10 @@ const TodoComponent = () => {
                     {(showInput || animateOut) && (
                         <ModalOverlay>
                             <ModalContent isOpen={showInput && !animateOut}>
-                                <h2>할 일 추가</h2>
+                                <ModalTitleContainer>
+                                    <h2>할 일 추가</h2>
+                                    <p>오늘 해야 할 일을 추가해 보세요.<br />한번에 최대 20개까지 추가 가능해요.</p>
+                                </ModalTitleContainer>
                                 <ToDoInputContainer>
                                     {inputs.map((input, index) => (
                                         <div key={index}>
@@ -320,10 +411,19 @@ const TodoComponent = () => {
                                         </div>
                                     ))}
                                 </ToDoInputContainer>
-                                <button onClick={addInput}>일정 추가</button>
+                                <AddTodoBtn onClick={() => {
+                                    if (inputs.length >= 20) {
+                                        alert('한번에 최대 20개까지 추가할 수 있어요.');
+                                    } else {
+                                        addInput();
+                                    }
+                                }}>
+                                    <img src="/add.svg" alt="Add Todo" />
+                                    <p>할 일 항목 추가</p>
+                                </AddTodoBtn>
                                 <TodoSaveAndCancelBtnContainer>
-                                    <button onClick={closeModal}>취소</button>
-                                    <button onClick={saveTodos}>저장</button>
+                                    <CancelBtn onClick={closeModal}>취소</CancelBtn>
+                                    <SaveTodoBtn onClick={saveTodos}>저장</SaveTodoBtn>
                                 </TodoSaveAndCancelBtnContainer>
                             </ModalContent>
                         </ModalOverlay>

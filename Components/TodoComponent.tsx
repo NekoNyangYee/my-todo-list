@@ -257,6 +257,36 @@ const AddTodoBtn = styled('button')({
     }
 });
 
+const TodoListContentContainer = styled('div')({
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+
+    '& li': {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        margin: 'auto 0',
+    }
+});
+
+const DeleteTodoBtn = styled('button')({
+    padding: '8px',
+    backgroundColor: 'transparent',
+    border: 'none',
+    cursor: 'pointer',
+    borderRadius: '50%',
+
+    '& img': {
+        width: '24px',
+        height: '24px',
+    },
+
+    '&:hover': {
+        background: '#F7F7F7',
+    }
+});
+
 const TodoComponent = () => {
     const { todos, inputs, addInput, setInput, setTodos, resetInputs } = useTodoStore();
     const [showInput, setShowInput] = useState<boolean>(false);
@@ -264,7 +294,7 @@ const TodoComponent = () => {
 
     useEffect(() => {
         if (inputs.length < 3) {
-            const additionalInputs = Array(2 - inputs.length).fill('');
+            const additionalInputs = Array(3 - inputs.length).fill('');
             additionalInputs.forEach(() => addInput());
         }
     }, [inputs, addInput]);
@@ -376,15 +406,20 @@ const TodoComponent = () => {
                 ) : (
                     <ul>
                         {todos.filter(todo => !todo.is_complete).map((todo) => (
-                            <li key={todo.id}>
-                                <input
-                                    type="checkbox"
-                                    checked={todo.is_complete}
-                                    onChange={() => toggleTodo(todo.id, todo.is_complete)}
-                                />
-                                {todo.content}
-                                <button onClick={() => deleteTodo(todo.id)}>삭제</button>
-                            </li>
+                            <TodoListContentContainer>
+                                <li key={todo.id}>
+                                    <input
+                                        type="checkbox"
+                                        checked={todo.is_complete}
+                                        onChange={() => toggleTodo(todo.id, todo.is_complete)}
+                                    />
+                                    {todo.content}
+
+                                </li>
+                                <DeleteTodoBtn onClick={() => deleteTodo(todo.id)}>
+                                    <img src="/delete.svg" alt="Delete Todo" />
+                                </DeleteTodoBtn>
+                            </TodoListContentContainer>
                         ))}
                     </ul>
                 )}

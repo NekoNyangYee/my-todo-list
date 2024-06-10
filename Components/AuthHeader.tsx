@@ -72,9 +72,9 @@ const LogOutBtn = styled('button')({
     }
 });
 
-const EditProfileBtn = styled('button')({
+const EditProfileBtn = styled('button')<{ isEditerOpen: boolean }>({
     padding: '1rem 3.2rem 1rem',
-    backgroundColor: 'transparent',
+    backgroundColor: (props) => props.isEditerOpen ? '#E7E7E7' : 'transparent',
     color: '#6A6A6A',
     border: 'none',
     borderRadius: '8px',
@@ -252,6 +252,7 @@ const InputField = styled('input')({
     width: '100%',
     boxSizing: 'border-box',
     backgroundColor: '#F6F8FC',
+    fontSize: '1rem',
 });
 
 const ButtonContainer = styled('div')({
@@ -487,7 +488,7 @@ const AuthHeader = () => {
                             {profile.provider === 'email' || (
                                 <WarningText>소셜 로그인으로 로그인 한 경우 프로필 편집을 할 수 없습니다.</WarningText>
                             )}
-                            <EditProfileBtn onClick={handleEditProfile} disabled={profile.provider !== 'email'}>
+                            <EditProfileBtn onClick={handleEditProfile} disabled={profile.provider !== 'email'} isEditerOpen={isEditMode}>
                                 프로필 편집
                             </EditProfileBtn>
 

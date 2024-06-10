@@ -6,6 +6,7 @@ import AuthForm from "./AuthForm";
 import { Session } from "@supabase/supabase-js";
 import { keyframes, styled } from "@pigment-css/react";
 import TodoComponent from "./TodoComponent";
+import { set } from "mongoose";
 
 const HeaderFlexBox = styled("div")({
     display: 'flex',
@@ -33,13 +34,10 @@ const AuthHeaderContainer = styled('div')({
     maxWidth: '972px',
     width: '100%',
     padding: '12px',
+
     '@media (max-width: 1224px)': {
         maxWidth: '90%',
-    },
-    '@media (max-width: 768px)': {
-        flexDirection: 'column',
-        alignItems: 'center',
-    },
+    }
 });
 
 const UserInfoText = styled('p')({
@@ -72,6 +70,33 @@ const LogOutBtn = styled('button')({
     '&:hover': {
         backgroundColor: '#FF4949',
         color: '#FFFFFF',
+    }
+});
+
+const EditProfileBtn = styled('button')({
+    padding: '1rem 3.2rem 1rem',
+    backgroundColor: 'transparent',
+    color: '#6A6A6A',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontSize: '0.8rem',
+    fontWeight: 'bold',
+    transition: 'background-color 0.2s',
+    textAlign: 'left',
+    backgroundImage: 'url("/edit.svg")',
+    backgroundRepeat: 'no-repeat',
+    backgroundPosition: 'left 20px center',
+    backgroundSize: '1.4rem',
+
+    '&:hover': {
+        backgroundColor: '#E7E7E7',
+    },
+
+    '&:disabled': {
+        backgroundColor: '#D3D3D3', // 얕은 회색 배경
+        cursor: 'not-allowed',
+        opacity: 0.5, // 불투명도 조정
     }
 });
 
@@ -125,9 +150,10 @@ const ModalContent = styled('div')<{ isModalOpen: boolean }>({
     maxWidth: '500px',
     width: '100%',
     boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
-    cursor: 'auto',
-    position: 'relative',
+    cursor: 'auto',  // 모달 내용 클릭 시 이벤트 전파 막기 위해 포인터 설정 해제
+    position: 'relative', // 자식 요소인 CloseButton의 위치 설정을 위해 relative로 변경
     animation: (props) => props.isModalOpen ? `${fadeInModal} 0.2s ease forwards` : `${fadeOutModal} 0.2s ease forwards`,
+
     "@media (max-width: 1224px)": {
         maxWidth: '80%',
     },
@@ -136,11 +162,12 @@ const ModalContent = styled('div')<{ isModalOpen: boolean }>({
 const CloseButton = styled('button')({
     background: 'none',
     border: 'none',
-    fontSize: '1.5rem',
     cursor: 'pointer',
-    position: 'absolute',
-    top: '10px',
-    right: '10px',
+
+    "& img": {
+        width: '40px',
+        height: '40px',
+    }
 });
 
 const ProfileModalBtn = styled('button')({
@@ -167,6 +194,40 @@ const ModalFlexBox = styled('div')({
     gap: '12px',
 });
 
+const ModalProfileSection = styled('div')({
+    position: 'relative',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+
+    '@media (max-width: 768px)': {
+        flexDirection: 'column',
+    },
+});
+
+const ProfileContainer = styled('div')({
+    position: 'relative',
+    display: 'inline-block',
+});
+
+const ModalProfileImage = styled('img')({
+    width: '140px',
+    height: '140px',
+    borderRadius: '50%',
+    position: 'relative',
+});
+
+const LoginWIthBadge = styled('img')({
+    width: '40px',
+    height: '40px',
+    position: 'absolute',
+    bottom: '30px', // 프로필 이미지의 아래쪽에 배치
+    right: '20px', // 프로필 이미지의 오른쪽에 배치
+    borderRadius: '50%',
+    transform: 'translate(50%, 50%)', // 정확한 위치 조정을 위해 변환 적용
+});
+
 const ModalInfoSettingContainer = styled('div')({
     display: 'flex',
     flexDirection: 'column',
@@ -178,36 +239,46 @@ const ModalInfoSettingContainer = styled('div')({
     borderRadius: '8px',
 });
 
-const LoginWIthBadge = styled('img')({
-    width: '40px',
-    height: '40px',
-    display: "inline",
-    margin: '0 auto',
-    position: 'relative',
-    right: '20px',
-    bottom: '10px',
-    borderRadius: '50%',
-});
-
-const ModalProfileImage = styled('img')({
-    width: '140px',
-    height: '140px',
-    borderRadius: '50%',
-    position: 'relative',
-    left: '20px',
-});
-
-const ModalProfileSection = styled('div')({
-    position: 'relative',
+const InputContainer = styled('div')({
     display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: '100%',
+    flexDirection: 'column',
+    gap: '8px',
+    marginTop: '12px',
 });
 
-const ProfileContainer = styled('div')({
-    position: 'relative',
-    display: 'inline-block',
+const InputField = styled('input')({
+    padding: '1rem',
+    borderRadius: '8px',
+    border: 'none',
+    width: '100%',
+    boxSizing: 'border-box',
+    backgroundColor: '#F6F8FC',
+});
+
+const ButtonContainer = styled('div')({
+    display: 'flex',
+    justifyContent: 'flex-end',
+    gap: '8px',
+    marginTop: '10px',
+});
+
+const SaveButton = styled('button')({
+    padding: '10px 20px',
+    borderRadius: '4px',
+    border: 'none',
+    backgroundColor: '#0075FF',
+    color: '#FFFFFF',
+    cursor: 'pointer',
+    '&:hover': {
+        backgroundColor: '#005BB5',
+    },
+});
+
+const WarningText = styled('p')({
+    color: '#FF4949',
+    fontSize: '0.8rem',
+    textAlign: 'left',
+    margin: '0',
 });
 
 const AuthHeader = () => {
@@ -215,6 +286,8 @@ const AuthHeader = () => {
     const [profile, setProfile] = useState<any>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [animateOut, setAnimateOut] = useState<boolean>(false);
+    const [isEditMode, setIsEditMode] = useState(false);
+    const [editedName, setEditedName] = useState('');
     const modalRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -331,8 +404,37 @@ const AuthHeader = () => {
     const handleOverlayClick = (event: React.MouseEvent) => {
         if (event.target === event.currentTarget) {
             closeModal();
+            setTimeout(() => {
+                setIsEditMode(false);
+            }, 100)
         }
     };
+
+    const handleEditProfile = () => {
+        setEditedName(profile.full_name);
+        setIsEditMode(!isEditMode);
+    };
+
+    const handleSaveProfile = async () => {
+        if (editedName.length === 0) {
+            alert('닉네임을 입력해주세요.');
+            return;
+        }
+
+        const { error } = await supabase
+            .from('users')
+            .update({ full_name: editedName })
+            .eq('id', profile.id);
+
+        if (error) {
+            console.error('Error updating profile:', error.message);
+        } else {
+            alert('닉네임이 수정되었습니다.');
+            setProfile((prevProfile: any) => ({ ...prevProfile, full_name: editedName }));
+            setIsEditMode(false);
+        }
+    };
+
 
     return (
         <>
@@ -358,7 +460,9 @@ const AuthHeader = () => {
             {(isModalOpen || animateOut) && (
                 <ModalOverlay onClick={handleOverlayClick}>
                     <ModalContent isModalOpen={isModalOpen && !animateOut}>
-                        <CloseButton onClick={closeModal}>&times;</CloseButton>
+                        <CloseButton onClick={closeModal}>
+                            <img src="./close.svg" alt="Close" />
+                        </CloseButton>
                         {profile ? (
                             <ModalFlexBox>
                                 <ModalProfileSection>
@@ -381,6 +485,27 @@ const AuthHeader = () => {
                             <ModalProfileImage src={profile.avatar_url || "./user.svg"} alt="Profile Picture" />
                         )}
                         <ModalInfoSettingContainer>
+                            {profile.provider === 'email' || (
+                                <WarningText>소셜 로그인으로 로그인 한 경우 프로필 편집을 할 수 없습니다.</WarningText>
+                            )}
+                            <EditProfileBtn onClick={handleEditProfile} disabled={profile.provider !== 'email'}>
+                                프로필 편집
+                            </EditProfileBtn>
+
+                            {isEditMode && (
+                                <InputContainer>
+                                    <InputField
+                                        type="text"
+                                        value={editedName}
+                                        onChange={(e) => setEditedName(e.target.value)}
+                                    />
+                                    <ButtonContainer>
+                                        <SaveButton onClick={handleSaveProfile} disabled={editedName.length === 0}>저장</SaveButton>
+                                    </ButtonContainer>
+                                </InputContainer>
+                            )}
+
+
                             <LogOutBtn onClick={handleLogout}>로그아웃</LogOutBtn>
                         </ModalInfoSettingContainer>
                     </ModalContent>

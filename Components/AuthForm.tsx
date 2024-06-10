@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "../Store/authStore";
 import { supabase } from "../lib/supabaseClient";
 import { updateProfile } from "../lib/updateProfile";
-import { styled } from "@pigment-css/react";
+import { keyframes, styled } from "@pigment-css/react";
 
 const LoginSiginupContainer = styled("div")({
   width: "100%",
@@ -77,10 +77,41 @@ const AuthInputContainer = styled("div")({
     "&:nth-child(2)": {
       backgroundImage: "url('/password.svg')",
     },
-    "&:nth-child(3)": {
-      backgroundImage: "url('/password.svg')",
-    },
-    "&:nth-child(4)": {
+  },
+});
+
+const fadeInModal = keyframes({
+  'from': {
+    opacity: 0,
+    transform: 'translateY(-20px)'
+  },
+  'to': {
+    opacity: 1,
+    transform: 'translateY(0)'
+  }
+});
+
+const fadeOutModal = keyframes({
+  'from': {
+    opacity: 1,
+    transform: 'translateY(0)'
+  },
+  'to': {
+    opacity: 0,
+    transform: 'translateY(-20px)'
+  }
+});
+
+const SignUpInputContainer = styled("div")<{ isOpen: boolean }>({
+  display: "flex",
+  flexDirection: "column",
+  gap: "12px",
+  animation: (props) => (props.isOpen ? fadeInModal : fadeOutModal) + " 0.2s",
+
+  "& input": {
+    backgroundImage: "url('/password.svg')",
+
+    "&:nth-child(2)": {
       backgroundImage: "url('/user.svg')",
     },
   },
@@ -173,7 +204,7 @@ const SwitchAuthBtn = styled("button")({
   },
 });
 
-const AuthForm: React.FC = () => {
+const AuthForm = () => {
   const {
     email,
     setEmail,
@@ -302,7 +333,7 @@ const AuthForm: React.FC = () => {
             autoComplete="new-password"
           />
           {authType === "signup" && (
-            <>
+            <SignUpInputContainer isOpen={authType === 'signup'}>
               <input
                 type="password"
                 value={confirmPassword}
@@ -317,7 +348,7 @@ const AuthForm: React.FC = () => {
                 placeholder="닉네임"
                 autoComplete="new-password"
               />
-            </>
+            </SignUpInputContainer>
           )}
           <LoginAndSignUpBtn onClick={handleAuth}>
             {authType === "signin" ? "로그인" : "회원가입"}

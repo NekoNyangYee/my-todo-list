@@ -238,11 +238,12 @@ const ModalInfoSettingContainer = styled('div')({
     borderRadius: '8px',
 });
 
-const InputContainer = styled('div')({
+const InputContainer = styled('div')<{ isEditOpen: boolean }>({
     display: 'flex',
     flexDirection: 'column',
     gap: '8px',
     marginTop: '12px',
+    animation: (props) => (props.isEditOpen ? fadeInModal : fadeOutModal) + " 0.2s",
 });
 
 const InputField = styled('input')({
@@ -253,6 +254,7 @@ const InputField = styled('input')({
     boxSizing: 'border-box',
     backgroundColor: '#F6F8FC',
     fontSize: '1rem',
+    outline: 'none',
 });
 
 const ButtonContainer = styled('div')({
@@ -398,6 +400,7 @@ const AuthHeader = () => {
         setTimeout(() => {
             setAnimateOut(false);
             setIsModalOpen(false);
+            setIsEditMode(false);
         }, 100);
     };
 
@@ -435,6 +438,17 @@ const AuthHeader = () => {
         }
     };
 
+    useEffect(() => {
+        if (isModalOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [isModalOpen]);
 
     return (
         <>
@@ -491,9 +505,8 @@ const AuthHeader = () => {
                             <EditProfileBtn onClick={handleEditProfile} disabled={profile.provider !== 'email'} isEditerOpen={isEditMode}>
                                 프로필 편집
                             </EditProfileBtn>
-
                             {isEditMode && (
-                                <InputContainer>
+                                <InputContainer isEditOpen={isEditMode}>
                                     <InputField
                                         type="text"
                                         value={editedName}
@@ -504,8 +517,6 @@ const AuthHeader = () => {
                                     </ButtonContainer>
                                 </InputContainer>
                             )}
-
-
                             <LogOutBtn onClick={handleLogout}>로그아웃</LogOutBtn>
                         </ModalInfoSettingContainer>
                     </ModalContent>

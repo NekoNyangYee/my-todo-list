@@ -88,15 +88,14 @@ const AuthInputContainer = styled("div")({
 
 const SocialContainer = styled("div")({
   padding: "1rem",
+  display: "flex",
+  flexDirection: "column",
+  gap: "12px",
 
   "& button": {
     width: "100%",
     padding: "0.8rem",
     borderRadius: "8px",
-    border: "none",
-    backgroundColor: "#FFFFFF",
-    cursor: "pointer",
-    transition: "all 0.3s ease",
 
     "&:hover": {
       transform: "translateY(-4px)",
@@ -109,6 +108,35 @@ const SocialContainer = styled("div")({
     gap: "12px",
     justifyContent: "center",
     alignItems: "center",
+  },
+});
+
+const GoogleSocialLoginBtn = styled("button")({
+  padding: "0.8rem",
+  borderRadius: "8px",
+  border: "none",
+  backgroundColor: "#FFFFFF",
+  cursor: "pointer",
+  transition: "all 0.3s ease",
+
+  "&:hover": {
+    transform: "translateY(-4px)",
+    boxShadow: "0px 4px 4px rgba(0, 0, 0, 0.15)",
+  },
+});
+
+const KaKaoSocialLoginBtn = styled("button")({
+  padding: "0.8rem",
+  borderRadius: "8px",
+  border: "none",
+  backgroundColor: "#F9E000",
+  cursor: "pointer",
+  transition: "all 0.3s ease",
+  color: "#371C1D",
+
+  "&:hover": {
+    transform: "translateY(-4px)",
+    boxShadow: "0px 4px 4px rgba(0, 0, 0, 0.15)",
   },
 });
 
@@ -237,7 +265,7 @@ const AuthForm: React.FC = () => {
     }
   };
 
-  const handleSocialLogin = async (provider: "google") => {
+  const handleSocialLogin = async (provider: "google" | 'kakao') => {
     const { data, error } = await supabase.auth.signInWithOAuth({ provider });
     if (error) {
       console.error(`Error signing in with ${provider}:`, error.message);
@@ -304,7 +332,7 @@ const AuthForm: React.FC = () => {
         </AuthInputContainer>
         {authType === "signin" && (
           <SocialContainer>
-            <button onClick={() => handleSocialLogin("google")}>
+            <GoogleSocialLoginBtn onClick={() => handleSocialLogin("google")}>
               <div className="social-login-flex">
                 <LogoImage
                   src="/google-logo.png"
@@ -314,7 +342,18 @@ const AuthForm: React.FC = () => {
                 />
                 <p style={{ alignItems: 'center', fontSize: "1rem", margin: '0', color: '#6A6A6A' }}>Google로 시작하기</p>
               </div>
-            </button>
+            </GoogleSocialLoginBtn>
+            <KaKaoSocialLoginBtn onClick={() => handleSocialLogin("kakao")}>
+              <div className="social-login-flex">
+                <LogoImage
+                  src="/kakao-logo.png"
+                  alt="kakao"
+                  width={250}
+                  height={250}
+                />
+                <p style={{ alignItems: 'center', fontSize: "1rem", margin: '0', color: '#6A6A6A' }}>카카오로 시작하기</p>
+              </div>
+            </KaKaoSocialLoginBtn>
           </SocialContainer>
         )}
       </LoginAuthContainer>

@@ -33,10 +33,13 @@ const AuthHeaderContainer = styled('div')({
     maxWidth: '972px',
     width: '100%',
     padding: '12px',
-
     '@media (max-width: 1224px)': {
         maxWidth: '90%',
-    }
+    },
+    '@media (max-width: 768px)': {
+        flexDirection: 'column',
+        alignItems: 'center',
+    },
 });
 
 const UserInfoText = styled('p')({
@@ -55,11 +58,11 @@ const UserInfoText = styled('p')({
 });
 
 const LogOutBtn = styled('button')({
-    padding: '8px 12px',
+    padding: '12px 16px',
     backgroundColor: '#FFB8B8',
     color: '#C33C3C',
     border: 'none',
-    borderRadius: '4px',
+    borderRadius: '8px',
     cursor: 'pointer',
     margin: 'auto 0',
     fontSize: '0.8rem',
@@ -122,13 +125,12 @@ const ModalContent = styled('div')<{ isModalOpen: boolean }>({
     maxWidth: '500px',
     width: '100%',
     boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
-    cursor: 'auto',  // 모달 내용 클릭 시 이벤트 전파 막기 위해 포인터 설정 해제
+    cursor: 'auto',
     position: 'relative',
     animation: (props) => props.isModalOpen ? `${fadeInModal} 0.2s ease forwards` : `${fadeOutModal} 0.2s ease forwards`,
-
     "@media (max-width: 1224px)": {
         maxWidth: '80%',
-    }
+    },
 });
 
 const CloseButton = styled('button')({
@@ -165,13 +167,6 @@ const ModalFlexBox = styled('div')({
     gap: '12px',
 });
 
-const ModalProfileImage = styled('img')({
-    width: '140px',
-    height: '140px',
-    borderRadius: '50%',
-    margin: 'auto',
-});
-
 const ModalInfoSettingContainer = styled('div')({
     display: 'flex',
     flexDirection: 'column',
@@ -181,6 +176,38 @@ const ModalInfoSettingContainer = styled('div')({
     marginTop: '20px',
     padding: '20px',
     borderRadius: '8px',
+});
+
+const LoginWIthBadge = styled('img')({
+    width: '40px',
+    height: '40px',
+    display: "inline",
+    margin: '0 auto',
+    position: 'relative',
+    right: '20px',
+    bottom: '10px',
+    borderRadius: '50%',
+});
+
+const ModalProfileImage = styled('img')({
+    width: '140px',
+    height: '140px',
+    borderRadius: '50%',
+    position: 'relative',
+    left: '20px',
+});
+
+const ModalProfileSection = styled('div')({
+    position: 'relative',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+});
+
+const ProfileContainer = styled('div')({
+    position: 'relative',
+    display: 'inline-block',
 });
 
 const AuthHeader = () => {
@@ -231,7 +258,7 @@ const AuthHeader = () => {
     const fetchProfile = async (userId: string, session: Session) => {
         const { data, error } = await supabase
             .from('users')
-            .select('id, email, full_name, avatar_url')
+            .select('id, email, full_name, avatar_url, provider')
             .eq('id', userId)
             .single();
 
@@ -254,7 +281,7 @@ const AuthHeader = () => {
                 // 새로 생성한 프로필을 다시 가져옴
                 const { data: newData, error: newError } = await supabase
                     .from('users')
-                    .select('id, email, full_name, avatar_url')
+                    .select('id, email, full_name, avatar_url, provider')
                     .eq('id', userId)
                     .single();
                 if (newError) {
@@ -323,7 +350,7 @@ const AuthHeader = () => {
                                 </ProfileModalBtn>
                             </HeaderFlexBox>
                         ) : (
-                            <p>프로필 불러오는 중...</p>
+                            <ProfileImage src={"./user.svg"} alt="Profile Picture" width={250} height={250} />
                         )}
                     </ProfileInfoContainer>
                 )}
@@ -334,11 +361,24 @@ const AuthHeader = () => {
                         <CloseButton onClick={closeModal}>&times;</CloseButton>
                         {profile ? (
                             <ModalFlexBox>
-                                <ModalProfileImage src={profile.avatar_url || "./user.svg"} alt="Profile Picture" width={250} height={250} />
+                                <ModalProfileSection>
+                                    <ProfileContainer>
+                                        <ModalProfileImage src={profile.avatar_url || "./user.svg"} alt="Profile Picture" />
+                                        {profile.provider === 'google' && (
+                                            <LoginWIthBadge src="./login-with-google.svg" alt="Google Logo" />
+                                        )}
+                                        {profile.provider === 'email' && (
+                                            <LoginWIthBadge src="./login-with-email.svg" alt="Email Logo" />
+                                        )}
+                                        {profile.provider === 'kakao' && (
+                                            <LoginWIthBadge src="./login-with-kakao.svg" alt="Kakao Logo" />
+                                        )}
+                                    </ProfileContainer>
+                                </ModalProfileSection>
                                 <ModalUserInfoText>{profile.full_name}</ModalUserInfoText>
                             </ModalFlexBox>
                         ) : (
-                            <p>프로필 불러오는 중...</p>
+                            <ModalProfileImage src={profile.avatar_url || "./user.svg"} alt="Profile Picture" />
                         )}
                         <ModalInfoSettingContainer>
                             <LogOutBtn onClick={handleLogout}>로그아웃</LogOutBtn>
@@ -346,7 +386,6 @@ const AuthHeader = () => {
                     </ModalContent>
                 </ModalOverlay>
             )}
-
             <TodoComponent />
         </>
     );

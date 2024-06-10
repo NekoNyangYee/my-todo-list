@@ -6,7 +6,6 @@ import AuthForm from "./AuthForm";
 import { Session } from "@supabase/supabase-js";
 import { keyframes, styled } from "@pigment-css/react";
 import TodoComponent from "./TodoComponent";
-import { set } from "mongoose";
 
 const HeaderFlexBox = styled("div")({
     display: 'flex',

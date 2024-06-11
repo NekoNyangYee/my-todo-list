@@ -5,6 +5,68 @@ import { useTodoStore } from '../Store/useAuthTodoStore';
 import { supabase } from '../lib/supabaseClient';
 import { styled, keyframes } from '@pigment-css/react';
 
+const fadeInDropDownModal = keyframes({
+    'from': {
+        opacity: 0,
+        transform: 'scale(0.9)',
+    },
+    'to': {
+        opacity: 1,
+        transform: 'scale(1)',
+    }
+});
+
+const fadeOutDropDownModal = keyframes({
+    'from': {
+        opacity: 1,
+        transform: 'scale(1)',
+    },
+    'to': {
+        opacity: 0,
+        transform: 'scale(0.9)',
+    }
+});
+
+const fadeInModal = keyframes({
+    'from': {
+        opacity: 0,
+        transform: 'scale(0.9)',
+    },
+    'to': {
+        opacity: 1,
+        transform: 'scale(1)',
+    }
+});
+
+const fadeOutModal = keyframes({
+    'from': {
+        opacity: 1,
+        transform: 'scale(1)',
+    },
+    'to': {
+        opacity: 0,
+        transform: 'scale(0.9)',
+    }
+});
+
+const rotateAdd = keyframes({
+    'from': {
+        transform: 'rotate(0deg)',
+    },
+    'to': {
+        transform: 'rotate(135deg)',
+    }
+});
+
+const rotateCancel = keyframes({
+    'from': {
+        transform: 'rotate(135deg)',
+    },
+    'to': {
+        transform: 'rotate(0deg)',
+    }
+});
+
 const TodoContainer = styled('div')({
     display: 'flex',
     justifyContent: 'center',
@@ -56,24 +118,6 @@ const ComplecatedTodoContainer = styled('div')({
     backgroundColor: '#FFFFFF',
 });
 
-const rotateAdd = keyframes({
-    'from': {
-        transform: 'rotate(0deg)',
-    },
-    'to': {
-        transform: 'rotate(135deg)',
-    }
-});
-
-const rotateCancel = keyframes({
-    'from': {
-        transform: 'rotate(135deg)',
-    },
-    'to': {
-        transform: 'rotate(0deg)',
-    }
-});
-
 const AddToDoBtn = styled('button')<{ isOpen: boolean }>({
     padding: '12px',
     backgroundColor: '#0075FF',
@@ -90,28 +134,6 @@ const AddToDoBtn = styled('button')<{ isOpen: boolean }>({
         height: '28px',
         animation: (props) => props.isOpen ? `${rotateAdd} 0.1s ease forwards` : `${rotateCancel} 0.1s ease forwards`,
     },
-});
-
-const fadeInModal = keyframes({
-    'from': {
-        opacity: 0,
-        transform: 'scale(0.9)',
-    },
-    'to': {
-        opacity: 1,
-        transform: 'scale(1)',
-    }
-});
-
-const fadeOutModal = keyframes({
-    'from': {
-        opacity: 1,
-        transform: 'scale(1)',
-    },
-    'to': {
-        opacity: 0,
-        transform: 'scale(0.9)',
-    }
 });
 
 const AddToDoBtnContainer = styled('div')({
@@ -288,26 +310,6 @@ const TodoListContentContainer = styled('div')({
     }
 });
 
-const DeleteTodoBtn = styled('button')({
-    padding: '8px',
-    backgroundColor: 'transparent',
-    border: 'none',
-    cursor: 'pointer',
-    borderRadius: '50%',
-    width: '40px',
-    height: '40px',
-    transition: 'background-color 0.2s ease',
-
-    '& img': {
-        width: '24px',
-        height: '24px',
-    },
-
-    '&:hover': {
-        background: '#F7F7F7',
-    }
-});
-
 const NoTodoListText = styled('p')({
     color: '#A7A7A7',
     fontSize: '1rem',
@@ -337,6 +339,9 @@ const PriorityButton = styled('button')<{ isPriority: boolean }>({
 
 const ImportantTodoContainer = styled('div')({
     padding: '1rem 0',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
     borderBottom: '4px dotted #E7E7E7',
 });
 
@@ -352,7 +357,7 @@ const DotMenuBtn = styled('button')({
     }
 });
 
-const DropdownMenu = styled('div')({
+const DropdownMenu = styled('div')<{ isDropDownOpen: boolean }>({
     position: 'absolute',
     top: '40px',
     right: 0,
@@ -360,6 +365,7 @@ const DropdownMenu = styled('div')({
     borderRadius: '8px',
     boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
     zIndex: 1,
+    animation: (props) => props.isDropDownOpen ? `${fadeInDropDownModal} 0.2s ease forwards` : `${fadeOutDropDownModal} 0.2s ease forwards`,
 });
 
 const DropdownItem = styled('button')({
@@ -370,10 +376,19 @@ const DropdownItem = styled('button')({
     backgroundColor: 'transparent',
     cursor: 'pointer',
     transition: 'background-color 0.2s',
+    fontSize: '0.9rem',
 
     '&:hover': {
         backgroundColor: '#F7F7F7',
     }
+});
+
+const CompleteItem = styled(DropdownItem)({
+    color: '#0075FF',
+});
+
+const DeleteItem = styled(DropdownItem)({
+    color: '#FF0000',
 });
 
 const TodoComponent = () => {
@@ -400,7 +415,9 @@ const TodoComponent = () => {
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                setShowDropdown(null);
+                setTimeout(() => {
+                    setShowDropdown(null);
+                }, 200); // 애니메이션 지속 시간과 일치하도록 설정
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -413,6 +430,18 @@ const TodoComponent = () => {
         fetchTodos();
         setShowDropdown(null); // 초기화
     }, []);
+
+    useEffect(() => {
+        if (showInput) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [showInput]);
 
     const handleInputChange = (index: number, value: string) => {
         setInput(index, value);
@@ -468,7 +497,7 @@ const TodoComponent = () => {
         if (error) {
             console.error('Error deleting todo:', error);
         } else {
-            console.log('할 일을 성공적으로 제거했어요.:', data);
+            console.log('할 일을 성공적으로 제거했어요.', data);
             fetchTodos();
             setShowDropdown(null); // 드롭다운 메뉴 닫기
         }
@@ -500,7 +529,6 @@ const TodoComponent = () => {
         if (error) {
             console.error('Error updating todo:', error);
         } else {
-            console.log('Todo updated successfully:', data);
             fetchTodos();
             setShowDropdown(null); // 드롭다운 메뉴 닫기
         }
@@ -588,14 +616,15 @@ const TodoComponent = () => {
                                             <img src="/dot-menu.svg" alt="Dot Menu" />
                                         </DotMenuBtn>
                                         {showDropdown === todo.id && (
-                                            <DropdownMenu ref={dropdownRef}>
-                                                <DropdownItem onClick={() => { toggleTodo(todo.id, todo.is_complete); setShowDropdown(null); }}>
+                                            <DropdownMenu ref={dropdownRef} isDropDownOpen={!!showDropdown}>
+                                                <CompleteItem onClick={() => { toggleTodo(todo.id, todo.is_complete); setShowDropdown(null); }}>
                                                     일정 완료
-                                                </DropdownItem>
-                                                <DropdownItem onClick={() => { deleteTodo(todo.id); setShowDropdown(null); }}>
+                                                </CompleteItem>
+                                                <DeleteItem onClick={() => { deleteTodo(todo.id); setShowDropdown(null); }}>
                                                     삭제
-                                                </DropdownItem>
+                                                </DeleteItem>
                                             </DropdownMenu>
+
                                         )}
                                     </TodoListContentContainer>
                                 ))}
@@ -627,14 +656,15 @@ const TodoComponent = () => {
                                     <img src="/dot-menu.svg" alt="Dot Menu" />
                                 </DotMenuBtn>
                                 {showDropdown === todo.id && (
-                                    <DropdownMenu ref={dropdownRef}>
-                                        <DropdownItem onClick={() => { toggleTodo(todo.id, todo.is_complete); setShowDropdown(null); }}>
+                                    <DropdownMenu ref={dropdownRef} isDropDownOpen={!!showDropdown}>
+                                        <CompleteItem onClick={() => { toggleTodo(todo.id, todo.is_complete); setShowDropdown(null); }}>
                                             일정 완료
-                                        </DropdownItem>
-                                        <DropdownItem onClick={() => { deleteTodo(todo.id); setShowDropdown(null); }}>
+                                        </CompleteItem>
+                                        <DeleteItem onClick={() => { deleteTodo(todo.id); setShowDropdown(null); }}>
                                             삭제
-                                        </DropdownItem>
+                                        </DeleteItem>
                                     </DropdownMenu>
+
                                 )}
                             </TodoListContentContainer>
                         ))}

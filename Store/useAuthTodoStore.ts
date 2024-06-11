@@ -4,6 +4,7 @@ interface Todo {
     id: string;
     content: string;
     is_complete: boolean;
+    is_priority: boolean;
     created_at: string;
 }
 

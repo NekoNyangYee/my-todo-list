@@ -118,7 +118,7 @@ const SignUpInputContainer = styled("div")<{ isOpen: boolean }>({
 });
 
 const SocialContainer = styled("div")({
-  padding: "1rem",
+  padding: "1rem 0",
   display: "flex",
   flexDirection: "column",
   gap: "12px",
@@ -323,7 +323,6 @@ const AuthForm = () => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="이메일"
-            autoComplete="new-password"
           />
           <input
             type="password"

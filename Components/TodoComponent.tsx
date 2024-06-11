@@ -278,6 +278,7 @@ const TodoListContentContainer = styled('div')({
     alignItems: 'center',
     gap: '12px',
     justifyContent: 'space-between',
+    position: 'relative',
 
     '& li': {
         display: 'flex',
@@ -314,11 +315,74 @@ const NoTodoListText = styled('p')({
     textAlign: 'center',
 });
 
+const PriorityButton = styled('button')<{ isPriority: boolean }>({
+    padding: '8px',
+    backgroundColor: 'transparent',
+    border: 'none',
+    cursor: 'pointer',
+    borderRadius: '50%',
+    width: '40px',
+    height: '40px',
+
+    '& svg': {
+        width: '24px',
+        height: '24px',
+        fill: (props) => props.isPriority ? '#F9E000' : '#D3D3D3',
+        stroke: (props) => props.isPriority ? '#F9E000' : '#D3D3D3',
+        strokeWidth: '2',
+        strokeLinecap: 'round',
+        strokeLinejoin: 'round',
+    }
+});
+
+const ImportantTodoContainer = styled('div')({
+    padding: '1rem 0',
+    borderBottom: '4px dotted #E7E7E7',
+});
+
+const DotMenuBtn = styled('button')({
+    padding: '8px',
+    backgroundColor: 'transparent',
+    border: 'none',
+    cursor: 'pointer',
+
+    '& img': {
+        width: '24px',
+        height: '24px',
+    }
+});
+
+const DropdownMenu = styled('div')({
+    position: 'absolute',
+    top: '40px',
+    right: 0,
+    backgroundColor: '#FFFFFF',
+    borderRadius: '8px',
+    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+    zIndex: 1,
+});
+
+const DropdownItem = styled('button')({
+    padding: '12px 1rem',
+    width: '100%',
+    textAlign: 'left',
+    border: 'none',
+    backgroundColor: 'transparent',
+    cursor: 'pointer',
+    transition: 'background-color 0.2s',
+
+    '&:hover': {
+        backgroundColor: '#F7F7F7',
+    }
+});
+
 const TodoComponent = () => {
     const { todos, inputs, addInput, setInput, setTodos, resetInputs } = useTodoStore();
     const [showInput, setShowInput] = useState<boolean>(false);
     const [animateOut, setAnimateOut] = useState<boolean>(false);
+    const [showDropdown, setShowDropdown] = useState<string | null>(null);
     const modalContentRef = useRef<HTMLDivElement>(null);
+    const dropdownRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (inputs.length < 3) {
@@ -333,8 +397,29 @@ const TodoComponent = () => {
         }
     }, [inputs]);
 
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setShowDropdown(null);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [dropdownRef]);
+
+    useEffect(() => {
+        fetchTodos();
+        setShowDropdown(null); // 초기화
+    }, []);
+
     const handleInputChange = (index: number, value: string) => {
         setInput(index, value);
+    };
+
+    const handleDotMenuClick = (todoId: string) => {
+        setShowDropdown(prev => (prev === todoId ? null : todoId));
     };
 
     const saveTodos = async () => {
@@ -356,6 +441,7 @@ const TodoComponent = () => {
                 user_id: user.id,
                 content,
                 is_complete: false,
+                is_priority: false, // 기본값으로 설정
                 created_at: new Date().toISOString(),
             })));
 
@@ -384,6 +470,7 @@ const TodoComponent = () => {
         } else {
             console.log('할 일을 성공적으로 제거했어요.:', data);
             fetchTodos();
+            setShowDropdown(null); // 드롭다운 메뉴 닫기
         }
     };
 
@@ -414,6 +501,21 @@ const TodoComponent = () => {
             console.error('Error updating todo:', error);
         } else {
             console.log('Todo updated successfully:', data);
+            fetchTodos();
+            setShowDropdown(null); // 드롭다운 메뉴 닫기
+        }
+    };
+
+    const togglePriority = async (id: string, isPriority: boolean) => {
+        const { data, error } = await supabase
+            .from('todos')
+            .update({ is_priority: !isPriority })
+            .eq('id', id);
+
+        if (error) {
+            console.error('Error updating priority:', error);
+        } else {
+            console.log('Priority updated successfully:', data);
             fetchTodos();
         }
     };
@@ -447,6 +549,9 @@ const TodoComponent = () => {
         }
     };
 
+    const importantTodos = todos.filter(todo => todo.is_priority && !todo.is_complete);
+    const nonImportantTodos = todos.filter(todo => !todo.is_priority && !todo.is_complete);
+
     return (
         <TodoContainer>
             <ProgressTodoContainer>
@@ -455,19 +560,82 @@ const TodoComponent = () => {
                     <NoTodoListText>현재 진행 중인 일정이 없어요.</NoTodoListText>
                 ) : (
                     <ul>
-                        {todos.filter(todo => !todo.is_complete).map((todo) => (
+                        {importantTodos.length > 0 && (
+                            <ImportantTodoContainer>
+                                {importantTodos.map((todo) => (
+                                    <TodoListContentContainer key={todo.id}>
+                                        <li>
+                                            <PriorityButton
+                                                isPriority={todo.is_priority}
+                                                onClick={() => togglePriority(todo.id, todo.is_priority)}
+                                            >
+                                                <svg
+                                                    width="24"
+                                                    height="24"
+                                                    viewBox="0 0 24 24"
+                                                    fill={todo.is_priority ? "#F9E000" : "none"}
+                                                    stroke="#F9E000"
+                                                    strokeWidth="2"
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                >
+                                                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+                                                </svg>
+                                            </PriorityButton>
+                                            {todo.content}
+                                        </li>
+                                        <DotMenuBtn onClick={() => handleDotMenuClick(todo.id)}>
+                                            <img src="/dot-menu.svg" alt="Dot Menu" />
+                                        </DotMenuBtn>
+                                        {showDropdown === todo.id && (
+                                            <DropdownMenu ref={dropdownRef}>
+                                                <DropdownItem onClick={() => { toggleTodo(todo.id, todo.is_complete); setShowDropdown(null); }}>
+                                                    일정 완료
+                                                </DropdownItem>
+                                                <DropdownItem onClick={() => { deleteTodo(todo.id); setShowDropdown(null); }}>
+                                                    삭제
+                                                </DropdownItem>
+                                            </DropdownMenu>
+                                        )}
+                                    </TodoListContentContainer>
+                                ))}
+                            </ImportantTodoContainer>
+                        )}
+                        {nonImportantTodos.map((todo) => (
                             <TodoListContentContainer key={todo.id}>
                                 <li>
-                                    <input
-                                        type="checkbox"
-                                        checked={todo.is_complete}
-                                        onChange={() => toggleTodo(todo.id, todo.is_complete)}
-                                    />
+                                    <PriorityButton
+                                        isPriority={todo.is_priority}
+                                        onClick={() => togglePriority(todo.id, todo.is_priority)}
+                                    >
+                                        <svg
+                                            width="24"
+                                            height="24"
+                                            viewBox="0 0 24 24"
+                                            fill={todo.is_priority ? "#F9E000" : "none"}
+                                            stroke="#F9E000"
+                                            strokeWidth="2"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                        >
+                                            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+                                        </svg>
+                                    </PriorityButton>
                                     {todo.content}
                                 </li>
-                                <DeleteTodoBtn onClick={() => deleteTodo(todo.id)}>
-                                    <img src="/delete.svg" alt="Delete Todo" />
-                                </DeleteTodoBtn>
+                                <DotMenuBtn onClick={() => handleDotMenuClick(todo.id)}>
+                                    <img src="/dot-menu.svg" alt="Dot Menu" />
+                                </DotMenuBtn>
+                                {showDropdown === todo.id && (
+                                    <DropdownMenu ref={dropdownRef}>
+                                        <DropdownItem onClick={() => { toggleTodo(todo.id, todo.is_complete); setShowDropdown(null); }}>
+                                            일정 완료
+                                        </DropdownItem>
+                                        <DropdownItem onClick={() => { deleteTodo(todo.id); setShowDropdown(null); }}>
+                                            삭제
+                                        </DropdownItem>
+                                    </DropdownMenu>
+                                )}
                             </TodoListContentContainer>
                         ))}
                     </ul>
@@ -508,6 +676,7 @@ const TodoComponent = () => {
                     )}
                 </AddToDoBtnContainer>
             </ProgressTodoContainer>
+
             <ComplecatedTodoContainer>
                 <h2>완료된 일정</h2>
                 {todos.filter(todo => todo.is_complete).length === 0 ? (

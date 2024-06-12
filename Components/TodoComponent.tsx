@@ -345,11 +345,14 @@ const ImportantTodoContainer = styled('div')({
     borderBottom: '4px dotted #E7E7E7',
 });
 
-const DotMenuBtn = styled('button')({
+const DotMenuBtn = styled('button')<{isDropDownOpen: boolean}>({
+    width: '40px',
+    height: '40px',
     padding: '8px',
-    backgroundColor: 'transparent',
     border: 'none',
     cursor: 'pointer',
+    backgroundColor: (props) => props.isDropDownOpen ? '#F7F7F7' : 'transparent',
+    borderRadius: '50%',
 
     '& img': {
         width: '24px',
@@ -415,9 +418,7 @@ const TodoComponent = () => {
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                setTimeout(() => {
                     setShowDropdown(null);
-                }, 200); // 애니메이션 지속 시간과 일치하도록 설정
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -452,28 +453,37 @@ const TodoComponent = () => {
     };
 
     const saveTodos = async () => {
-        const nonEmptyInputs: Array<string> = inputs.filter(input => input.trim() !== '');
+        const nonEmptyInputs = inputs.filter(input => input.trim() !== '');
         if (nonEmptyInputs.length === 0) {
             alert('할 일을 입력해주세요.');
             return;
         } else {
             alert('저장되었습니다.');
         }
-
+    
         const { data: { session } } = await supabase.auth.getSession();
         const user = session?.user;
         if (!user) return;
-
+    
+        // 기존 할 일의 개수를 가져와서 original_order 값을 설정합니다.
+        const { data: existingTodos } = await supabase
+            .from('todos')
+            .select('id')
+            .eq('user_id', user.id);
+    
+        const currentOrder = existingTodos ? existingTodos.length : 0;
+    
         const { data, error } = await supabase
             .from('todos')
-            .insert(nonEmptyInputs.map(content => ({
+            .insert(nonEmptyInputs.map((content, index) => ({
                 user_id: user.id,
                 content,
                 is_complete: false,
                 is_priority: false, // 기본값으로 설정
                 created_at: new Date().toISOString(),
+                original_order: currentOrder + index, // original_order 값 설정
             })));
-
+    
         if (error) {
             console.error('Error saving todos:', error);
         } else {
@@ -484,22 +494,25 @@ const TodoComponent = () => {
                 setShowInput(false); // 애니메이션 완료 후 모달 닫기
                 setAnimateOut(false); // 애니메이션 상태 초기화
             }, 100); // 애니메이션 시간과 맞추기
-            fetchTodos();
+            fetchTodos(); // 데이터를 정렬하여 다시 가져옴
         }
     };
 
     const deleteTodo = async (id: string) => {
-        const { data, error } = await supabase
-            .from('todos')
-            .delete()
-            .eq('id', id);
-
-        if (error) {
-            console.error('Error deleting todo:', error);
-        } else {
-            console.log('할 일을 성공적으로 제거했어요.', data);
-            fetchTodos();
-            setShowDropdown(null); // 드롭다운 메뉴 닫기
+        if (confirm('할 일을 삭제하시겠습니까?')) {
+            const { data, error } = await supabase
+                .from('todos')
+                .delete()
+                .eq('id', id);
+    
+            if (error) {
+                console.error('Error deleting todo:', error);
+            } else {
+                alert('할 일을 성공적으로 제거했어요.');
+                console.log('할 일을 성공적으로 제거했어요.', data);
+                fetchTodos();
+                setShowDropdown(null); // 드롭다운 메뉴 닫기
+            }
         }
     };
 
@@ -507,12 +520,13 @@ const TodoComponent = () => {
         const { data: { session } } = await supabase.auth.getSession();
         const user = session?.user;
         if (!user) return;
-
+    
         const { data, error } = await supabase
             .from('todos')
             .select('*')
-            .eq('user_id', user.id);
-
+            .eq('user_id', user.id)
+            .order('original_order', { ascending: true });  // original_order 기준으로 오름차순 정렬
+    
         if (error) {
             console.error('Error fetching todos:', error);
         } else {
@@ -612,7 +626,7 @@ const TodoComponent = () => {
                                             </PriorityButton>
                                             {todo.content}
                                         </li>
-                                        <DotMenuBtn onClick={() => handleDotMenuClick(todo.id)}>
+                                        <DotMenuBtn onClick={() => handleDotMenuClick(todo.id)} isDropDownOpen={showDropdown === todo.id}>
                                             <img src="/dot-menu.svg" alt="Dot Menu" />
                                         </DotMenuBtn>
                                         {showDropdown === todo.id && (
@@ -652,7 +666,7 @@ const TodoComponent = () => {
                                     </PriorityButton>
                                     {todo.content}
                                 </li>
-                                <DotMenuBtn onClick={() => handleDotMenuClick(todo.id)}>
+                                <DotMenuBtn onClick={() => handleDotMenuClick(todo.id)} isDropDownOpen={showDropdown === todo.id}>
                                     <img src="/dot-menu.svg" alt="Dot Menu" />
                                 </DotMenuBtn>
                                 {showDropdown === todo.id && (

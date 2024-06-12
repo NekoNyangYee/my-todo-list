@@ -284,7 +284,7 @@ const WarningText = styled('p')({
 });
 
 const AuthHeader = () => {
-    const [session, setSession] = useState<Session | null>(null);
+    const [session, setSession] = useState<any>(null);
     const [profile, setProfile] = useState<any>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [animateOut, setAnimateOut] = useState<boolean>(false);
@@ -295,7 +295,12 @@ const AuthHeader = () => {
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
-                setIsModalOpen(false);
+                setAnimateOut(true);
+                setTimeout(() => {
+                    setAnimateOut(false);
+                    setIsModalOpen(false);
+                    setIsEditMode(false);
+                }, 200);
             }
         };
 
@@ -310,9 +315,8 @@ const AuthHeader = () => {
         const getSession = async () => {
             const { data: { session } } = await supabase.auth.getSession();
             setSession(session);
-            console.log('Current session:', session);
             if (session) {
-                fetchProfile(session.user.id, session);
+                fetchProfile(session.user.id);
             }
         };
 
@@ -321,7 +325,7 @@ const AuthHeader = () => {
         const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
             setSession(session);
             if (session) {
-                fetchProfile(session.user.id, session);
+                fetchProfile(session.user.id);
             }
         });
 
@@ -330,42 +334,14 @@ const AuthHeader = () => {
         };
     }, []);
 
-    const fetchProfile = async (userId: string, session: Session) => {
+    const fetchProfile = async (userId: string) => {
         const { data, error } = await supabase
             .from('users')
             .select('id, email, full_name, avatar_url, provider')
             .eq('id', userId)
             .single();
 
-        if (error && error.message === 'JSON object requested, multiple (or no) rows returned') {
-            console.error('No profile found, creating a new profile');
-            // 프로필이 없을 경우 새로 생성
-            const { error: insertError } = await supabase.from('users').upsert({
-                id: userId,
-                email: session?.user?.email || '',
-                full_name: session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || '',
-                avatar_url: session?.user?.user_metadata?.avatar_url || session?.user?.user_metadata?.picture || '',
-                provider: session?.user?.app_metadata?.provider || 'email',
-                created_at: new Date(),
-                updated_at: new Date(),
-            });
-
-            if (insertError) {
-                console.error('Error inserting new profile:', insertError.message);
-            } else {
-                // 새로 생성한 프로필을 다시 가져옴
-                const { data: newData, error: newError } = await supabase
-                    .from('users')
-                    .select('id, email, full_name, avatar_url, provider')
-                    .eq('id', userId)
-                    .single();
-                if (newError) {
-                    console.error('Error fetching new profile:', newError.message);
-                } else {
-                    setProfile(newData);
-                }
-            }
-        } else if (error) {
+        if (error) {
             console.error('Error fetching profile:', error.message);
         } else {
             setProfile(data);
@@ -409,7 +385,7 @@ const AuthHeader = () => {
             closeModal();
             setTimeout(() => {
                 setIsEditMode(false);
-            }, 100)
+            }, 100);
         }
     };
 
@@ -424,17 +400,41 @@ const AuthHeader = () => {
             return;
         }
 
+        const updates = {
+            full_name: editedName,
+            updated_at: new Date(),
+        };
+
         const { error } = await supabase
             .from('users')
-            .update({ full_name: editedName })
+            .update(updates)
             .eq('id', profile.id);
 
         if (error) {
             console.error('Error updating profile:', error.message);
         } else {
-            alert('닉네임이 수정되었습니다.');
-            setProfile((prevProfile: any) => ({ ...prevProfile, full_name: editedName }));
-            setIsEditMode(false);
+            // 세션의 user_metadata도 업데이트하여 최신 상태를 유지
+            const { error: metaError } = await supabase.auth.updateUser({
+                data: { full_name: editedName },
+            });
+
+            if (metaError) {
+                console.error('Error updating user metadata:', metaError.message);
+            } else {
+                alert('닉네임이 수정되었습니다.');
+                setProfile((prevProfile: any) => ({ ...prevProfile, full_name: editedName }));
+                setSession((prevSession: any) => ({
+                    ...prevSession,
+                    user: {
+                        ...prevSession.user,
+                        user_metadata: {
+                            ...prevSession.user.user_metadata,
+                            full_name: editedName,
+                        },
+                    },
+                }));
+                setIsEditMode(false);
+            }
         }
     };
 
@@ -460,7 +460,7 @@ const AuthHeader = () => {
                     <ProfileInfoContainer>
                         {profile ? (
                             <HeaderFlexBox>
-                                <UserInfoText><strong>{profile.full_name}</strong> 님, 환영합니다.</UserInfoText>
+                                <UserInfoText><strong>{profile.full_name}</strong>님, 환영해요.</UserInfoText>
                                 <ProfileModalBtn onClick={openModal}>
                                     <ProfileImage src={profile.avatar_url || "./user.svg"} alt="Profile Picture" width={250} height={250} />
                                 </ProfileModalBtn>
@@ -473,7 +473,7 @@ const AuthHeader = () => {
             </AuthHeaderContainer>
             {(isModalOpen || animateOut) && (
                 <ModalOverlay onClick={handleOverlayClick}>
-                    <ModalContent isModalOpen={isModalOpen && !animateOut}>
+                    <ModalContent isModalOpen={isModalOpen && !animateOut} ref={modalRef}>
                         <CloseButton onClick={closeModal}>
                             <img src="./close.svg" alt="Close" />
                         </CloseButton>

@@ -5,6 +5,7 @@ import { useTodoStore } from '../Store/useAuthTodoStore';
 import { supabase } from '../lib/supabaseClient';
 import { styled, keyframes } from '@pigment-css/react';
 import { fetchTodos } from '@components/util/todoUtil';
+import { v4 as uuidv4 } from 'uuid';
 
 const fadeInDropDownModal = keyframes({
     'from': {
@@ -416,21 +417,40 @@ const UncompletedDropdownMenu = styled(DropdownMenu)({
     right: 0,
 });
 
+const UncompletedDeleteItem = styled(DeleteItem)({
+    width: '100%',
+});
+
 const UncompletedCompleteItem = styled(CompleteItem)({
     width: '100%',
 });
 
-const UncompletedDeleteItem = styled(DeleteItem)({
-    width: '100%',
+const UncompletedRestoreItem = styled(DropdownItem)({
+    color: '#0075FF',
 });
+
+interface Todo {
+    id: string;
+    user_id: string;
+    content: string;
+    is_complete: boolean;
+    is_priority: boolean;
+    created_at: string;
+    original_order: number;
+}
+
+type Keyable = {
+    [key: string]: any;
+};
 
 const TodoComponent = () => {
     const { todos, inputs, addInput, setInput, setTodos, resetInputs } = useTodoStore();
     const [showInput, setShowInput] = useState<boolean>(false);
     const [animateOut, setAnimateOut] = useState<boolean>(false);
     const [showDropdown, setShowDropdown] = useState<string | null>(null);
-    const [uncompletedTodos, setUncompletedTodos] = useState<any[]>([]);
+    const [uncompletedTodos, setUncompletedTodos] = useState<Todo[]>([]);
     const [uncompletedShowDropdown, setUncompletedShowDropdown] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState<boolean>(true);
     const modalContentRef = useRef<HTMLDivElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -459,19 +479,6 @@ const TodoComponent = () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, [dropdownRef]);
-
-    useEffect(() => {
-        const fetchInitialTodos = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            const user = session?.user;
-            if (!user) return;
-
-            await fetchTodos(user.id, setTodos); // user.id를 사용하여 사용자 ID 전달
-            setShowDropdown(null); // 초기화
-        };
-
-        fetchInitialTodos();
-    }, []);
 
     useEffect(() => {
         if (showInput) {
@@ -504,28 +511,209 @@ const TodoComponent = () => {
         }
     };
 
+    const archiveTodos = async () => {
+        console.log('archiveTodos 함수 호출됨');
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError) {
+            console.error('세션을 가져오는 중 오류 발생:', sessionError);
+            return;
+        }
+
+        const user = session?.user;
+        if (!user) {
+            console.error('사용자를 찾을 수 없음');
+            return;
+        }
+
+        const { data: todos, error: fetchError } = await supabase
+            .from('todos')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('is_complete', false);
+
+        if (fetchError) {
+            console.error('일정을 가져오는 중 오류 발생:', fetchError);
+            return;
+        }
+
+        if (!todos || todos.length === 0) {
+            console.log('아카이브할 일정이 없습니다');
+            return;
+        }
+
+        console.log('가져온 일정:', todos);
+
+        const uniqueTodos = removeDuplicates(todos, 'id'); // 중복 제거
+
+        const todosToInsert = uniqueTodos.map(todo => {
+            const originalOrder = todo.original_order !== null ? parseInt(todo.original_order, 10) : null;
+            console.log(`Original order for todo ${todo.id}:`, originalOrder);
+            return {
+                id: todo.id,
+                user_id: todo.user_id,
+                content: todo.content,
+                is_complete: todo.is_complete,
+                is_priority: todo.is_priority,
+                created_at: todo.created_at,
+                original_order: originalOrder,
+                archived_id: uuidv4() // UUID 필드로 변환 후 적절한 값을 할당
+            };
+        });
+
+        const { data: archivedTodos, error: archiveError } = await supabase
+            .from('archived_todos')
+            .insert(todosToInsert);
+
+        if (archiveError) {
+            console.error('일정을 아카이브하는 중 오류 발생:', archiveError);
+            return;
+        }
+
+        console.log('아카이브된 일정:', archivedTodos);
+
+        const { data: deleteData, error: deleteError } = await supabase
+            .from('todos')
+            .delete()
+            .in('id', uniqueTodos.map(todo => todo.id));
+
+        if (deleteError) {
+            console.error('일정을 삭제하는 중 오류 발생:', deleteError);
+            return;
+        }
+
+        console.log('삭제된 일정:', deleteData);
+        fetchAndMoveUncompletedTodos();
+    };
+
+    const updateTodos = (newTodo: Todo) => {
+        setTodos([...todos, newTodo]);
+    };
+
+    const restoreTodo = async (id: string) => {
+        console.log('restoreTodo 함수 호출됨');
+        const { data: { session } } = await supabase.auth.getSession();
+        const user = session?.user;
+        if (!user) return;
+
+        const { data: archivedTodos, error } = await supabase
+            .from('archived_todos')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('id', id);
+
+        if (error) {
+            console.error('아카이브된 일정을 가져오는 중 오류 발생:', error);
+            return;
+        }
+
+        if (!archivedTodos || archivedTodos.length === 0) {
+            console.log('복원할 아카이브된 일정이 없습니다');
+            return;
+        }
+
+        const archivedTodo = archivedTodos[0];
+        console.log('가져온 아카이브된 일정:', archivedTodo);
+
+        const todoToInsert: Todo = {
+            user_id: archivedTodo.user_id,
+            content: archivedTodo.content,
+            is_complete: archivedTodo.is_complete,
+            is_priority: archivedTodo.is_priority,
+            created_at: archivedTodo.created_at,
+            original_order: archivedTodo.original_order,
+            id: uuidv4() // 클라이언트 측에서 새로운 UUID 생성
+        };
+
+        const { data: restoredTodo, error: restoreError } = await supabase
+            .from('todos')
+            .insert(todoToInsert);
+
+        if (restoreError) {
+            console.error('일정을 복원하는 중 오류 발생:', restoreError);
+            return;
+        }
+
+        const { data: deleteData, error: deleteError } = await supabase
+            .from('archived_todos')
+            .delete()
+            .eq('id', archivedTodo.id);
+
+        if (deleteError) {
+            console.error('아카이브된 일정을 삭제하는 중 오류 발생:', deleteError);
+            return;
+        }
+
+        console.log('일정이 성공적으로 복원되었습니다:', restoredTodo);
+
+        // Zustand 상태 업데이트
+        updateTodos(todoToInsert);
+
+        setUncompletedTodos((prevUncompleted) => {
+            const newUncompleted = prevUncompleted.filter(todo => todo.id !== id);
+            return newUncompleted;
+        });
+    };
+
+
+
     const fetchAndMoveUncompletedTodos = async () => {
         const { data: { session } } = await supabase.auth.getSession();
         const user = session?.user;
         if (!user) return;
 
         const { data: uncompletedTodos, error } = await supabase
-            .from('todos')
+            .from('archived_todos')
             .select('*')
             .eq('user_id', user.id)
-            .eq('is_complete', false)
             .order('original_order', { ascending: true });
 
         if (error) {
             console.error('Error fetching uncompleted todos:', error);
         } else {
-            setUncompletedTodos(uncompletedTodos);
-
-            // 진행 중인 일정에서 완료하지 못한 일정 제거
-            const updatedTodos = todos.filter(todo => !uncompletedTodos.some(uncompletedTodo => uncompletedTodo.id === todo.id));
-            setTodos(updatedTodos);
+            // 중복 제거
+            const uniqueUncompletedTodos = removeDuplicates(uncompletedTodos, 'id');
+            setUncompletedTodos(uniqueUncompletedTodos);
         }
     };
+
+    const removeDuplicates = <T extends Keyable>(array: T[], key: keyof T): T[] => {
+        return array.filter((obj, index, self) =>
+            index === self.findIndex((el) => (
+                el[key] === obj[key]
+            ))
+        );
+    };
+
+
+    const fetchInitialTodos = async () => {
+        setIsLoading(true);
+        const { data: { session } } = await supabase.auth.getSession();
+        const user = session?.user;
+        if (!user) return;
+
+        const { data: allTodos, error } = await supabase
+            .from('todos')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('original_order', { ascending: true });
+
+        if (error) {
+            console.error('Error fetching todos:', error);
+            return;
+        }
+
+        setTodos(allTodos);
+        setIsLoading(false);
+    };
+
+    useEffect(() => {
+        const initializeTodos = async () => {
+            await fetchInitialTodos();
+            await fetchAndMoveUncompletedTodos();
+        };
+
+        initializeTodos();
+    }, []);
 
     useEffect(() => {
         const checkSpecificTime = () => {
@@ -533,49 +721,27 @@ const TodoComponent = () => {
             const currentHour = now.getHours();
             const currentMinute = now.getMinutes();
 
-            const targetHour = 18;
-            const targetMinute = 41;
+            const targetHour = 0;
+            const targetMinute = 0;
+
+            console.log(`현재 시간: ${currentHour}:${currentMinute}`);
 
             if (currentHour === targetHour && currentMinute === targetMinute) {
+                console.log('특정 시간이 되어 archiveTodos 함수를 호출합니다.');
                 deleteCompletedTodos();
-                fetchAndMoveUncompletedTodos();
+                archiveTodos();
             }
         };
 
-        checkSpecificTime();
-        const interval = setInterval(checkSpecificTime, 60 * 1000);
+        checkSpecificTime(); // 초기 체크
+        const interval = setInterval(checkSpecificTime, 60 * 1000); // 매 분마다 체크
 
         return () => clearInterval(interval);
     }, []);
 
-    useEffect(() => {
-        const fetchInitialUncompletedTodos = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            const user = session?.user;
-            if (!user) return;
-
-            const { data: uncompletedTodos, error } = await supabase
-                .from('todos')
-                .select('*')
-                .eq('user_id', user.id)
-                .eq('is_complete', false)
-                .order('original_order', { ascending: true });
-
-            if (error) {
-                console.error('Error fetching initial uncompleted todos:', error);
-            } else {
-                setUncompletedTodos(uncompletedTodos);
-
-                // 진행 중인 일정에서 완료하지 못한 일정 제거
-                const updatedTodos = todos.filter(todo => !uncompletedTodos.some(uncompletedTodo => uncompletedTodo.id === todo.id));
-                setTodos(updatedTodos);
-            }
-        };
-
-        fetchInitialUncompletedTodos();
-    }, []);
-
-
+    if (isLoading) {
+        return <div>Loading...</div>; // 로딩 상태일 때 표시할 내용
+    }
 
     const handleInputChange = (index: number, value: string) => {
         setInput(index, value);
@@ -587,6 +753,11 @@ const TodoComponent = () => {
 
     const handleUncompletedDotMenuClick = (todoId: string) => {
         setUncompletedShowDropdown(prev => (prev === todoId ? null : todoId));
+    };
+
+    const restoreTodoHandler = (id: string) => {
+        restoreTodo(id);
+        setUncompletedShowDropdown(null);
     };
 
     const saveTodos = async () => {
@@ -702,19 +873,6 @@ const TodoComponent = () => {
         }, 100); // 애니메이션 시간과 맞추기
     };
 
-    useEffect(() => {
-        const fetchInitialTodos = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            const user = session?.user;
-            if (!user) return;
-
-            await fetchTodos(user.id, setTodos); // user.id를 사용하여 사용자 ID 전달
-            setShowDropdown(null); // 초기화
-        };
-
-        fetchInitialTodos();
-    }, []);
-
     const handleAddInput = () => {
         if (inputs.length >= 20) {
             alert('한번에 최대 20개까지 추가할 수 있어요.');
@@ -778,7 +936,6 @@ const TodoComponent = () => {
                                                     삭제
                                                 </DeleteItem>
                                             </DropdownMenu>
-
                                         )}
                                     </TodoListContentContainer>
                                 ))}
@@ -818,7 +975,6 @@ const TodoComponent = () => {
                                             삭제
                                         </DeleteItem>
                                     </DropdownMenu>
-
                                 )}
                             </TodoListContentContainer>
                         ))}
@@ -896,9 +1052,9 @@ const TodoComponent = () => {
                                 </UncompletedDotMenuBtn>
                                 {uncompletedShowDropdown === todo.id && (
                                     <UncompletedDropdownMenu ref={dropdownRef} isDropDownOpen={!!uncompletedShowDropdown}>
-                                        <UncompletedCompleteItem onClick={() => { toggleTodo(todo.id, todo.is_complete); setUncompletedShowDropdown(null); }}>
-                                            일정 완료
-                                        </UncompletedCompleteItem>
+                                        <UncompletedRestoreItem onClick={() => restoreTodoHandler(todo.id)}>
+                                            끌어올리기
+                                        </UncompletedRestoreItem>
                                         <UncompletedDeleteItem onClick={() => { deleteTodo(todo.id); setUncompletedShowDropdown(null); }}>
                                             삭제
                                         </UncompletedDeleteItem>

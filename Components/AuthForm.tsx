@@ -5,6 +5,8 @@ import { useAuthStore } from "../Store/authStore";
 import { supabase } from "../lib/supabaseClient";
 import { updateProfile } from "../lib/updateProfile";
 import { keyframes, styled } from "@pigment-css/react";
+import { fetchTodos } from "@components/util/todoUtil";
+import { useTodoStore } from "@components/Store/useAuthTodoStore";
 
 const LoginSiginupContainer = styled("div")({
   width: "100%",
@@ -217,7 +219,48 @@ const AuthForm = () => {
         fullName,
         setFullName,
     } = useAuthStore();
+    const { setTodos } = useTodoStore();
     const router = useRouter();
+
+    const deleteCompletedTodos = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        const user = session?.user;
+        if (!user) return;
+
+        const { data, error } = await supabase
+            .from('todos')
+            .delete()
+            .eq('user_id', user.id)
+            .eq('is_complete', true);
+
+        if (error) {
+            console.error('Error deleting completed todos:', error);
+        } else {
+            console.log('Completed todos deleted successfully:', data);
+            fetchTodos(user.id, setTodos); // user.id를 사용하여 사용자 ID 전달
+        }
+    };
+
+    const checkSpecificTime = () => {
+        const now = new Date();
+        const currentHour = now.getHours();
+        const currentMinute = now.getMinutes();
+    
+        // 원하는 시간 설정 (자정)
+        const targetHour = 0;
+        const targetMinute = 0;
+    
+        // 현재 시간이 원하는 시간과 일치하면 삭제 함수 호출
+        if (currentHour === targetHour && currentMinute === targetMinute) {
+            deleteCompletedTodos();
+        }
+    };
+
+    const setupMidnightCheck = () => {
+        checkSpecificTime(); // 초기 체크
+        const interval = setInterval(checkSpecificTime, 60 * 1000); // 매 분마다 체크
+        return () => clearInterval(interval); // 컴포넌트 언마운트 시 인터벌 클리어
+    };
 
     const updateProfile = async (user: any) => {
         const { error } = await supabase
@@ -265,6 +308,8 @@ const AuthForm = () => {
                 // 사용자 세션 정보에서 user_metadata를 업데이트
                 await updateProfile(data.session.user);
                 router.refresh();
+                setupMidnightCheck();
+                fetchTodos(data.session.user.id, setTodos);
             }
         } else {
             if (password !== confirmPassword) {
@@ -303,6 +348,8 @@ const AuthForm = () => {
                 await updateProfile(data.session.user);
                 alert("회원가입이 완료되었습니다. 최초 회원가입 후 자동으로 로그인됩니다.");
                 router.refresh();
+                setupMidnightCheck();
+                fetchTodos(data.session.user.id, setTodos);
             }
         }
     };
@@ -317,6 +364,8 @@ const AuthForm = () => {
                 // 사용자 세션 정보에서 user_metadata를 업데이트
                 await updateProfile(user.data.user);
                 router.refresh();
+                setupMidnightCheck();
+                fetchTodos(user.data.user.id, setTodos);
             }
         }
     };

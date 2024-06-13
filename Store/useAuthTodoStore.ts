@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
- export interface Todo {
+interface Todo {
     id: string;
     content: string;
     is_complete: boolean;

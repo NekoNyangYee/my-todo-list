@@ -169,8 +169,7 @@ const ModalContent = styled('div')<{ isModalOpen: boolean }>({
     },
 
     '@media (max-width: 1224px)': {
-        maxWidth: '100%',
-        flex: 1,
+        maxWidth: '80%',
     },
 });
 

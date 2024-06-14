@@ -13,15 +13,33 @@ interface Todo {
 interface TodoState {
     todos: Todo[];
     inputs: string[];
+    showInput: boolean;
+    animateOut: boolean;
+    showDropdown: string | null;
+    uncompletedTodos: Todo[];
+    uncompletedShowDropdown: string | null;
+    isLoading: boolean;
     addInput: () => void;
     setInput: (index: number, value: string) => void;
     setTodos: (todos: Todo[]) => void;
     resetInputs: () => void;
+    setShowInput: (show: boolean) => void;
+    setAnimateOut: (animate: boolean) => void;
+    setShowDropdown: (dropdown: string | null) => void;
+    setUncompletedTodos: (todos: Todo[]) => void;
+    setUncompletedShowDropdown: (dropdown: string | null) => void;
+    setIsLoading: (loading: boolean) => void;
 }
 
 export const useTodoStore = create<TodoState>((set) => ({
     todos: [],
     inputs: [''],
+    showInput: false,
+    animateOut: false,
+    showDropdown: null,
+    uncompletedTodos: [],
+    uncompletedShowDropdown: null,
+    isLoading: true,
     addInput: () => set((state) => ({ inputs: [...state.inputs, ''] })),
     setInput: (index, value) => set((state) => {
         const newInputs = [...state.inputs];
@@ -30,4 +48,10 @@ export const useTodoStore = create<TodoState>((set) => ({
     }),
     setTodos: (todos) => set({ todos }),
     resetInputs: () => set({ inputs: [''] }),
+    setShowInput: (show) => set({ showInput: show }),
+    setAnimateOut: (animate) => set({ animateOut: animate }),
+    setShowDropdown: (dropdown) => set({ showDropdown: dropdown }),
+    setUncompletedTodos: (todos) => set({ uncompletedTodos: todos }),
+    setUncompletedShowDropdown: (dropdown) => set({ uncompletedShowDropdown: dropdown }),
+    setIsLoading: (loading) => set({ isLoading: loading }),
 }));

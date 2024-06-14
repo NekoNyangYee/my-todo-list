@@ -161,7 +161,7 @@ const ModalOverlay = styled('div')({
 });
 
 const ModalContent = styled('div')<{ isOpen: boolean }>({
-    background: 'white',
+    background: '#F6F8FC',
     padding: '1rem 1rem 0',
     borderRadius: '12px',
     maxWidth: '572px',
@@ -200,10 +200,16 @@ const ToDoInputContainer = styled('div')({
         width: '100%',
         padding: '1rem',
         borderRadius: '8px',
-        border: '1px solid #E7E7E7',
+        border: 'none',
         outline: 'none',
         boxSizing: 'border-box',
         fontSize: '1rem',
+        backgroundColor: '#FFFFFF',
+
+        "&:focus": {
+            outline: "none",
+            border: "1px solid #E7E7E7",
+          },
     },
 });
 
@@ -217,7 +223,7 @@ const TodoSaveAndCancelBtnContainer = styled('div')({
     width: '100%',
     position: 'sticky',
     bottom: 0,
-    background: 'white',
+    background: '#F6F8FC',
 });
 
 const CancelBtn = styled('button')({
@@ -422,17 +428,9 @@ const UncompletedDeleteItem = styled(DeleteItem)({
     width: '100%',
 });
 
-const UncompletedCompleteItem = styled(CompleteItem)({
-    width: '100%',
-});
-
 const UncompletedRestoreItem = styled(DropdownItem)({
     color: '#0075FF',
 });
-
-type Keyable = {
-    [key: string]: any;
-};
 
 const TodoComponent = () => {
     const { todos, inputs, addInput, setInput, setTodos, resetInputs } = useTodoStore();

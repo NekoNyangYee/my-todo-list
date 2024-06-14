@@ -152,11 +152,32 @@ const ModalContent = styled('div')<{ isModalOpen: boolean }>({
     cursor: 'auto',  // 모달 내용 클릭 시 이벤트 전파 막기 위해 포인터 설정 해제
     position: 'relative', // 자식 요소인 CloseButton의 위치 설정을 위해 relative로 변경
     animation: (props) => props.isModalOpen ? `${fadeInModal} 0.2s ease forwards` : `${fadeOutModal} 0.2s ease forwards`,
+    maxHeight: '80vh', // 최대 높이를 뷰포트 높이의 80%로 설정
+    overflowY: 'auto', // 수직 스크롤 설정
+
+    "&::-webkit-scrollbar": {
+        width: '8px',
+    },
+
+    "&::-webkit-scrollbar-thumb": {
+        backgroundColor: '#E1E1E1',
+        borderRadius: '8px',
+    },
+
+    "&::-webkit-scrollbar-track": {
+        background: 'transparent',
+    },
+
+    '@media (max-width: 1224px)': {
+        maxWidth: '100%',
+        flex: 1,
+    },
 
     "@media (max-width: 1224px)": {
         maxWidth: '80%',
     },
 });
+
 
 const CloseButton = styled('button')({
     background: 'none',

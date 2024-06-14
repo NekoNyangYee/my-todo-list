@@ -374,6 +374,21 @@ const TodoListContentContainer = styled('div')({
     alignItems: 'center',
     gap: '12px',
     justifyContent: 'space-between',
+    position: 'relative',  // 부모 요소를 상대적으로 위치시키기 위해 추가
+
+    '& li': {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        margin: 'auto 0',
+    }
+});
+
+const TodoListIncompleteContentContainer = styled('div')({
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    justifyContent: 'space-between',
 
     '& li': {
         display: 'flex',
@@ -426,6 +441,7 @@ const DotMenuBtn = styled('button')<{ isDropDownOpen: boolean }>({
     cursor: 'pointer',
     backgroundColor: (props) => props.isDropDownOpen ? '#F7F7F7' : 'transparent',
     borderRadius: '50%',
+    position: 'relative',  // 상대적으로 위치시키기 위해 추가
 
     '& img': {
         width: '24px',
@@ -436,8 +452,8 @@ const DotMenuBtn = styled('button')<{ isDropDownOpen: boolean }>({
 const DropdownMenu = styled('div')<{ isDropDownOpen: boolean }>({
     position: 'absolute',
     width: '160px',
-    top: '40px',
-    right: 0,
+    top: '100%',  // 버튼 바로 아래로 설정
+    right: '10px',     // 왼쪽 정렬
     backgroundColor: '#FFFFFF',
     borderRadius: '8px',
     boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
@@ -480,13 +496,35 @@ const DeleteItem = styled(DropdownItem)({
 
 const UncompletedTodoContainer = styled('div')(commonContainerStyles);
 
-const UncompletedDotMenuBtn = styled(DotMenuBtn)<{ isDropDownOpen: boolean }>({
-    backgroundColor: (props) => props.isDropDownOpen ? '#F7F7F7' : 'transparent',
+const UncompletedDotMenuContainer = styled('div')<{ isOpen: boolean }>({
+    position: (props) => props.isOpen ? 'static' : 'relative',  // 상대적으로 위치시키기 위해 추가
 });
 
-const UncompletedDropdownMenu = styled(DropdownMenu)({
-    top: '40px',
-    right: 0,
+const UncompletedDotMenuBtn = styled('button')<{ isDropDownOpen: boolean }>({
+    width: '40px',
+    height: '40px',
+    padding: '8px',
+    border: 'none',
+    cursor: 'pointer',
+    borderRadius: '50%',
+    backgroundColor: (props) => props.isDropDownOpen ? '#F7F7F7' : 'transparent',
+
+    '& img': {
+        width: '24px',
+        height: '24px',
+    }
+});
+
+const UncompletedDropdownMenu = styled('div')<{ isDropDownOpen: boolean }>({
+    position: 'absolute',
+    width: '160px',
+    top: '100%',  // 버튼 바로 아래로 설정
+    right: '10px',     // 왼쪽 정렬
+    backgroundColor: '#FFFFFF',
+    borderRadius: '8px',
+    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+    zIndex: 1,
+    animation: (props) => props.isDropDownOpen ? `${fadeInDropDownModal} 0.2s ease forwards` : `${fadeOutDropDownModal} 0.2s ease forwards`,
 });
 
 const UncompletedDeleteItem = styled(DeleteItem)({
@@ -801,18 +839,18 @@ const TodoComponent = () => {
                                     </li>
                                     <DotMenuBtn onClick={() => handleDotMenuClick(todo.id)} isDropDownOpen={showDropdown === todo.id}>
                                         <img src="/dot-menu.svg" alt="Dot Menu" />
+                                        {showDropdown === todo.id && (
+                                            <DropdownMenu ref={dropdownRef} isDropDownOpen={!!showDropdown}>
+                                                <CompleteItem onClick={() => { toggleTodo(todo.id, todo.is_complete); setShowDropdown(null); }}>
+                                                    일정 완료
+                                                </CompleteItem>
+                                                <DeleteItem onClick={() => { deleteTodo(todo.id); setShowDropdown(null); }}>
+                                                    <img src="/delete.svg" alt="Delete" />
+                                                    삭제
+                                                </DeleteItem>
+                                            </DropdownMenu>
+                                        )}
                                     </DotMenuBtn>
-                                    {showDropdown === todo.id && (
-                                        <DropdownMenu ref={dropdownRef} isDropDownOpen={!!showDropdown}>
-                                            <CompleteItem onClick={() => { toggleTodo(todo.id, todo.is_complete); setShowDropdown(null); }}>
-                                                일정 완료
-                                            </CompleteItem>
-                                            <DeleteItem onClick={() => { deleteTodo(todo.id); setShowDropdown(null); }}>
-                                                <img src="/delete.svg" alt="Delete" />
-                                                삭제
-                                            </DeleteItem>
-                                        </DropdownMenu>
-                                    )}
                                 </TodoListContentContainer>
                             ))}
                         </ul>
@@ -885,26 +923,28 @@ const TodoComponent = () => {
                 ) : (
                     <ul>
                         {uncompletedTodos.map((todo) => (
-                            <TodoListContentContainer key={todo.id}>
+                            <TodoListIncompleteContentContainer key={todo.id}>
                                 <li>
                                     {todo.content}
                                 </li>
-                                <UncompletedDotMenuBtn onClick={() => handleUncompletedDotMenuClick(todo.id)} isDropDownOpen={uncompletedShowDropdown === todo.id}>
-                                    <img src="/dot-menu.svg" alt="Dot Menu" />
-                                </UncompletedDotMenuBtn>
-                                {uncompletedShowDropdown === todo.id && (
-                                    <UncompletedDropdownMenu ref={dropdownRef} isDropDownOpen={!!uncompletedShowDropdown}>
-                                        <UncompletedRestoreItem onClick={() => restoreTodoHandler(todo.id)}>
-                                            <img src="/arrow-up.svg" alt="ArrowUp" />
-                                            끌어올리기
-                                        </UncompletedRestoreItem>
-                                        <UncompletedDeleteItem onClick={() => { deleteTodo(todo.id); setUncompletedShowDropdown(null); }}>
-                                            <img src="/delete.svg" alt="Delete" />
-                                            삭제
-                                        </UncompletedDeleteItem>
-                                    </UncompletedDropdownMenu>
-                                )}
-                            </TodoListContentContainer>
+                                <UncompletedDotMenuContainer isOpen={showInput}>
+                                    <UncompletedDotMenuBtn onClick={() => handleUncompletedDotMenuClick(todo.id)} isDropDownOpen={uncompletedShowDropdown === todo.id}>
+                                        <img src="/dot-menu.svg" alt="Dot Menu" />
+                                    </UncompletedDotMenuBtn>
+                                    {uncompletedShowDropdown === todo.id && (
+                                        <UncompletedDropdownMenu ref={dropdownRef} isDropDownOpen={!!uncompletedShowDropdown}>
+                                            <UncompletedRestoreItem onClick={() => restoreTodoHandler(todo.id)}>
+                                                <img src="/arrow-up.svg" alt="ArrowUp" />
+                                                끌어올리기
+                                            </UncompletedRestoreItem>
+                                            <UncompletedDeleteItem onClick={() => { deleteTodo(todo.id); setUncompletedShowDropdown(null); }}>
+                                                <img src="/delete.svg" alt="Delete" />
+                                                삭제
+                                            </UncompletedDeleteItem>
+                                        </UncompletedDropdownMenu>
+                                    )}
+                                </UncompletedDotMenuContainer>
+                            </TodoListIncompleteContentContainer>
                         ))}
                     </ul>
                 )}

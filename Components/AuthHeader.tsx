@@ -337,7 +337,7 @@ const AuthHeader = () => {
     const fetchProfile = async (userId: string) => {
         const { data, error } = await supabase
             .from('users')
-            .select('id, email, full_name, avatar_url, provider')
+            .select('id, email, full_name, avatar_url, provider, created_at')
             .eq('id', userId)
             .single();
 
@@ -499,18 +499,32 @@ const AuthHeader = () => {
                             <ModalProfileImage src={profile.avatar_url || "./user.svg"} alt="Profile Picture" />
                         )}
                         <ModalInfoSettingContainer>
-                            {profile.provider === 'email' || (
-                                <WarningText>소셜 로그인으로 로그인 한 경우 프로필 편집을 할 수 없습니다.</WarningText>
-                            )}
-                            <EditProfileBtn onClick={handleEditProfile} disabled={profile.provider !== 'email'} isEditerOpen={isEditMode}>
+                            <EditProfileBtn onClick={handleEditProfile} isEditerOpen={isEditMode}>
                                 프로필 편집
                             </EditProfileBtn>
                             {isEditMode && (
                                 <InputContainer isEditOpen={isEditMode}>
+                                    <label>닉네임</label>
                                     <InputField
                                         type="text"
                                         value={editedName}
                                         onChange={(e) => setEditedName(e.target.value)}
+                                        disabled={profile.provider !== 'email'}
+                                    />
+                                    {profile.provider === 'email' || (
+                                        <WarningText>{`${profile.provider}로 로그인 한 경우 프로필 편집을 할 수 없습니다.`}</WarningText>
+                                    )}
+                                    <label>이메일</label>
+                                    <InputField
+                                        type="text"
+                                        value={profile.email}
+                                        disabled
+                                    />
+                                    <label>가입일자</label>
+                                    <InputField
+                                        type="text"
+                                        value={new Date(profile.created_at).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}
+                                        disabled
                                     />
                                     <ButtonContainer>
                                         <SaveButton onClick={handleSaveProfile} disabled={editedName.length === 0}>저장</SaveButton>
@@ -519,6 +533,7 @@ const AuthHeader = () => {
                             )}
                             <LogOutBtn onClick={handleLogout}>로그아웃</LogOutBtn>
                         </ModalInfoSettingContainer>
+
                     </ModalContent>
                 </ModalOverlay>
             )}

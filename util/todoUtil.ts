@@ -162,7 +162,6 @@ export const checkSpecificTime = async (userId: string, setTodos: (todos: Todo[]
 
     const targetHour = 0;
     const targetMinute = 0;
-
     if (currentHour === targetHour && currentMinute === targetMinute) {
         await deleteCompletedTodos(userId, setTodos);
         await archiveTodos(userId, setTodos, setUncompletedTodos);

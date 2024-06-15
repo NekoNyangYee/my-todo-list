@@ -352,7 +352,6 @@ const AuthHeader = () => {
     }, []);
 
     const fetchProfile = async (userId: string, session: any) => {
-        console.log(`Fetching profile for user ID: ${userId}`);
         const { data, error } = await supabase
             .from('users')
             .select('id, email, full_name, avatar_url, provider')
@@ -385,12 +384,14 @@ const AuthHeader = () => {
                     console.error('Error fetching new profile:', newError.message);
                 } else {
                     setProfile(newData);
+                    console.log('New profile inserted and fetched successfully:', newData); // 로그 추가
                 }
             }
         } else if (error) {
             console.error('Error fetching profile:', error.message);
         } else {
             setProfile(data);
+            console.log('Profile fetched successfully:', data); // 로그 추가
         }
     };
 
@@ -459,8 +460,7 @@ const AuthHeader = () => {
         if (error) {
             console.error('Error updating profile:', error.message);
         } else {
-            console.log('Profile updated successfully'); // 로그 추가
-            // 세션의 user_metadata도 업데이트하여 최신 상태를 유지
+            console.log('Profile updated successfully');
             const { error: metaError } = await supabase.auth.updateUser({
                 data: { full_name: editedName },
             });
@@ -468,7 +468,7 @@ const AuthHeader = () => {
             if (metaError) {
                 console.error('Error updating user metadata:', metaError.message);
             } else {
-                console.log('User metadata updated successfully'); // 로그 추가
+                console.log('User metadata updated successfully');
                 alert('닉네임이 수정되었습니다.');
                 setProfile((prevProfile: any) => ({ ...prevProfile, full_name: editedName }));
                 setSession((prevSession: any) => ({
@@ -497,7 +497,6 @@ const AuthHeader = () => {
             document.body.style.overflow = '';
         };
     }, [isModalOpen]);
-
     return (
         <>
             <AuthHeaderContainer>

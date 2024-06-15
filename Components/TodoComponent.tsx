@@ -438,6 +438,25 @@ const ImportantTodoContainer = styled.div`
   border-bottom: 4px dotted #e7e7e7;
 `;
 
+const DotMenuBtnWrapper = styled.div`
+  position: relative;
+  display: inline-block;
+  & button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  & img {
+    width: 24px;
+    height: 24px;
+  }
+`;
+
 const DotMenuBtn = styled.button<{ isDropDownOpen: boolean }>`
   width: 40px;
   height: 40px;
@@ -456,14 +475,23 @@ const DotMenuBtn = styled.button<{ isDropDownOpen: boolean }>`
 
 const DropdownMenu = styled.div<{ isDropDownOpen: boolean }>`
   position: absolute;
-  width: 160px;
   top: 100%;
-  right: 10px;
-  background-color: #ffffff;
+  right: 0;
+  background: white;
+  border: 1px solid #e7e7e7;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  z-index: 1;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+  width: 150px;
   animation: ${({ isDropDownOpen }) => (isDropDownOpen ? fadeInDropDownModal : fadeOutDropDownModal)} 0.2s ease forwards;
+
+  & > * {
+    padding: 0.5rem 0.8rem;
+    cursor: pointer;
+    &:hover {
+      background-color: #f5f5f5;
+    }
+  }
 `;
 
 const DropdownItem = styled.button`
@@ -480,8 +508,8 @@ const DropdownItem = styled.button`
   font-size: 0.9rem;
 
   & img {
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
   }
 
   &:hover {
@@ -489,22 +517,27 @@ const DropdownItem = styled.button`
   }
 `;
 
-const CompleteItem = styled(DropdownItem)`
-  color: #333333;
+const CompleteItem = styled.div`
+  color: #28a745;
 `;
 
-const DeleteItem = styled(DropdownItem)`
+const DeleteItem = styled.div`
+  color: #dc3545;
   display: flex;
   align-items: center;
-  color: #ff5a5a;
+  gap: 0.5rem;
 `;
-
 const UncompletedTodoContainer = styled.div`
   ${commonContainerStyles}
 `;
 
 const UncompletedDotMenuContainer = styled.div<{ isOpen: boolean }>`
   position: ${({ isOpen }) => (isOpen ? 'static' : 'relative')};
+
+  & img {
+    width: 24px;
+    height: 24px;
+  }
 `;
 
 const UncompletedDotMenuBtn = styled.button<{ isDropDownOpen: boolean }>`
@@ -536,6 +569,7 @@ const UncompletedDropdownMenu = styled.div<{ isDropDownOpen: boolean }>`
 
 const UncompletedDeleteItem = styled(DeleteItem)`
   width: 100%;
+  padding: 12px 8px;
 `;
 
 const UncompletedRestoreItem = styled(DropdownItem)`
@@ -804,20 +838,22 @@ const TodoComponent = () => {
                                                 </PriorityButton>
                                                 {todo.content}
                                             </li>
-                                            <DotMenuBtn onClick={() => handleDotMenuClick(todo.id)} isDropDownOpen={showDropdown === todo.id}>
-                                                <img src="/dot-menu.svg" alt="Dot Menu" />
-                                            </DotMenuBtn>
-                                            {showDropdown === todo.id && (
-                                                <DropdownMenu ref={dropdownRef} isDropDownOpen={!!showDropdown}>
-                                                    <CompleteItem onClick={() => { toggleTodo(todo.id, todo.is_complete); setShowDropdown(null); }}>
-                                                        일정 완료
-                                                    </CompleteItem>
-                                                    <DeleteItem onClick={() => { deleteTodo(todo.id); setShowDropdown(null); }}>
-                                                        <img src="/delete.svg" alt="Delete" />
-                                                        삭제
-                                                    </DeleteItem>
-                                                </DropdownMenu>
-                                            )}
+                                            <DotMenuBtnWrapper>
+                                                <DotMenuBtn onClick={() => handleDotMenuClick(todo.id)} isDropDownOpen={showDropdown === todo.id}>
+                                                    <img src="/dot-menu.svg" alt="Dot Menu" />
+                                                </DotMenuBtn>
+                                                {showDropdown === todo.id && (
+                                                    <DropdownMenu ref={dropdownRef} isDropDownOpen={!!showDropdown}>
+                                                        <CompleteItem onClick={() => { toggleTodo(todo.id, todo.is_complete); setShowDropdown(null); }}>
+                                                            일정 완료
+                                                        </CompleteItem>
+                                                        <DeleteItem onClick={() => { deleteTodo(todo.id); setShowDropdown(null); }}>
+                                                            <img src="/delete.svg" alt="Delete" />
+                                                            삭제
+                                                        </DeleteItem>
+                                                    </DropdownMenu>
+                                                )}
+                                            </DotMenuBtnWrapper>
                                         </TodoListContentContainer>
                                     ))}
                                 </ImportantTodoContainer>
@@ -844,8 +880,10 @@ const TodoComponent = () => {
                                         </PriorityButton>
                                         {todo.content}
                                     </li>
-                                    <DotMenuBtn onClick={() => handleDotMenuClick(todo.id)} isDropDownOpen={showDropdown === todo.id}>
-                                        <img src="/dot-menu.svg" alt="Dot Menu" />
+                                    <DotMenuBtnWrapper>
+                                        <DotMenuBtn onClick={() => handleDotMenuClick(todo.id)} isDropDownOpen={showDropdown === todo.id}>
+                                            <img src="/dot-menu.svg" alt="Dot Menu" />
+                                        </DotMenuBtn>
                                         {showDropdown === todo.id && (
                                             <DropdownMenu ref={dropdownRef} isDropDownOpen={!!showDropdown}>
                                                 <CompleteItem onClick={() => { toggleTodo(todo.id, todo.is_complete); setShowDropdown(null); }}>
@@ -857,7 +895,7 @@ const TodoComponent = () => {
                                                 </DeleteItem>
                                             </DropdownMenu>
                                         )}
-                                    </DotMenuBtn>
+                                    </DotMenuBtnWrapper>
                                 </TodoListContentContainer>
                             ))}
                         </ul>

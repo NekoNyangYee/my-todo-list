@@ -1,4 +1,3 @@
-// utils.ts
 import { supabase } from '@components/lib/supabaseClient';
 import { v4 as uuidv4 } from 'uuid';
 import { Todo } from '@components/types/todo';
@@ -31,6 +30,21 @@ export const fetchTodos = async (userId: string, setTodos: (todos: Todo[]) => vo
     }
 
     setTodos(data);
+};
+
+export const fetchTodosForDate = async (userId: string, date: Date, setTodos: (todos: Todo[]) => void): Promise<void> => {
+    const koreanDateString = new Date(date.getTime() + (9 * 60 * 60 * 1000)).toISOString().split('T')[0];
+    const { data, error } = await supabase
+        .from('todos')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('date', koreanDateString);
+
+    if (error) {
+        console.error('Error fetching todos:', error);
+    } else {
+        setTodos(data);
+    }
 };
 
 export const archiveTodos = async (userId: string, setTodos: (todos: Todo[]) => void, setUncompletedTodos: (todos: Todo[]) => void): Promise<void> => {
@@ -78,6 +92,102 @@ export const archiveTodos = async (userId: string, setTodos: (todos: Todo[]) => 
 
     await fetchTodos(userId, setTodos);
     await fetchAndMoveUncompletedTodos(userId, setUncompletedTodos);
+};
+
+export const deleteTodo = async (userId: string, id: string, setTodos: (todos: Todo[]) => void, selectedDate: Date): Promise<void> => {
+    const { error } = await supabase
+        .from('todos')
+        .delete()
+        .eq('id', id);
+
+    if (error) {
+        console.error('Error deleting todo:', error);
+        return;
+    }
+
+    await fetchTodosForDate(userId, selectedDate, setTodos);
+};
+
+export const toggleTodo = async (userId: string, id: string, isComplete: boolean, setTodos: (todos: Todo[]) => void, selectedDate: Date): Promise<void> => {
+    const { error } = await supabase
+        .from('todos')
+        .update({ is_complete: !isComplete })
+        .eq('id', id);
+
+    if (error) {
+        console.error('Error updating todo:', error);
+        return;
+    }
+
+    await fetchTodosForDate(userId, selectedDate, setTodos);
+};
+
+export const togglePriority = async (userId: string, id: string, isPriority: boolean, setTodos: (todos: Todo[]) => void, selectedDate: Date): Promise<void> => {
+    const { error } = await supabase
+        .from('todos')
+        .update({ is_priority: !isPriority })
+        .eq('id', id);
+
+    if (error) {
+        console.error('Error updating priority:', error);
+        return;
+    }
+
+    await fetchTodosForDate(userId, selectedDate, setTodos);
+};
+
+export const saveTodos = async (
+    userId: string,
+    inputs: string[],
+    setTodos: (todos: Todo[]) => void,
+    resetInputs: () => void,
+    setAnimateOut: (animate: boolean) => void,
+    setShowInput: (show: boolean) => void,
+    selectedDate: Date
+) => {
+    const nonEmptyInputs = inputs.filter(input => input.trim() !== '');
+    if (nonEmptyInputs.length === 0) {
+        alert('할 일을 입력해주세요.');
+        return;
+    } else {
+        alert('저장되었습니다.');
+    }
+
+    const dateString = new Date(selectedDate.getTime() - selectedDate.getTimezoneOffset() * 60000)
+        .toISOString()
+        .split('T')[0];
+
+    const { data: existingTodos } = await supabase
+        .from('todos')
+        .select('id')
+        .eq('user_id', userId);
+
+    const currentOrder = existingTodos ? existingTodos.length : 0;
+
+    const { data, error } = await supabase
+        .from('todos')
+        .insert(nonEmptyInputs.map((content, index) => ({
+            user_id: userId,
+            content,
+            is_complete: false,
+            is_priority: false,
+            created_at: new Date().toISOString(),
+            date: dateString,
+            original_order: currentOrder + index,
+        })));
+
+    if (error) {
+        console.error('Error saving todos:', error);
+    } else {
+        console.log('Todos saved successfully:', data);
+        resetInputs();
+        setAnimateOut(true);
+        setTimeout(() => {
+            setShowInput(false);
+            setAnimateOut(false);
+        }, 100);
+        await fetchTodosForDate(userId, selectedDate, setTodos);
+    }
 };
 
 export const restoreTodo = async (userId: string, id: string, setTodos: (todos: Todo[]) => void): Promise<void> => {

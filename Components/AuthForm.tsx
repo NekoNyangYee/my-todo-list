@@ -259,7 +259,7 @@ const AuthForm = () => {
       } else if (data.session) {
         console.log('로그인 성공:', data.session.user);
         await updateProfile(data.session.user, 'email');
-        router.refresh();
+        router.push('/'); // 로그인 후 메인 페이지로 리다이렉트
         await fetchTodos(data.session.user.id, setTodos);
         setupMidnightCheck(data.session.user.id, setTodos, setUncompletedTodos);
       }

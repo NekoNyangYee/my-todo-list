@@ -20,7 +20,7 @@ interface TodoState {
     uncompletedShowDropdown: string | null;
     isLoading: boolean;
     addInput: () => void;
-    setInput: (index: number, value: string) => void;
+    setInputs: (index: number, value: string) => void;
     setTodos: (todos: Todo[]) => void;
     resetInputs: () => void;
     setShowInput: (show: boolean) => void;
@@ -41,7 +41,7 @@ export const useTodoStore = create<TodoState>((set) => ({
     uncompletedShowDropdown: null,
     isLoading: true,
     addInput: () => set((state) => ({ inputs: [...state.inputs, ''] })),
-    setInput: (index, value) => set((state) => {
+    setInputs: (index, value) => set((state) => {
         const newInputs = [...state.inputs];
         newInputs[index] = value;
         return { inputs: newInputs };

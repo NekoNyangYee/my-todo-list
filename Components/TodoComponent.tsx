@@ -5,8 +5,9 @@ import styled from "@emotion/styled";
 import { useEffect, useRef, useState } from "react";
 import { useTodoStore } from "../Store/useAuthTodoStore";
 import { supabase } from "../lib/supabaseClient";
-import { fetchTodos, setupMidnightCheck, restoreTodo, fetchAndMoveUncompletedTodos } from "@components/util/todoUtil";
+import { fetchTodosForDate, deleteTodo, toggleTodo, togglePriority, saveTodos } from "@components/util/todoUtil";
 import { Todo } from "@components/types/todo";
+import Link from "next/link";
 
 const fadeInDropDownModal = keyframes`
   from {
@@ -448,7 +449,6 @@ const DotMenuBtnWrapper = styled.div`
     padding: 0;
     display: flex;
     align-items: center;
-    justify-content: center;
   }
 
   & img {
@@ -486,7 +486,7 @@ const DropdownMenu = styled.div<{ isDropDownOpen: boolean }>`
   animation: ${({ isDropDownOpen }) => (isDropDownOpen ? fadeInDropDownModal : fadeOutDropDownModal)} 0.2s ease forwards;
 
   & > * {
-    padding: 0.5rem 0.8rem;
+    padding: 12px 8px;
     cursor: pointer;
     &:hover {
       background-color: #f5f5f5;
@@ -518,71 +518,32 @@ const DropdownItem = styled.button`
 `;
 
 const CompleteItem = styled.div`
-  color: #28a745;
-`;
-
-const DeleteItem = styled.div`
-  color: #dc3545;
+  color: #28A745;
   display: flex;
   align-items: center;
   gap: 0.5rem;
 `;
-const UncompletedTodoContainer = styled.div`
-  ${commonContainerStyles}
-`;
 
-const UncompletedDotMenuContainer = styled.div<{ isOpen: boolean }>`
-  position: ${({ isOpen }) => (isOpen ? 'static' : 'relative')};
-
-  & img {
-    width: 24px;
-    height: 24px;
-  }
-`;
-
-const UncompletedDotMenuBtn = styled.button<{ isDropDownOpen: boolean }>`
-  width: 40px;
-  height: 40px;
-  padding: 8px;
-  border: none;
-  cursor: pointer;
-  border-radius: 50%;
-  background-color: ${({ isDropDownOpen }) => (isDropDownOpen ? '#f7f7f7' : 'transparent')};
-
-  & img {
-    width: 24px;
-    height: 24px;
-  }
-`;
-
-const UncompletedDropdownMenu = styled.div<{ isDropDownOpen: boolean }>`
-  position: absolute;
-  width: 160px;
-  top: 100%;
-  right: 10px;
-  background-color: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  z-index: 1;
-  animation: ${({ isDropDownOpen }) => (isDropDownOpen ? fadeInDropDownModal : fadeOutDropDownModal)} 0.2s ease forwards;
-`;
-
-const UncompletedDeleteItem = styled(DeleteItem)`
-  width: 100%;
+const DeleteItem = styled.div`
+  color: #dc3545;
   padding: 12px 8px;
+    display: flex;
+    align-items: center;
+    '&:hover': {
+        background-color: #f7f7f7;
+    }
 `;
 
-const UncompletedRestoreItem = styled(DropdownItem)`
-  color: #333333;
-`;
+interface TodoComponentProps {
+    user: { id: string; email: string } | null;
+    selectedDate: Date;
+}
 
-const TodoComponent = () => {
-    const { todos, inputs, addInput, setInput, setTodos, resetInputs } = useTodoStore();
+const TodoComponent: React.FC<TodoComponentProps> = ({ user, selectedDate }) => {
+    const { todos, setTodos, inputs, addInput, setInputs, resetInputs } = useTodoStore();
     const [showInput, setShowInput] = useState<boolean>(false);
     const [animateOut, setAnimateOut] = useState<boolean>(false);
     const [showDropdown, setShowDropdown] = useState<string | null>(null);
-    const [uncompletedTodos, setUncompletedTodos] = useState<Todo[]>([]);
-    const [uncompletedShowDropdown, setUncompletedShowDropdown] = useState<string | null>(null);
     const modalContentRef = useRef<HTMLDivElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -603,7 +564,6 @@ const TodoComponent = () => {
         const handleClickOutside = (event: MouseEvent) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
                 setShowDropdown(null);
-                setUncompletedShowDropdown(null);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -625,155 +585,45 @@ const TodoComponent = () => {
     }, [showInput]);
 
     useEffect(() => {
-        const initializeTodos = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            const user = session?.user;
-            if (!user) return;
-
-            await fetchTodos(user.id, setTodos);
-            await fetchAndMoveUncompletedTodos(user.id, setUncompletedTodos);
+        const fetchData = async () => {
+            if (user) {
+                await fetchTodosForDate(user.id, selectedDate, setTodos);
+            }
         };
 
-        initializeTodos();
-    }, []);
-
-    useEffect(() => {
-        const setupCheck = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            const user = session?.user;
-            if (!user) return;
-
-            const intervalCleanup = setupMidnightCheck(user.id, setTodos, setUncompletedTodos);
-
-            return () => intervalCleanup();
-        };
-
-        setupCheck();
-    }, []);
+        fetchData();
+    }, [user, selectedDate, setTodos]);
 
     const handleInputChange = (index: number, value: string) => {
-        setInput(index, value);
+        setInputs(index, value);
     };
 
     const handleDotMenuClick = (todoId: string) => {
         setShowDropdown(prev => (prev === todoId ? null : todoId));
     };
 
-    const handleUncompletedDotMenuClick = (todoId: string) => {
-        setUncompletedShowDropdown(prev => (prev === todoId ? null : todoId));
-    };
-
-    const restoreTodoHandler = async (id: string) => {
-        const { data: { session } } = await supabase.auth.getSession();
-        const user = session?.user;
-        if (!user) return;
-
-        await restoreTodo(user.id, id, setTodos);
-
-        setUncompletedTodos(prev => prev.filter(todo => todo.id !== id));
-        setUncompletedShowDropdown(null);
-    };
-
-    const saveTodos = async () => {
-        const nonEmptyInputs = inputs.filter(input => input.trim() !== '');
-        if (nonEmptyInputs.length === 0) {
-            alert('할 일을 입력해주세요.');
-            return;
-        } else {
-            alert('저장되었습니다.');
-        }
-
-        const { data: { session } } = await supabase.auth.getSession();
-        const user = session?.user;
-        if (!user) return;
-
-        const { data: existingTodos } = await supabase
-            .from('todos')
-            .select('id')
-            .eq('user_id', user.id);
-
-        const currentOrder = existingTodos ? existingTodos.length : 0;
-
-        const { data, error } = await supabase
-            .from('todos')
-            .insert(nonEmptyInputs.map((content, index) => ({
-                user_id: user.id,
-                content,
-                is_complete: false,
-                is_priority: false,
-                created_at: new Date().toISOString(),
-                original_order: currentOrder + index,
-            })));
-
-        if (error) {
-            console.error('Error saving todos:', error);
-        } else {
-            console.log('Todos saved successfully:', data);
-            resetInputs();
-            setAnimateOut(true);
-            setTimeout(() => {
-                setShowInput(false);
-                setAnimateOut(false);
-            }, 100);
-            await fetchTodos(user.id, setTodos);
+    const deleteTodoHandler = async (id: string) => {
+        if (user) {
+            await deleteTodo(user.id, id, setTodos, selectedDate);
         }
     };
 
-    const deleteTodo = async (id: string) => {
-        const { data: { session } } = await supabase.auth.getSession();
-        const user = session?.user;
-        if (!user) return;
-
-        if (confirm('할 일을 삭제하시겠습니까?')) {
-            const { data, error } = await supabase
-                .from('todos')
-                .delete()
-                .eq('id', id);
-
-            if (error) {
-                console.error('Error deleting todo:', error);
-            } else {
-                alert('할 일을 성공적으로 제거했어요.');
-                console.log('할 일을 성공적으로 제거했어요.', data);
-                await fetchTodos(user.id, setTodos);
-                setShowDropdown(null);
-            }
+    const toggleTodoHandler = async (id: string, isComplete: boolean) => {
+        if (user) {
+            await toggleTodo(user.id, id, isComplete, setTodos, selectedDate);
         }
     };
 
-    const toggleTodo = async (id: string, isComplete: boolean) => {
-        const { data: { session } } = await supabase.auth.getSession();
-        const user = session?.user;
-        if (!user) return;
-
-        const { data, error } = await supabase
-            .from('todos')
-            .update({ is_complete: !isComplete })
-            .eq('id', id);
-
-        if (error) {
-            console.error('Error updating todo:', error);
-        } else {
-            await fetchTodos(user.id, setTodos);
-            setShowDropdown(null);
+    const togglePriorityHandler = async (id: string, isPriority: boolean) => {
+        if (user) {
+            await togglePriority(user.id, id, isPriority, setTodos, selectedDate);
         }
     };
 
-    const togglePriority = async (id: string, isPriority: boolean) => {
-        const { data: { session } } = await supabase.auth.getSession();
-        const user = session?.user;
-        if (!user) return;
-
-        const { data, error } = await supabase
-            .from('todos')
-            .update({ is_priority: !isPriority })
-            .eq('id', id);
-
-        if (error) {
-            console.error('Error updating priority:', error);
-        } else {
-            console.log('Priority updated successfully:', data);
-            await fetchTodos(user.id, setTodos);
+    const saveTodosHandler = async () => {
+        if (user) {
+            await saveTodos(user.id, inputs, setTodos, resetInputs, setAnimateOut, setShowInput, selectedDate);
+            await fetchTodosForDate(user.id, selectedDate, setTodos);
         }
     };
 
@@ -804,13 +654,14 @@ const TodoComponent = () => {
 
     const importantTodos = todos.filter(todo => todo.is_priority && !todo.is_complete);
     const nonImportantTodos = todos.filter(todo => !todo.is_priority && !todo.is_complete);
+    const completedTodos = todos.filter(todo => todo.is_complete);
 
     return (
         <MainTodoListContainer>
             <TodoContainer>
                 <ProgressTodoContainer>
                     <h2>진행 중인 일정</h2>
-                    {todos.filter(todo => !todo.is_complete).length === 0 ? (
+                    {nonImportantTodos.length === 0 && importantTodos.length === 0 ? (
                         <NoTodoListText>현재 진행 중인 일정이 없어요.</NoTodoListText>
                     ) : (
                         <ul>
@@ -821,7 +672,7 @@ const TodoComponent = () => {
                                             <li>
                                                 <PriorityButton
                                                     isPriority={todo.is_priority}
-                                                    onClick={() => togglePriority(todo.id, todo.is_priority)}
+                                                    onClick={() => togglePriorityHandler(todo.id, todo.is_priority)}
                                                 >
                                                     <svg
                                                         width="24"
@@ -844,10 +695,11 @@ const TodoComponent = () => {
                                                 </DotMenuBtn>
                                                 {showDropdown === todo.id && (
                                                     <DropdownMenu ref={dropdownRef} isDropDownOpen={!!showDropdown}>
-                                                        <CompleteItem onClick={() => { toggleTodo(todo.id, todo.is_complete); setShowDropdown(null); }}>
+                                                        <CompleteItem onClick={() => toggleTodoHandler(todo.id, todo.is_complete)}>
+                                                            <img src="/check.svg" alt="Check" />
                                                             일정 완료
                                                         </CompleteItem>
-                                                        <DeleteItem onClick={() => { deleteTodo(todo.id); setShowDropdown(null); }}>
+                                                        <DeleteItem onClick={() => deleteTodoHandler(todo.id)}>
                                                             <img src="/delete.svg" alt="Delete" />
                                                             삭제
                                                         </DeleteItem>
@@ -863,7 +715,7 @@ const TodoComponent = () => {
                                     <li>
                                         <PriorityButton
                                             isPriority={todo.is_priority}
-                                            onClick={() => togglePriority(todo.id, todo.is_priority)}
+                                            onClick={() => togglePriorityHandler(todo.id, todo.is_priority)}
                                         >
                                             <svg
                                                 width="24"
@@ -886,10 +738,11 @@ const TodoComponent = () => {
                                         </DotMenuBtn>
                                         {showDropdown === todo.id && (
                                             <DropdownMenu ref={dropdownRef} isDropDownOpen={!!showDropdown}>
-                                                <CompleteItem onClick={() => { toggleTodo(todo.id, todo.is_complete); setShowDropdown(null); }}>
+                                                <CompleteItem onClick={() => toggleTodoHandler(todo.id, todo.is_complete)}>
+                                                    <img src="/check.svg" alt="Check" />
                                                     일정 완료
                                                 </CompleteItem>
-                                                <DeleteItem onClick={() => { deleteTodo(todo.id); setShowDropdown(null); }}>
+                                                <DeleteItem onClick={() => deleteTodoHandler(todo.id)}>
                                                     <img src="/delete.svg" alt="Delete" />
                                                     삭제
                                                 </DeleteItem>
@@ -929,7 +782,7 @@ const TodoComponent = () => {
                                     </AddTodoBtn>
                                     <TodoSaveAndCancelBtnContainer>
                                         <CancelBtn onClick={closeModal}>취소</CancelBtn>
-                                        <SaveTodoBtn onClick={saveTodos}>저장</SaveTodoBtn>
+                                        <SaveTodoBtn onClick={saveTodosHandler}>저장</SaveTodoBtn>
                                     </TodoSaveAndCancelBtnContainer>
                                 </ModalContent>
                             </ModalOverlay>
@@ -944,14 +797,16 @@ const TodoComponent = () => {
                     ) : (
                         <ul>
                             {todos.filter(todo => todo.is_complete).map((todo) => (
-                                <li key={todo.id}>
-                                    <input
-                                        type="checkbox"
-                                        checked={todo.is_complete}
-                                        onChange={() => toggleTodo(todo.id, todo.is_complete)}
-                                    />
-                                    {todo.content}
-                                </li>
+                                <TodoListContentContainer key={todo.id}>
+                                    <li>
+                                        <input
+                                            type="checkbox"
+                                            checked={todo.is_complete}
+                                            onChange={() => toggleTodoHandler(todo.id, todo.is_complete)}
+                                        />
+                                        {todo.content}
+                                    </li>
+                                </TodoListContentContainer>
                             ))}
                         </ul>
                     )}
@@ -961,41 +816,10 @@ const TodoComponent = () => {
                     </CompleteInfoContainer>
                 </ComplecatedTodoContainer>
             </TodoContainer>
-            <UncompletedTodoContainer>
-                <h2>완료하지 못한 일정</h2>
-                {uncompletedTodos.length === 0 ? (
-                    <NoTodoListText>완료하지 못한 할 일이 없어요.</NoTodoListText>
-                ) : (
-                    <ul>
-                        {uncompletedTodos.map((todo) => (
-                            <TodoListIncompleteContentContainer key={todo.id}>
-                                <li>
-                                    {todo.content}
-                                </li>
-                                <UncompletedDotMenuContainer isOpen={showInput}>
-                                    <UncompletedDotMenuBtn onClick={() => handleUncompletedDotMenuClick(todo.id)} isDropDownOpen={uncompletedShowDropdown === todo.id}>
-                                        <img src="/dot-menu.svg" alt="Dot Menu" />
-                                    </UncompletedDotMenuBtn>
-                                    {uncompletedShowDropdown === todo.id && (
-                                        <UncompletedDropdownMenu ref={dropdownRef} isDropDownOpen={!!uncompletedShowDropdown}>
-                                            <UncompletedRestoreItem onClick={() => restoreTodoHandler(todo.id)}>
-                                                <img src="/arrow-up.svg" alt="ArrowUp" />
-                                                끌어올리기
-                                            </UncompletedRestoreItem>
-                                            <UncompletedDeleteItem onClick={() => { deleteTodo(todo.id); setUncompletedShowDropdown(null); }}>
-                                                <img src="/delete.svg" alt="Delete" />
-                                                삭제
-                                            </UncompletedDeleteItem>
-                                        </UncompletedDropdownMenu>
-                                    )}
-                                </UncompletedDotMenuContainer>
-                            </TodoListIncompleteContentContainer>
-                        ))}
-                    </ul>
-                )}
-            </UncompletedTodoContainer>
+            <Link href="/calendar">
+                캘린더로 이동
+            </Link>
         </MainTodoListContainer>
-
     );
 };
 

@@ -1,0 +1,11 @@
+.react-calendar {
+  width: 50%;
+  height: 50%;
+  max-width: 100%;
+  background: #ffff;
+  border: 1px solid #eeeeee;
+  font-family: Arial, Helvetica, sans-serif;
+  line-height: 1.125em;
+  border-radius: 10px;
+  box-shadow: 0px 0px 20px #e0e0e0;
+}

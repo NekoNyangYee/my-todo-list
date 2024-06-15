@@ -5,8 +5,8 @@ import styled from "@emotion/styled";
 import React, { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import AuthForm from "./AuthForm";
+import { Session } from '@supabase/supabase-js';
 import TodoComponent from "./TodoComponent";
-import { Session } from "@supabase/supabase-js";
 
 const HeaderFlexBox = styled.div`
     display: flex;
@@ -308,6 +308,7 @@ const AuthHeader = () => {
     const [isEditMode, setIsEditMode] = useState(false);
     const [editedName, setEditedName] = useState('');
     const modalRef = useRef<HTMLDivElement>(null);
+    const [selectedDate, setSelectedDate] = useState(new Date());
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -497,18 +498,17 @@ const AuthHeader = () => {
             document.body.style.overflow = '';
         };
     }, [isModalOpen]);
+
     return (
         <>
             <AuthHeaderContainer>
                 <MainLogoImage src="./main-logo.svg" alt="Todo" />
-                <LogOutBtn onClick={handleLogout}>로그아웃</LogOutBtn>
                 {!session ? (
                     <AuthForm />
                 ) : (
                     <ProfileInfoContainer>
                         {profile ? (
                             <HeaderFlexBox>
-
                                 <UserInfoText><strong>{profile.full_name}</strong>님, 환영해요.</UserInfoText>
                                 <ProfileModalBtn onClick={openModal}>
                                     <ProfileImage src={profile.avatar_url || "./user.svg"} alt="Profile Picture" width={250} height={250} />
@@ -588,7 +588,7 @@ const AuthHeader = () => {
                     </ModalContent>
                 </ModalOverlay>
             )}
-            <TodoComponent />
+            <TodoComponent user={session ? { id: session.user.id, email: session.user.email } : null} selectedDate={selectedDate} />
         </>
     );
 };

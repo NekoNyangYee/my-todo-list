@@ -501,6 +501,7 @@ const AuthHeader = () => {
         <>
             <AuthHeaderContainer>
                 <MainLogoImage src="./main-logo.svg" alt="Todo" />
+                <LogOutBtn onClick={handleLogout}>로그아웃</LogOutBtn>
                 {!session ? (
                     <AuthForm />
                 ) : (

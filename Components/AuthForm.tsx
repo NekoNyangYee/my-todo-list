@@ -8,7 +8,6 @@ import { supabase } from "../lib/supabaseClient";
 import { updateProfile } from "../lib/updateProfile";
 import { fetchTodos, setupMidnightCheck } from "@components/util/todoUtil";
 import { useTodoStore } from "@components/Store/useAuthTodoStore";
-import { set } from "mongoose";
 
 const LoginSiginupContainer = styled.div`
   width: 100%;

@@ -18,7 +18,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" style={{ background: "#F6F8FC", height: "100vh" }}>
-      <link rel="manifest" href="/manifest.json" />
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+      </head>
       <body className={noto_sans_kr.className} style={{ margin: "0", height: "100vh" }}>{children}</body>
     </html>
   );

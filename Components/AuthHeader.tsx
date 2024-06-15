@@ -6,6 +6,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import AuthForm from "./AuthForm";
 import TodoComponent from "./TodoComponent";
+import { Session } from "@supabase/supabase-js";
 
 const HeaderFlexBox = styled.div`
     display: flex;
@@ -332,7 +333,7 @@ const AuthHeader = () => {
             const { data: { session } } = await supabase.auth.getSession();
             setSession(session);
             if (session) {
-                fetchProfile(session.user.id);
+                fetchProfile(session.user.id, session);
             }
         };
 
@@ -341,7 +342,7 @@ const AuthHeader = () => {
         const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
             setSession(session);
             if (session) {
-                fetchProfile(session.user.id);
+                fetchProfile(session.user.id, session);
             }
         });
 
@@ -350,14 +351,43 @@ const AuthHeader = () => {
         };
     }, []);
 
-    const fetchProfile = async (userId: string) => {
+    const fetchProfile = async (userId: string, session: any) => {
+        console.log(`Fetching profile for user ID: ${userId}`);
         const { data, error } = await supabase
             .from('users')
-            .select('id, email, full_name, avatar_url, provider, created_at')
+            .select('id, email, full_name, avatar_url, provider')
             .eq('id', userId)
             .single();
 
-        if (error) {
+        if (error && error.message === 'JSON object requested, multiple (or no) rows returned') {
+            console.error('No profile found, creating a new profile');
+            // 프로필이 없을 경우 새로 생성
+            const { error: insertError } = await supabase.from('users').upsert({
+                id: userId,
+                email: session?.user?.email || '',
+                full_name: session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || '',
+                avatar_url: session?.user?.user_metadata?.avatar_url || session?.user?.user_metadata?.picture || '',
+                provider: session?.user?.app_metadata?.provider || 'email',
+                created_at: new Date(),
+                updated_at: new Date(),
+            });
+
+            if (insertError) {
+                console.error('Error inserting new profile:', insertError.message);
+            } else {
+                // 새로 생성한 프로필을 다시 가져옴
+                const { data: newData, error: newError } = await supabase
+                    .from('users')
+                    .select('id, email, full_name, avatar_url, provider')
+                    .eq('id', userId)
+                    .single();
+                if (newError) {
+                    console.error('Error fetching new profile:', newError.message);
+                } else {
+                    setProfile(newData);
+                }
+            }
+        } else if (error) {
             console.error('Error fetching profile:', error.message);
         } else {
             setProfile(data);
@@ -429,6 +459,7 @@ const AuthHeader = () => {
         if (error) {
             console.error('Error updating profile:', error.message);
         } else {
+            console.log('Profile updated successfully'); // 로그 추가
             // 세션의 user_metadata도 업데이트하여 최신 상태를 유지
             const { error: metaError } = await supabase.auth.updateUser({
                 data: { full_name: editedName },
@@ -437,6 +468,7 @@ const AuthHeader = () => {
             if (metaError) {
                 console.error('Error updating user metadata:', metaError.message);
             } else {
+                console.log('User metadata updated successfully'); // 로그 추가
                 alert('닉네임이 수정되었습니다.');
                 setProfile((prevProfile: any) => ({ ...prevProfile, full_name: editedName }));
                 setSession((prevSession: any) => ({
@@ -476,13 +508,16 @@ const AuthHeader = () => {
                     <ProfileInfoContainer>
                         {profile ? (
                             <HeaderFlexBox>
+
                                 <UserInfoText><strong>{profile.full_name}</strong>님, 환영해요.</UserInfoText>
                                 <ProfileModalBtn onClick={openModal}>
                                     <ProfileImage src={profile.avatar_url || "./user.svg"} alt="Profile Picture" width={250} height={250} />
                                 </ProfileModalBtn>
                             </HeaderFlexBox>
                         ) : (
-                            <ProfileImage src={"./user.svg"} alt="Profile Picture" width={250} height={250} />
+                            <>
+                                <ProfileImage src={"./user.svg"} alt="Profile Picture" width={250} height={250} />
+                                <LogOutBtn onClick={handleLogout}>로그아웃</LogOutBtn></>
                         )}
                     </ProfileInfoContainer>
                 )}

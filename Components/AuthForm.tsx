@@ -5,8 +5,10 @@ import styled from "@emotion/styled";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "../Store/authStore";
 import { supabase } from "../lib/supabaseClient";
+import { updateProfile } from "../lib/updateProfile";
 import { fetchTodos, setupMidnightCheck } from "@components/util/todoUtil";
 import { useTodoStore } from "@components/Store/useAuthTodoStore";
+import { set } from "mongoose";
 
 const LoginSiginupContainer = styled.div`
   width: 100%;
@@ -209,7 +211,6 @@ const SwitchAuthBtn = styled.button`
     text-decoration: underline;
   }
 `;
-
 const AuthForm = () => {
   const {
     email,
@@ -223,31 +224,19 @@ const AuthForm = () => {
     fullName,
     setFullName,
   } = useAuthStore();
-  const { setTodos, setUncompletedTodos } = useTodoStore(); // setUncompletedTodos 추가
+  const { setTodos, setUncompletedTodos } = useTodoStore();
   const router = useRouter();
-
-  const updateProfile = async (user: any) => {
-    const { error } = await supabase
-      .from('users')
-      .update({
-        full_name: user.user_metadata.full_name
-      })
-      .eq('id', user.id);
-
-    if (error) {
-      console.error('Error updating profile:', error.message);
-    } else {
-      console.log('Profile updated successfully');
-    }
-  };
 
   const handleAuth = async () => {
     if (authType === "signin") {
+      console.log('로그인 시도 중...');
       const { data: user } = await supabase
         .from("users")
         .select("provider")
         .eq("email", email)
         .single();
+
+      console.log('User data fetched:', user);
 
       if (email === "") {
         alert("이메일을 입력해주세요.");
@@ -267,12 +256,13 @@ const AuthForm = () => {
 
       if (error) {
         alert("비밀번호나 이메일이 일치하지 않습니다.");
-        console.error("Error signing in:", error.message);
+        console.error("로그인 중 오류 발생:", error.message);
       } else if (data.session) {
-        await updateProfile(data.session.user);
+        console.log('로그인 성공:', data.session.user);
+        await updateProfile(data.session.user, 'email');
         router.refresh();
         await fetchTodos(data.session.user.id, setTodos);
-        setupMidnightCheck(data.session.user.id, setTodos, setUncompletedTodos); // 로그인 후 자정 체크 설정
+        setupMidnightCheck(data.session.user.id, setTodos, setUncompletedTodos);
       }
     } else {
       if (password !== confirmPassword) {
@@ -307,29 +297,29 @@ const AuthForm = () => {
           console.error("Error signing up:", error.message);
         }
       } else if (data.session) {
-        await updateProfile(data.session.user);
+        await updateProfile(data.session.user, 'email');
         alert("회원가입이 완료되었습니다. 최초 회원가입 후 자동으로 로그인됩니다.");
         router.refresh();
         await fetchTodos(data.session.user.id, setTodos);
-        setupMidnightCheck(data.session.user.id, setTodos, setUncompletedTodos); // 회원가입 후 자정 체크 설정
+        setupMidnightCheck(data.session.user.id, setTodos, setUncompletedTodos);
       }
     }
   };
 
-  const handleSocialLogin = async (provider: any) => {
+  const handleSocialLogin = async (provider: "google" | 'kakao') => {
     const { data, error } = await supabase.auth.signInWithOAuth({ provider });
     if (error) {
       console.error(`Error signing in with ${provider}:`, error.message);
     } else {
       const user = await supabase.auth.getUser();
       if (user.data.user) {
-        await updateProfile(user.data.user);
+        await updateProfile(user.data.user, provider);
+        await setupMidnightCheck(user.data.user.id, setTodos, setUncompletedTodos);
         router.refresh();
-        await fetchTodos(user.data.user.id, setTodos);
-        setupMidnightCheck(user.data.user.id, setTodos, setUncompletedTodos); // 소셜 로그인 후 자정 체크 설정
       }
     }
   };
+
 
   return (
     <LoginSiginupContainer>

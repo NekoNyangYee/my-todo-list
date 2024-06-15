@@ -7,7 +7,7 @@ export const updateProfile = async (user: any, provider: string) => {
 
     console.log('Updating profile for user:', { id, email, full_name, avatar_url, provider });
 
-    const { error } = await supabase.from('users').upsert({
+    const { data, error } = await supabase.from('users').upsert({
         id,
         email,
         full_name,
@@ -18,5 +18,9 @@ export const updateProfile = async (user: any, provider: string) => {
 
     if (error) {
         console.error('Error updating profile:', error.message);
+        console.error('Error details:', error.details);
+        console.error('Error hint:', error.hint);
+    } else {
+        console.log('Profile updated successfully:', data);
     }
 };

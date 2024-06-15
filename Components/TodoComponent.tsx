@@ -1,539 +1,546 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { useTodoStore } from '../Store/useAuthTodoStore';
-import { supabase } from '../lib/supabaseClient';
-import { styled, keyframes } from '@pigment-css/react';
-import { fetchTodos, setupMidnightCheck, restoreTodo, fetchAndMoveUncompletedTodos } from '@components/util/todoUtil';
-import { Todo } from '@components/types/todo';
+import { css, keyframes } from "@emotion/react";
+import styled from "@emotion/styled";
+import { useEffect, useRef, useState } from "react";
+import { useTodoStore } from "../Store/useAuthTodoStore";
+import { supabase } from "../lib/supabaseClient";
+import { fetchTodos, setupMidnightCheck, restoreTodo, fetchAndMoveUncompletedTodos } from "@components/util/todoUtil";
+import { Todo } from "@components/types/todo";
 
-const fadeInDropDownModal = keyframes({
-    'from': {
-        opacity: 0,
-        transform: 'scale(0.9)',
-    },
-    'to': {
-        opacity: 1,
-        transform: 'scale(1)',
+const fadeInDropDownModal = keyframes`
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+`;
+
+const fadeOutDropDownModal = keyframes`
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+`;
+
+const fadeInModal = keyframes`
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+`;
+
+const fadeOutModal = keyframes`
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+`;
+
+const rotateAdd = keyframes`
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(135deg);
+  }
+`;
+
+const rotateCancel = keyframes`
+  from {
+    transform: rotate(135deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+`;
+
+const MainTodoListContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  width: 100%;
+  max-width: 972px;
+  margin: 0 auto;
+  padding: 2rem 0;
+
+  @media (max-width: 1224px) {
+    max-width: 90%;
+    flex-direction: column;
+    gap: 2rem;
+  }
+`;
+
+const TodoContainer = styled.div`
+  display: flex;
+  flex-direction: row;
+  gap: 2rem;
+  width: 100%;
+  max-width: 972px;
+  margin: 0 auto;
+
+  & ul {
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  & li {
+    list-style: none;
+  }
+
+  @media (max-width: 1224px) {
+    max-width: 100%;
+    flex-direction: column;
+    gap: 2rem;
+  }
+`;
+
+const commonContainerStyles = css`
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  flex-direction: column;
+  gap: 12px;
+  border-radius: 12px;
+  padding: 1rem;
+  box-sizing: border-box;
+  background-color: #ffffff;
+  overflow-y: auto;
+  height: calc(100vh - 20rem);
+
+  & h2 {
+    margin: 0;
+    color: #333333;
+    font-size: 1.5rem;
+  }
+
+  & ul {
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  & li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: auto 0;
+  }
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: #e1e1e1;
+    border-radius: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  @media (max-width: 1224px) {
+    max-width: 100%;
+    flex: 1;
+  }
+`;
+
+const ProgressTodoContainer = styled.div`
+  ${commonContainerStyles}
+`;
+
+const ComplecatedTodoContainer = styled.div`
+  ${commonContainerStyles}
+`;
+
+const CompleteInfoContainer = styled.div`
+  display: flex;
+  gap: 12px;
+  color: #7e7cde;
+  font-size: 1rem;
+  padding: 1rem;
+  border-radius: 8px;
+  background-color: #f3f4ff;
+
+  & img {
+    width: 24px;
+    height: 24px;
+    margin: auto 0;
+  }
+`;
+
+const AddToDoBtn = styled.button<{ isOpen: boolean }>`
+  padding: 12px;
+  background-color: #0075ff;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  border-radius: 50%;
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+
+  & img {
+    width: 28px;
+    height: 28px;
+    animation: ${({ isOpen }) => (isOpen ? rotateAdd : rotateCancel)} 0.1s ease forwards;
+  }
+`;
+
+const AddToDoBtnContainer = styled.div`
+  position: sticky;
+  bottom: 0;
+  justify-content: flex-end;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+`;
+
+const ModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+`;
+
+const ModalContent = styled.div<{ isOpen: boolean }>`
+  position: relative;
+  background: #f6f8fc;
+  padding: 1rem 1rem 0;
+  border-radius: 12px;
+  max-width: 572px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  animation: ${({ isOpen }) => (isOpen ? fadeInModal : fadeOutModal)} 0.2s ease forwards;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: #a9a9a9;
+    border-radius: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  @media (max-width: 1224px) {
+    max-width: 80%;
+  }
+`;
+
+const ToDoInputContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  & input {
+    width: 100%;
+    padding: 1rem;
+    border-radius: 8px;
+    border: none;
+    outline: none;
+    box-sizing: border-box;
+    font-size: 1rem;
+    background-color: #ffffff;
+
+    &:focus {
+      outline: none;
+      border: 1px solid #e7e7e7;
     }
-});
-
-const fadeOutDropDownModal = keyframes({
-    'from': {
-        opacity: 1,
-        transform: 'scale(1)',
-    },
-    'to': {
-        opacity: 0,
-        transform: 'scale(0.9)',
-    }
-});
-
-const fadeInModal = keyframes({
-    'from': {
-        opacity: 0,
-        transform: 'scale(0.9)',
-    },
-    'to': {
-        opacity: 1,
-        transform: 'scale(1)',
-    }
-});
-
-const fadeOutModal = keyframes({
-    'from': {
-        opacity: 1,
-        transform: 'scale(1)',
-    },
-    'to': {
-        opacity: 0,
-        transform: 'scale(0.9)',
-    }
-});
-
-const rotateAdd = keyframes({
-    'from': {
-        transform: 'rotate(0deg)',
-    },
-    'to': {
-        transform: 'rotate(135deg)',
-    }
-});
-
-const rotateCancel = keyframes({
-    'from': {
-        transform: 'rotate(135deg)',
-    },
-    'to': {
-        transform: 'rotate(0deg)',
-    }
-});
-
-const MainTodoListContainer = styled('div')({
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '2rem',
-    width: '100%',
-    maxWidth: '972px',
-    margin: '0 auto',
-    padding: '2rem 0',
-
-    '@media (max-width: 1224px)': {
-        maxWidth: '90%',
-        flexDirection: 'column',
-        gap: '2rem',
-    }
-});
-
-const TodoContainer = styled('div')({
-    display: 'flex',
-    flexDirection: 'row', // 모바일에서 세로로 정렬
-    gap: '2rem',
-    width: '100%',
-    maxWidth: '972px',
-    margin: '0 auto',
-
-    "& ul": {
-        padding: 0,
-        margin: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '12px',
-    },
-
-    "& li": {
-        listStyle: 'none',
-    },
-
-    '@media (max-width: 1224px)': {
-        maxWidth: '100%',
-        flexDirection: 'column',
-        gap: '2rem',
-    }
-});
-
-const commonContainerStyles = {
-    flex: 1,
-    display: 'flex',
-    justifyContent: 'space-between',
-    flexDirection: 'column',
-    gap: '12px',
-    borderRadius: '12px',
-    padding: '1rem',
-    boxSizing: 'border-box',
-    backgroundColor: '#FFFFFF',
-    overflowY: 'auto',
-    height: 'calc(100vh - 20rem)', // 화면 높이에 따라 동적으로 설정
-
-    "& h2": {
-        margin: 0,
-        color: '#333333',
-        fontSize: '1.5rem',
-    },
-
-    "& ul": {
-        padding: 0,
-        margin: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '12px',
-    },
-
-    "& li": {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        margin: 'auto 0',
-    },
-
-    "&::-webkit-scrollbar": {
-        width: '8px',
-    },
-
-    "&::-webkit-scrollbar-thumb": {
-        backgroundColor: '#E1E1E1',
-        borderRadius: '8px',
-    },
-
-    "&::-webkit-scrollbar-track": {
-        background: 'transparent',
-    },
-
-    '@media (max-width: 1224px)': {
-        maxWidth: '100%',
-        flex: 1,
-    }
-};
-
-const ProgressTodoContainer = styled('div')(commonContainerStyles);
-const ComplecatedTodoContainer = styled('div')(commonContainerStyles);
-
-const CompleteInfoContainer = styled('div')({
-    display: 'flex',
-    gap: '12px',
-    color: '#7E7CDE',
-    fontSize: '1rem',
-    padding: '1rem',
-    borderRadius: '8px',
-    backgroundColor: '#F3F4FF',
-
-    '& img': {
-        width: '24px',
-        height: '24px',
-        margin: 'auto 0',
-    }
-});
-
-const AddToDoBtn = styled('button')<{ isOpen: boolean }>({
-    padding: '12px',
-    backgroundColor: '#0075FF',
-    color: '#fff',
-    border: 'none',
-    cursor: 'pointer',
-    borderRadius: '50%',
-    display: 'flex',
-    gap: '8px',
-    marginLeft: 'auto',
-
-    '& img': {
-        width: '28px',
-        height: '28px',
-        animation: (props) => props.isOpen ? `${rotateAdd} 0.1s ease forwards` : `${rotateCancel} 0.1s ease forwards`,
-    },
-});
-
-const AddToDoBtnContainer = styled('div')({
-    position: 'sticky',
-    bottom: 0,
-    justifyContent: 'flex-end',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px',
-});
-
-const ModalOverlay = styled('div')({
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    backdropFilter: 'blur(4px)',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-});
-
-const ModalContent = styled('div')<{ isOpen: boolean }>({
-    position: 'relative', // position 설정 추가
-    background: '#F6F8FC',
-    padding: '1rem 1rem 0',
-    borderRadius: '12px',
-    maxWidth: '572px',
-    width: '100%',
-    maxHeight: '80vh',
-    overflowY: 'auto',
-    display: 'flex',
-    flexDirection: 'column',
-    animation: (props) => props.isOpen ? `${fadeInModal} 0.2s ease forwards` : `${fadeOutModal} 0.2s ease forwards`,
-
-    "&::-webkit-scrollbar": {
-        width: '8px',
-    },
-
-    "&::-webkit-scrollbar-thumb": {
-        backgroundColor: '#A9A9A9',
-        borderRadius: '8px',
-    },
-
-    "&::-webkit-scrollbar-track": {
-        background: 'transparent',
-    },
-
-    "@media (max-width: 1224px)": {
-        maxWidth: '80%',
-    }
-});
-
-
-const ToDoInputContainer = styled('div')({
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px',
-
-    '& input': {
-        width: '100%',
-        padding: '1rem',
-        borderRadius: '8px',
-        border: 'none',
-        outline: 'none',
-        boxSizing: 'border-box',
-        fontSize: '1rem',
-        backgroundColor: '#FFFFFF',
-
-        "&:focus": {
-            outline: "none",
-            border: "1px solid #E7E7E7",
-        },
-    },
-});
-
-const TodoSaveAndCancelBtnContainer = styled('div')({
-    display: 'flex',
-    gap: '12px',
-    justifyContent: 'flex-end',
-    marginTop: '1rem',
-    padding: '1rem 0',
-    boxSizing: 'border-box',
-    width: '100%',
-    position: 'sticky',
-    bottom: 0,
-    background: '#F6F8FC',
-});
-
-const CancelBtn = styled('button')({
-    padding: '12px 1.6rem',
-    backgroundColor: '#E7E7E7',
-    color: '#AEAEAE',
-    fontSize: '0.8rem',
-    border: 'none',
-    cursor: 'pointer',
-    borderRadius: '8px',
-    outline: 'none',
-    transition: 'background-color 0.2s, color 0.2s',
-    fontWeight: 'bold',
-
-    '&:hover': {
-        backgroundColor: '#D7D7D7',
-    }
-});
-
-const SaveTodoBtn = styled('button')({
-    padding: '12px 1.6rem',
-    backgroundColor: '#0075FF',
-    color: '#FFFFFF',
-    fontSize: '0.8rem',
-    border: 'none',
-    cursor: 'pointer',
-    borderRadius: '8px',
-    outline: 'none',
-    transition: 'background-color 0.2s, color 0.2s',
-    fontWeight: 'bold',
-
-    '&:hover': {
-        backgroundColor: '#0055CC',
-    }
-});
-
-const ModalTitleContainer = styled('div')({
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px',
-    marginBottom: '1rem',
-
-    '& h2, & p': {
-        margin: '0'
-    },
-
-    '& p': {
-        color: '#6A6A6A',
-        fontSize: '0.9rem',
-    }
-});
-
-const AddTodoBtn = styled('button')({
-    display: 'flex',
-    gap: '8px',
-    justifyContent: 'center',
-    padding: '12px',
-    backgroundColor: '#0075FF',
-    color: '#fff',
-    border: 'none',
-    cursor: 'pointer',
-    borderRadius: '8px',
-    outline: 'none',
-    transition: 'background-color 0.2s',
-    margin: '1rem 0',
-
-    '& img': {
-        width: '20px',
-        height: '20px',
-    },
-
-    '& p': {
-        margin: 'auto 0',
-    },
-
-    '&:hover': {
-        backgroundColor: '#0055CC',
-    }
-});
-
-const TodoListContentContainer = styled('div')({
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    justifyContent: 'space-between',
-    position: 'relative',  // 부모 요소를 상대적으로 위치시키기 위해 추가
-
-    '& li': {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        margin: 'auto 0',
-    }
-});
-
-const TodoListIncompleteContentContainer = styled('div')({
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    justifyContent: 'space-between',
-
-    '& li': {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        margin: 'auto 0',
-    }
-});
-
-const NoTodoListText = styled('p')({
-    color: '#A7A7A7',
-    fontSize: '1rem',
-    margin: 'auto',
-    textAlign: 'center',
-});
-
-const PriorityButton = styled('button')<{ isPriority: boolean }>({
-    padding: '8px',
-    backgroundColor: 'transparent',
-    border: 'none',
-    cursor: 'pointer',
-    borderRadius: '50%',
-    width: '40px',
-    height: '40px',
-
-    '& svg': {
-        width: '24px',
-        height: '24px',
-        fill: (props) => props.isPriority ? '#F9E000' : '#D3D3D3',
-        stroke: (props) => props.isPriority ? '#F9E000' : '#D3D3D3',
-        strokeWidth: '2',
-        strokeLinecap: 'round',
-        strokeLinejoin: 'round',
-    }
-});
-
-const ImportantTodoContainer = styled('div')({
-    padding: '1rem 0',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px',
-    borderBottom: '4px dotted #E7E7E7',
-});
-
-const DotMenuBtn = styled('button')<{ isDropDownOpen: boolean }>({
-    width: '40px',
-    height: '40px',
-    padding: '8px',
-    border: 'none',
-    cursor: 'pointer',
-    backgroundColor: (props) => props.isDropDownOpen ? '#F7F7F7' : 'transparent',
-    borderRadius: '50%',
-    position: 'relative',  // 상대적으로 위치시키기 위해 추가
-
-    '& img': {
-        width: '24px',
-        height: '24px',
-    }
-});
-
-const DropdownMenu = styled('div')<{ isDropDownOpen: boolean }>({
-    position: 'absolute',
-    width: '160px',
-    top: '100%',  // 버튼 바로 아래로 설정
-    right: '10px',     // 왼쪽 정렬
-    backgroundColor: '#FFFFFF',
-    borderRadius: '8px',
-    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-    zIndex: 1,
-    animation: (props) => props.isDropDownOpen ? `${fadeInDropDownModal} 0.2s ease forwards` : `${fadeOutDropDownModal} 0.2s ease forwards`,
-});
-
-const DropdownItem = styled('button')({
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '12px 8px',
-    width: '100%',
-    textAlign: 'left',
-    border: 'none',
-    backgroundColor: 'transparent',
-    cursor: 'pointer',
-    transition: 'background-color 0.2s',
-    fontSize: '0.9rem',
-
-    '& img': {
-        width: '20px',
-        height: '20px',
-    },
-
-    '&:hover': {
-        backgroundColor: '#F7F7F7',
-    }
-});
-
-const CompleteItem = styled(DropdownItem)({
-    color: '#333333',
-});
-
-const DeleteItem = styled(DropdownItem)({
-    display: 'flex',
-    alignItems: 'center',
-    color: '#FF5A5A',
-});
-
-const UncompletedTodoContainer = styled('div')(commonContainerStyles);
-
-const UncompletedDotMenuContainer = styled('div')<{ isOpen: boolean }>({
-    position: (props) => props.isOpen ? 'static' : 'relative',  // 상대적으로 위치시키기 위해 추가
-});
-
-const UncompletedDotMenuBtn = styled('button')<{ isDropDownOpen: boolean }>({
-    width: '40px',
-    height: '40px',
-    padding: '8px',
-    border: 'none',
-    cursor: 'pointer',
-    borderRadius: '50%',
-    backgroundColor: (props) => props.isDropDownOpen ? '#F7F7F7' : 'transparent',
-
-    '& img': {
-        width: '24px',
-        height: '24px',
-    }
-});
-
-const UncompletedDropdownMenu = styled('div')<{ isDropDownOpen: boolean }>({
-    position: 'absolute',
-    width: '160px',
-    top: '100%',  // 버튼 바로 아래로 설정
-    right: '10px',     // 왼쪽 정렬
-    backgroundColor: '#FFFFFF',
-    borderRadius: '8px',
-    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-    zIndex: 1,
-    animation: (props) => props.isDropDownOpen ? `${fadeInDropDownModal} 0.2s ease forwards` : `${fadeOutDropDownModal} 0.2s ease forwards`,
-});
-
-const UncompletedDeleteItem = styled(DeleteItem)({
-    width: '100%',
-});
-
-const UncompletedRestoreItem = styled(DropdownItem)({
-    color: '#333333',
-});
+  }
+`;
+
+const TodoSaveAndCancelBtnContainer = styled.div`
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 1rem;
+  padding: 1rem 0;
+  box-sizing: border-box;
+  width: 100%;
+  position: sticky;
+  bottom: 0;
+  background: #f6f8fc;
+`;
+
+const CancelBtn = styled.button`
+  padding: 12px 1.6rem;
+  background-color: #e7e7e7;
+  color: #aeaeae;
+  font-size: 0.8rem;
+  border: none;
+  cursor: pointer;
+  border-radius: 8px;
+  outline: none;
+  transition: background-color 0.2s, color 0.2s;
+  font-weight: bold;
+
+  &:hover {
+    background-color: #d7d7d7;
+  }
+`;
+
+const SaveTodoBtn = styled.button`
+  padding: 12px 1.6rem;
+  background-color: #0075ff;
+  color: #ffffff;
+  font-size: 0.8rem;
+  border: none;
+  cursor: pointer;
+  border-radius: 8px;
+  outline: none;
+  transition: background-color 0.2s, color 0.2s;
+  font-weight: bold;
+
+  &:hover {
+    background-color: #0055cc;
+  }
+`;
+
+const ModalTitleContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 1rem;
+
+  & h2, & p {
+    margin: 0;
+  }
+
+  & p {
+    color: #6a6a6a;
+    font-size: 0.9rem;
+  }
+`;
+
+const AddTodoBtn = styled.button`
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  padding: 12px;
+  background-color: #0075ff;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  border-radius: 8px;
+  outline: none;
+  transition: background-color 0.2s;
+  margin: 1rem 0;
+
+  & img {
+    width: 20px;
+    height: 20px;
+  }
+
+  & p {
+    margin: auto 0;
+  }
+
+  &:hover {
+    background-color: #0055cc;
+  }
+`;
+
+const TodoListContentContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+  position: relative;
+
+  & li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: auto 0;
+  }
+`;
+
+const TodoListIncompleteContentContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+
+  & li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: auto 0;
+  }
+`;
+
+const NoTodoListText = styled.p`
+  color: #a7a7a7;
+  font-size: 1rem;
+  margin: auto;
+  text-align: center;
+`;
+
+const PriorityButton = styled.button<{ isPriority: boolean }>`
+  padding: 8px;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+
+  & svg {
+    width: 24px;
+    height: 24px;
+    fill: ${({ isPriority }) => (isPriority ? '#f9e000' : '#d3d3d3')};
+    stroke: ${({ isPriority }) => (isPriority ? '#f9e000' : '#d3d3d3')};
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+`;
+
+const ImportantTodoContainer = styled.div`
+  padding: 1rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-bottom: 4px dotted #e7e7e7;
+`;
+
+const DotMenuBtn = styled.button<{ isDropDownOpen: boolean }>`
+  width: 40px;
+  height: 40px;
+  padding: 8px;
+  border: none;
+  cursor: pointer;
+  background-color: ${({ isDropDownOpen }) => (isDropDownOpen ? '#f7f7f7' : 'transparent')};
+  border-radius: 50%;
+  position: relative;
+
+  & img {
+    width: 24px;
+    height: 24px;
+  }
+`;
+
+const DropdownMenu = styled.div<{ isDropDownOpen: boolean }>`
+  position: absolute;
+  width: 160px;
+  top: 100%;
+  right: 10px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 1;
+  animation: ${({ isDropDownOpen }) => (isDropDownOpen ? fadeInDropDownModal : fadeOutDropDownModal)} 0.2s ease forwards;
+`;
+
+const DropdownItem = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 8px;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background-color: transparent;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-size: 0.9rem;
+
+  & img {
+    width: 20px;
+    height: 20px;
+  }
+
+  &:hover {
+    background-color: #f7f7f7;
+  }
+`;
+
+const CompleteItem = styled(DropdownItem)`
+  color: #333333;
+`;
+
+const DeleteItem = styled(DropdownItem)`
+  display: flex;
+  align-items: center;
+  color: #ff5a5a;
+`;
+
+const UncompletedTodoContainer = styled.div`
+  ${commonContainerStyles}
+`;
+
+const UncompletedDotMenuContainer = styled.div<{ isOpen: boolean }>`
+  position: ${({ isOpen }) => (isOpen ? 'static' : 'relative')};
+`;
+
+const UncompletedDotMenuBtn = styled.button<{ isDropDownOpen: boolean }>`
+  width: 40px;
+  height: 40px;
+  padding: 8px;
+  border: none;
+  cursor: pointer;
+  border-radius: 50%;
+  background-color: ${({ isDropDownOpen }) => (isDropDownOpen ? '#f7f7f7' : 'transparent')};
+
+  & img {
+    width: 24px;
+    height: 24px;
+  }
+`;
+
+const UncompletedDropdownMenu = styled.div<{ isDropDownOpen: boolean }>`
+  position: absolute;
+  width: 160px;
+  top: 100%;
+  right: 10px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 1;
+  animation: ${({ isDropDownOpen }) => (isDropDownOpen ? fadeInDropDownModal : fadeOutDropDownModal)} 0.2s ease forwards;
+`;
+
+const UncompletedDeleteItem = styled(DeleteItem)`
+  width: 100%;
+`;
+
+const UncompletedRestoreItem = styled(DropdownItem)`
+  color: #333333;
+`;
 
 const TodoComponent = () => {
     const { todos, inputs, addInput, setInput, setTodos, resetInputs } = useTodoStore();

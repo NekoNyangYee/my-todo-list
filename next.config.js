@@ -1,4 +1,9 @@
-import { withPigment } from "@pigment-css/nextjs-plugin";
+/** @type {import('next').NextConfig} */
+
+const withPWA = require('next-pwa')({
+    dest: 'public',
+});
+
 const nextConfig = {
     reactStrictMode: true,
     images: {
@@ -6,4 +11,4 @@ const nextConfig = {
     },
 };
 
-export default withPigment(nextConfig);
+module.exports = withPWA(nextConfig);

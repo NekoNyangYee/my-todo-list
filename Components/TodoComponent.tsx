@@ -4,9 +4,7 @@ import { css, keyframes } from "@emotion/react";
 import styled from "@emotion/styled";
 import { useEffect, useRef, useState } from "react";
 import { useTodoStore } from "../Store/useAuthTodoStore";
-import { supabase } from "../lib/supabaseClient";
 import { fetchTodosForDate, deleteTodo, toggleTodo, togglePriority, saveTodos } from "@components/util/todoUtil";
-import { Todo } from "@components/types/todo";
 import Link from "next/link";
 
 const fadeInDropDownModal = keyframes`
@@ -76,9 +74,9 @@ const MainTodoListContainer = styled.div`
   flex-direction: column;
   gap: 2rem;
   width: 100%;
-  height: 92vh;
   max-width: 972px;
   margin: 0 auto;
+  height: 100vh;
 
   @media (max-width: 1224px) {
     max-width: 90%;
@@ -92,8 +90,8 @@ const TodoContainer = styled.div`
   flex-direction: row;
   gap: 2rem;
   width: 100%;
-  max-width: 972px;
   height: 100vh;
+  max-width: 972px;
   margin: 0 auto;
 
   & ul {
@@ -233,12 +231,13 @@ const ModalOverlay = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
+  z-index: 1000; /* Ensure the modal overlay is above other content */
 `;
 
 const ModalContent = styled.div<{ isOpen: boolean }>`
   position: relative;
   background: #f6f8fc;
-  padding: 1rem 1rem 0;
+  padding: 1rem;
   border-radius: 12px;
   max-width: 572px;
   width: 100%;
@@ -265,6 +264,7 @@ const ModalContent = styled.div<{ isOpen: boolean }>`
     max-width: 80%;
   }
 `;
+
 
 const ToDoInputContainer = styled.div`
   display: flex;

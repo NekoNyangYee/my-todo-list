@@ -640,169 +640,172 @@ const TodoComponent: React.FC<TodoComponentProps> = ({ user, selectedDate }) => 
   const nonImportantTodos = todos.filter(todo => !todo.is_priority && !todo.is_complete);
 
   return (
-    <MainTodoListContainer>
-      <TodoContainer>
-        <ProgressTodoContainer>
-          <h2>진행 중인 일정</h2>
-          {nonImportantTodos.length === 0 && importantTodos.length === 0 ? (
-            <NoTodoListText>현재 진행 중인 일정이 없어요.</NoTodoListText>
-          ) : (
-            <ul>
-              {importantTodos.length > 0 && (
-                <ImportantTodoContainer>
-                  {importantTodos.map((todo) => (
-                    <TodoListContentContainer key={todo.id}>
-                      <li>
-                        <PriorityButton
-                          isPriority={todo.is_priority}
-                          onClick={() => togglePriorityHandler(todo.id, todo.is_priority)}
-                        >
-                          <svg
-                            width="24"
-                            height="24"
-                            viewBox="0 0 24 24"
-                            fill={todo.is_priority ? "#F9E000" : "none"}
-                            stroke="#F9E000"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
+    <>
+      <MainTodoListContainer>
+        <TodoContainer>
+          <ProgressTodoContainer>
+            <h2>진행 중인 일정</h2>
+            {nonImportantTodos.length === 0 && importantTodos.length === 0 ? (
+              <NoTodoListText>현재 진행 중인 일정이 없어요.</NoTodoListText>
+            ) : (
+              <ul>
+                {importantTodos.length > 0 && (
+                  <ImportantTodoContainer>
+                    {importantTodos.map((todo) => (
+                      <TodoListContentContainer key={todo.id}>
+                        <li>
+                          <PriorityButton
+                            isPriority={todo.is_priority}
+                            onClick={() => togglePriorityHandler(todo.id, todo.is_priority)}
                           >
-                            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-                          </svg>
-                        </PriorityButton>
-                        {todo.content}
-                      </li>
-                      <DotMenuBtnWrapper>
-                        <DotMenuBtn onClick={() => handleDotMenuClick(todo.id)} isDropDownOpen={showDropdown === todo.id}>
-                          <img src="/dot-menu.svg" alt="Dot Menu" />
-                        </DotMenuBtn>
-                        {showDropdown === todo.id && (
-                          <DropdownMenu ref={dropdownRef} isDropDownOpen={!!showDropdown}>
-                            <CompleteItem onClick={() => toggleTodoHandler(todo.id, todo.is_complete)}>
-                              <img src="/check.svg" alt="Check" />
-                              일정 완료
-                            </CompleteItem>
-                            <DeleteItem onClick={() => deleteTodoHandler(todo.id)}>
-                              <img src="/delete.svg" alt="Delete" />
-                              삭제
-                            </DeleteItem>
-                          </DropdownMenu>
-                        )}
-                      </DotMenuBtnWrapper>
-                    </TodoListContentContainer>
-                  ))}
-                </ImportantTodoContainer>
-              )}
-              {nonImportantTodos.map((todo) => (
-                <TodoListContentContainer key={todo.id}>
-                  <li>
-                    <PriorityButton
-                      isPriority={todo.is_priority}
-                      onClick={() => togglePriorityHandler(todo.id, todo.is_priority)}
-                    >
-                      <svg
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill={todo.is_priority ? "#F9E000" : "none"}
-                        stroke="#F9E000"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-                      </svg>
-                    </PriorityButton>
-                    {todo.content}
-                  </li>
-                  <DotMenuBtnWrapper>
-                    <DotMenuBtn onClick={() => handleDotMenuClick(todo.id)} isDropDownOpen={showDropdown === todo.id}>
-                      <img src="/dot-menu.svg" alt="Dot Menu" />
-                    </DotMenuBtn>
-                    {showDropdown === todo.id && (
-                      <DropdownMenu ref={dropdownRef} isDropDownOpen={!!showDropdown}>
-                        <CompleteItem onClick={() => toggleTodoHandler(todo.id, todo.is_complete)}>
-                          <img src="/check.svg" alt="Check" />
-                          일정 완료
-                        </CompleteItem>
-                        <DeleteItem onClick={() => deleteTodoHandler(todo.id)}>
-                          <img src="/delete.svg" alt="Delete" />
-                          삭제
-                        </DeleteItem>
-                      </DropdownMenu>
-                    )}
-                  </DotMenuBtnWrapper>
-                </TodoListContentContainer>
-              ))}
-            </ul>
-          )}
-          <AddToDoBtnContainer>
-            <AddToDoBtn onClick={() => setShowInput(!showInput)} isOpen={showInput}>
-              <img src="/add.svg" alt="Add Todo" />
-            </AddToDoBtn>
-            {(showInput || animateOut) && (
-              <ModalOverlay>
-                <ModalContent isOpen={showInput && !animateOut} ref={modalContentRef}>
-                  <ModalTitleContainer>
-                    <h2>할 일 추가</h2>
-                    <p>오늘 해야 할 일을 추가해 보세요.<br />한번에 최대 20개까지 추가 가능해요.</p>
-                  </ModalTitleContainer>
-                  <ToDoInputContainer>
-                    {inputs.map((input, index) => (
-                      <div key={index}>
-                        <input
-                          type="text"
-                          value={input}
-                          placeholder='할 일을 입력해주세요.'
-                          onChange={(e) => handleInputChange(index, e.target.value)}
-                        />
-                      </div>
+                            <svg
+                              width="24"
+                              height="24"
+                              viewBox="0 0 24 24"
+                              fill={todo.is_priority ? "#F9E000" : "none"}
+                              stroke="#F9E000"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+                            </svg>
+                          </PriorityButton>
+                          {todo.content}
+                        </li>
+                        <DotMenuBtnWrapper>
+                          <DotMenuBtn onClick={() => handleDotMenuClick(todo.id)} isDropDownOpen={showDropdown === todo.id}>
+                            <img src="/dot-menu.svg" alt="Dot Menu" />
+                          </DotMenuBtn>
+                          {showDropdown === todo.id && (
+                            <DropdownMenu ref={dropdownRef} isDropDownOpen={!!showDropdown}>
+                              <CompleteItem onClick={() => toggleTodoHandler(todo.id, todo.is_complete)}>
+                                <img src="/check.svg" alt="Check" />
+                                일정 완료
+                              </CompleteItem>
+                              <DeleteItem onClick={() => deleteTodoHandler(todo.id)}>
+                                <img src="/delete.svg" alt="Delete" />
+                                삭제
+                              </DeleteItem>
+                            </DropdownMenu>
+                          )}
+                        </DotMenuBtnWrapper>
+                      </TodoListContentContainer>
                     ))}
-                  </ToDoInputContainer>
-                  <AddTodoBtn onClick={handleAddInput}>
-                    <img src="/add.svg" alt="Add Todo" />
-                    <p>할 일 항목 추가</p>
-                  </AddTodoBtn>
-                  <TodoSaveAndCancelBtnContainer>
-                    <CancelBtn onClick={closeModal}>취소</CancelBtn>
-                    <SaveTodoBtn onClick={saveTodosHandler}>저장</SaveTodoBtn>
-                  </TodoSaveAndCancelBtnContainer>
-                </ModalContent>
-              </ModalOverlay>
+                  </ImportantTodoContainer>
+                )}
+                {nonImportantTodos.map((todo) => (
+                  <TodoListContentContainer key={todo.id}>
+                    <li>
+                      <PriorityButton
+                        isPriority={todo.is_priority}
+                        onClick={() => togglePriorityHandler(todo.id, todo.is_priority)}
+                      >
+                        <svg
+                          width="24"
+                          height="24"
+                          viewBox="0 0 24 24"
+                          fill={todo.is_priority ? "#F9E000" : "none"}
+                          stroke="#F9E000"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+                        </svg>
+                      </PriorityButton>
+                      {todo.content}
+                    </li>
+                    <DotMenuBtnWrapper>
+                      <DotMenuBtn onClick={() => handleDotMenuClick(todo.id)} isDropDownOpen={showDropdown === todo.id}>
+                        <img src="/dot-menu.svg" alt="Dot Menu" />
+                      </DotMenuBtn>
+                      {showDropdown === todo.id && (
+                        <DropdownMenu ref={dropdownRef} isDropDownOpen={!!showDropdown}>
+                          <CompleteItem onClick={() => toggleTodoHandler(todo.id, todo.is_complete)}>
+                            <img src="/check.svg" alt="Check" />
+                            일정 완료
+                          </CompleteItem>
+                          <DeleteItem onClick={() => deleteTodoHandler(todo.id)}>
+                            <img src="/delete.svg" alt="Delete" />
+                            삭제
+                          </DeleteItem>
+                        </DropdownMenu>
+                      )}
+                    </DotMenuBtnWrapper>
+                  </TodoListContentContainer>
+                ))}
+              </ul>
             )}
-          </AddToDoBtnContainer>
-        </ProgressTodoContainer>
+            <AddToDoBtnContainer>
+              <AddToDoBtn onClick={() => setShowInput(!showInput)} isOpen={showInput}>
+                <img src="/add.svg" alt="Add Todo" />
+              </AddToDoBtn>
+            </AddToDoBtnContainer>
+          </ProgressTodoContainer>
 
-        <ComplecatedTodoContainer>
-          <h2>완료된 일정</h2>
-          {todos.filter(todo => todo.is_complete).length === 0 ? (
-            <NoTodoListText>완료된 할 일이 없어요.</NoTodoListText>
-          ) : (
-            <ul>
-              {todos.filter(todo => todo.is_complete).map((todo) => (
-                <TodoListContentContainer key={todo.id}>
-                  <li>
-                    <input
-                      type="checkbox"
-                      checked={todo.is_complete}
-                      onChange={() => toggleTodoHandler(todo.id, todo.is_complete)}
-                    />
-                    {todo.content}
-                  </li>
-                </TodoListContentContainer>
+          <ComplecatedTodoContainer>
+            <h2>완료된 일정</h2>
+            {todos.filter(todo => todo.is_complete).length === 0 ? (
+              <NoTodoListText>완료된 할 일이 없어요.</NoTodoListText>
+            ) : (
+              <ul>
+                {todos.filter(todo => todo.is_complete).map((todo) => (
+                  <TodoListContentContainer key={todo.id}>
+                    <li>
+                      <input
+                        type="checkbox"
+                        checked={todo.is_complete}
+                        onChange={() => toggleTodoHandler(todo.id, todo.is_complete)}
+                      />
+                      {todo.content}
+                    </li>
+                  </TodoListContentContainer>
+                ))}
+              </ul>
+            )}
+            <CompleteInfoContainer>
+              <img src="/info.svg" alt="Info" />
+              완료된 일정은 매일 자정이 되면 쌓이는 것을 방지하기 위해 자동 삭제 처리가 됩니다.
+            </CompleteInfoContainer>
+          </ComplecatedTodoContainer>
+        </TodoContainer>
+        <Link href="/calendar">
+          캘린더로 이동
+        </Link>
+      </MainTodoListContainer>
+
+      {(showInput || animateOut) && (
+        <ModalOverlay>
+          <ModalContent isOpen={showInput && !animateOut} ref={modalContentRef}>
+            <ModalTitleContainer>
+              <h2>할 일 추가</h2>
+              <p>오늘 해야 할 일을 추가해 보세요.<br />한번에 최대 20개까지 추가 가능해요.</p>
+            </ModalTitleContainer>
+            <ToDoInputContainer>
+              {inputs.map((input, index) => (
+                <div key={index}>
+                  <input
+                    type="text"
+                    value={input}
+                    placeholder='할 일을 입력해주세요.'
+                    onChange={(e) => handleInputChange(index, e.target.value)}
+                  />
+                </div>
               ))}
-            </ul>
-          )}
-          <CompleteInfoContainer>
-            <img src="/info.svg" alt="Info" />
-            완료된 일정은 매일 자정이 되면 쌓이는 것을 방지하기 위해 자동 삭제 처리가 됩니다.
-          </CompleteInfoContainer>
-        </ComplecatedTodoContainer>
-      </TodoContainer>
-      <Link href="/calendar">
-        캘린더로 이동
-      </Link>
-    </MainTodoListContainer>
+            </ToDoInputContainer>
+            <AddTodoBtn onClick={handleAddInput}>
+              <img src="/add.svg" alt="Add Todo" />
+              <p>할 일 항목 추가</p>
+            </AddTodoBtn>
+            <TodoSaveAndCancelBtnContainer>
+              <CancelBtn onClick={closeModal}>취소</CancelBtn>
+              <SaveTodoBtn onClick={saveTodosHandler}>저장</SaveTodoBtn>
+            </TodoSaveAndCancelBtnContainer>
+          </ModalContent>
+        </ModalOverlay>
+      )}
+    </>
   );
 };
 

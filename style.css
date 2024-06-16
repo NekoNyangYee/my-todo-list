@@ -88,3 +88,12 @@
 .react-calendar__month-view__days__day--neighboringMonth {
   color: var(--calendar-border);
 }
+
+.react-calendar__tile .dot {
+  height: 6px;
+  width: 6px;
+  background-color: #4caf50;
+  border-radius: 50%;
+  display: inline-block;
+  margin-top: 2px;
+}

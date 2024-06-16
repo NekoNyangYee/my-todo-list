@@ -6,4 +6,5 @@ export interface Todo {
     is_priority: boolean;
     created_at: string;
     original_order: number;
+    date: string;
 }

@@ -76,7 +76,6 @@ const MainTodoListContainer = styled.div`
   width: 100%;
   max-width: 972px;
   margin: 0 auto;
-  height: 100vh;
 
   @media (max-width: 1224px) {
     max-width: 90%;
@@ -168,12 +167,12 @@ const commonContainerStyles = css`
 
 const ProgressTodoContainer = styled.div`
   ${commonContainerStyles}
-  height: 50vh;
+  height: 60vh;
 `;
 
 const ComplecatedTodoContainer = styled.div`
   ${commonContainerStyles}
-  height: 50vh;
+  height: 60vh;
 `;
 
 
@@ -237,7 +236,7 @@ const ModalOverlay = styled.div`
 const ModalContent = styled.div<{ isOpen: boolean }>`
   position: relative;
   background: #f6f8fc;
-  padding: 1rem;
+  padding: 1rem 1rem 0 1rem;
   border-radius: 12px;
   max-width: 572px;
   width: 100%;

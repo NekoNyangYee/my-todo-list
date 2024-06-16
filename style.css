@@ -18,7 +18,6 @@
 }
 
 .react-calendar {
-  width: 530px;
   padding: 1rem;
   max-width: 100%;
   background: var(--calendar-background);
@@ -72,7 +71,7 @@
   color: var(--tile-color);
 }
 
-.react-calendar__tile--active:enabled:hover,
+.react-calendar__tile--active:hover,
 .react-calendar__tile--active:enabled:focus {
   background: var(--tile-hover-background-active);
   color: var(--tile-hover-color-active);

@@ -11,7 +11,6 @@ import { useTodoStore } from '@components/Store/useAuthTodoStore';
 import moment from 'moment';
 import '/style.css'
 import { keyframes } from '@emotion/react';
-import css from 'styled-jsx/css';
 
 type ValuePiece = Date | null;
 type Value = ValuePiece | [ValuePiece, ValuePiece];
@@ -159,22 +158,31 @@ const ModalContent = styled.div<{ isOpen: boolean }>`
 `;
 
 const ModalTitleContainer = styled.div`
-  margin-bottom: 20px;
   h2 {
     margin: 0;
   }
 `;
 
 const ToDoInputContainer = styled.div`
-  margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 `;
 
 const InputField = styled.input`
-  width: calc(100% - 20px);
-  padding: 10px;
-  margin-bottom: 10px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
+    width: 100%;
+    padding: 1rem;
+    border-radius: 8px;
+    border: none;
+    outline: none;
+    box-sizing: border-box;
+    font-size: 1rem;
+    background-color: #ffffff;
+
+    &:focus {
+      outline: none;
+      border: 1px solid #e7e7e7;
+    }
 `;
 
 const AddTodoBtn = styled.button`
@@ -219,31 +227,77 @@ const TodoSaveAndCancelBtnContainer = styled.div`
 `;
 
 const CancelBtn = styled.button`
-    padding: 10px 20px;
-    font-size: 16px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-    background-color: #dc3545;
-    color: white;
+  padding: 12px 1.6rem;
+  background-color: #e7e7e7;
+  color: #aeaeae;
+  font-size: 0.8rem;
+  border: none;
+  cursor: pointer;
+  border-radius: 8px;
+  outline: none;
+  transition: background-color 0.2s, color 0.2s;
+  font-weight: bold;
 
-    &:hover {
-        background-color: #c82333;
-    }
+  &:hover {
+    background-color: #d7d7d7;
+  }
 `;
 
 const SaveTodoBtn = styled.button`
-    padding: 10px 20px;
-    font-size: 16px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-    background-color: #0070f3;
-    color: white;
-    &:hover {
-        background-color: #005bb5;
+  padding: 12px 1.6rem;
+  background-color: #0075ff;
+  color: #ffffff;
+  font-size: 0.8rem;
+  border: none;
+  cursor: pointer;
+  border-radius: 8px;
+  outline: none;
+  transition: background-color 0.2s, color 0.2s;
+  font-weight: bold;
+
+  &:hover {
+    background-color: #0055cc;
+  }
+`;
+
+const Container = styled.div`
+    width: 100%;
+    padding-top: 8rem;
+    max-width: 972px;
+    margin: 0 auto;
+
+    @media (max-width: 1224px) {
+        max-width: 90%;
+        flex-direction: column;
+        gap: 2rem;
+    }
+`;
+
+const CalendarInfoContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 0.4em;
+    margin-bottom: 2rem;
+
+    h1 {
+        margin: 0;
+        font-size: 1.5rem;
+    }
+
+    p {
+        margin: 0;
+        color: #777;
+    }
+`;
+
+const CalendarTite = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    & img {
+        width: 24px;
+        height: 24px;
     }
 `;
 
@@ -252,9 +306,7 @@ const MainTodoListContainer = styled.div`
   justify-content: space-between;
   align-items: flex-start;
   gap: 3rem;
-  width: 100%;
-  padding-top: 10rem;
-  max-width: 972px;
+  
   margin: 0 auto;
 
   & ul {
@@ -262,25 +314,26 @@ const MainTodoListContainer = styled.div`
     padding: 0;
   }
 
-  @media (max-width: 1224px) {
-    max-width: 90%;
-    flex-direction: column;
-    gap: 2rem;
-  }
+  @media (max-width: 972px) {
+        flex-direction: column;
+        gap: 2rem;
+    }
 `;
 
 const TodoContainer = styled.div`
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  height: 58vh;
   padding: 1rem;
   background-color: #FFFFFF;
   border-radius: 12px;
   width: 100%;
   box-sizing: border-box;
   box-shadow: 0px 0px 20px #E0E0E0;
+  min-height: 520px; // 최소 높이
+  max-height: 700px; // 최대 높이
 `;
+
 
 const ProgressTodoContainer = styled.div`
   height: 50vh;
@@ -336,13 +389,17 @@ const CalendarWrapper = styled.div`
   width: 100%;
   max-width: 480px; /* Fixed width */
   margin: 0 auto;
+  min-height: 560px; /* 최소 높이 */
+  max-height: 800px; /* 최대 높이 */
 `;
 
 const CalendarStyled = styled(Calendar)`
   width: 100%;
   height: auto;
-  max-height: calc(100vh - 40px); /* Fixed height */
+  min-height: 400px; /* 최소 높이 */
+  max-height: 600px; /* 최대 높이 */
 `;
+
 
 const NoTodoListText = styled.p`
     text-align: center;
@@ -437,7 +494,7 @@ const WantSelectListText = styled.div`
 `;
 
 const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) => {
-    const { addInput, inputs } = useTodoStore();
+    const { addInput, inputs, setInputs, resetInputs } = useTodoStore();
     const [value, onChange] = useState<Value>(new Date());
     const [showInput, setShowInput] = useState<boolean>(false);
     const [todoInputs, setTodoInputs] = useState<string[]>(['']);
@@ -507,9 +564,7 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
     }, [user, selectedDate]);
 
     const handleInputChange = (index: number, value: string) => {
-        const newInputs = [...inputs];
-        newInputs[index] = value;
-        setTodoInputs(newInputs);
+        setInputs(index, value);
     };
 
     const handleAddInput = () => {
@@ -527,10 +582,6 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
             }, 100);
         }
         setTodoInputs([...inputs, '']);
-    };
-
-    const resetInputs = () => {
-        setTodoInputs(['']);
     };
 
     const closeModal = () => {
@@ -610,133 +661,130 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
         }
     };
 
-    const tileClassName = ({ date }: { date: Date }) => {
-        // 일요일(0) 또는 토요일(6)인지 확인하여 클래스를 지정합니다.
-        if (date.getDay() === 0 /* 일요일 */) {
-            return 'sunday'; // 일요일에 해당하는 클래스
-        }
-        if (date.getDay() === 6 /* 토요일 */) {
-            return 'saturday'; // 토요일에 해당하는 클래스
-        }
-        return ''; // 다른 날짜는 추가 클래스가 없습니다.
-    }
-
     const importantTodos = todos.filter(todo => todo.is_priority && !todo.is_complete);
     const nonImportantTodos = todos.filter(todo => !todo.is_priority && !todo.is_complete);
 
     return (
-        <MainTodoListContainer>
-            <CalendarWrapper>
-                <CalendarStyled
-                    onClickDay={handleDateClick}
-                    value={value}
-                    formatDay={(locale, date) => moment(date).format("DD")}
-                    tileClassName={tileClassName}
-                />
-            </CalendarWrapper>
-            {selectedDate ? (
-                <TodoContainer>
-                    <ProgressTodoContainer>
-                        <h2>
-                            진행 중인 일정 - {selectedDate.toLocaleString("ko-KR", {
-                                year: "numeric",
-                                month: "long",
-                                day: "numeric",
-                            })}
-                        </h2>
-                        {todos.filter(todo => !todo.is_complete).length === 0 ? (
-                            <NoTodoListText>현재 진행 중인 일정이 없어요.</NoTodoListText>
-                        ) : (
-                            <ul>
-                                {importantTodos.length > 0 && (
-                                    <ImportantTodoContainer>
-                                        {importantTodos.map((todo) => (
-                                            <TodoListContentContainer key={todo.id}>
-                                                <li>{todo.content}</li>
-                                                <DotMenuBtnWrapper>
-                                                    <DotMenuBtn onClick={() => handleDotMenuClick(todo.id)} isDropDownOpen={showDropdown === todo.id}>
-                                                        <img src="/dot-menu.svg" alt="Dot Menu" />
-                                                    </DotMenuBtn>
-                                                    {showDropdown === todo.id && (
-                                                        <DropdownMenu ref={dropdownRef} isDropDownOpen={!!showDropdown}>
-                                                            <CompleteItem onClick={() => toggleTodoHandler(todo.id, todo.is_complete)}>
-                                                                <img src="/check.svg" alt="Check" />
-                                                                일정 완료
-                                                            </CompleteItem>
-                                                            <DeleteItem onClick={() => deleteTodoHandler(todo.id)}>
-                                                                <img src="/delete.svg" alt="Delete" />
-                                                                삭제
-                                                            </DeleteItem>
-                                                        </DropdownMenu>
-                                                    )}
-                                                </DotMenuBtnWrapper>
-                                            </TodoListContentContainer>
-                                        ))}
-                                    </ImportantTodoContainer>
-                                )}
-                                {nonImportantTodos.map((todo) => (
-                                    <TodoListContentContainer key={todo.id}>
-                                        <li>{todo.content}</li>
-                                        <DotMenuBtnWrapper>
-                                            <DotMenuBtn onClick={() => handleDotMenuClick(todo.id)} isDropDownOpen={showDropdown === todo.id}>
-                                                <img src="/dot-menu.svg" alt="Dot Menu" />
-                                            </DotMenuBtn>
-                                            {showDropdown === todo.id && (
-                                                <DropdownMenu ref={dropdownRef} isDropDownOpen={!!showDropdown}>
-                                                    <DeleteItem onClick={() => deleteTodoHandler(todo.id)}>
-                                                        <img src="/delete.svg" alt="Delete" />
-                                                        삭제
-                                                    </DeleteItem>
-                                                </DropdownMenu>
-                                            )}
-                                        </DotMenuBtnWrapper>
-                                    </TodoListContentContainer>
-                                ))}
-                            </ul>
-                        )}
-                        <AddToDoBtnContainer>
-                            <AddToDoBtn onClick={() => setShowInput(!showInput)} isOpen={showInput}>
-                                <img src="/add.svg" alt="Add Todo" />
-                            </AddToDoBtn>
-                        </AddToDoBtnContainer>
-                    </ProgressTodoContainer>
-                    {(showInput || animateOut) && (
-                        <ModalOverlay>
-                            <ModalContent isOpen={showInput && !animateOut} ref={modalContentRef}>
-                                <ModalTitleContainer>
-                                    <h2>할 일 추가</h2>
-                                    <p>오늘 해야 할 일을 추가해 보세요.<br />한번에 최대 20개까지 추가 가능해요.</p>
-                                </ModalTitleContainer>
-                                <ToDoInputContainer>
-                                    {inputs.map((input, index) => (
-                                        <div key={index}>
-                                            <InputField
-                                                type="text"
-                                                value={input}
-                                                placeholder='할 일을 입력해주세요.'
-                                                onChange={(e) => handleInputChange(index, e.target.value)}
-                                            />
-                                        </div>
+        <Container>
+            <CalendarInfoContainer>
+                <CalendarTite>
+                    <img src="/calendar.svg" alt="Calendar" />
+                    <h1>캘린더 일정</h1>
+                </CalendarTite>
+                <p>원하는 날짜를 선택하면 해당 날짜의 일정을 확인하거나 추가할 수 있어요.</p>
+            </CalendarInfoContainer>
+            <MainTodoListContainer>
+                <CalendarWrapper>
+                    <CalendarStyled
+                        onClickDay={handleDateClick}
+                        value={value}
+                        formatDay={(locale, date) => moment(date).format("DD")}
+                    />
+                </CalendarWrapper>
+                {selectedDate ? (
+                    <TodoContainer>
+                        <ProgressTodoContainer>
+                            <h2>
+                                {selectedDate.toLocaleString("ko-KR", {
+                                    year: "numeric",
+                                    month: "long",
+                                    day: "numeric",
+                                })}
+                            </h2>
+                            {todos.filter(todo => !todo.is_complete).length === 0 ? (
+                                <NoTodoListText>현재 진행 중인 일정이 없어요.</NoTodoListText>
+                            ) : (
+                                <ul>
+                                    {importantTodos.length > 0 && (
+                                        <ImportantTodoContainer>
+                                            {importantTodos.map((todo) => (
+                                                <TodoListContentContainer key={todo.id}>
+                                                    <li>{todo.content}</li>
+                                                    <DotMenuBtnWrapper>
+                                                        <DotMenuBtn onClick={() => handleDotMenuClick(todo.id)} isDropDownOpen={showDropdown === todo.id}>
+                                                            <img src="/dot-menu.svg" alt="Dot Menu" />
+                                                        </DotMenuBtn>
+                                                        {showDropdown === todo.id && (
+                                                            <DropdownMenu ref={dropdownRef} isDropDownOpen={!!showDropdown}>
+                                                                <CompleteItem onClick={() => toggleTodoHandler(todo.id, todo.is_complete)}>
+                                                                    <img src="/check.svg" alt="Check" />
+                                                                    일정 완료
+                                                                </CompleteItem>
+                                                                <DeleteItem onClick={() => deleteTodoHandler(todo.id)}>
+                                                                    <img src="/delete.svg" alt="Delete" />
+                                                                    삭제
+                                                                </DeleteItem>
+                                                            </DropdownMenu>
+                                                        )}
+                                                    </DotMenuBtnWrapper>
+                                                </TodoListContentContainer>
+                                            ))}
+                                        </ImportantTodoContainer>
+                                    )}
+                                    {nonImportantTodos.map((todo) => (
+                                        <TodoListContentContainer key={todo.id}>
+                                            <li>{todo.content}</li>
+                                            <DotMenuBtnWrapper>
+                                                <DotMenuBtn onClick={() => handleDotMenuClick(todo.id)} isDropDownOpen={showDropdown === todo.id}>
+                                                    <img src="/dot-menu.svg" alt="Dot Menu" />
+                                                </DotMenuBtn>
+                                                {showDropdown === todo.id && (
+                                                    <DropdownMenu ref={dropdownRef} isDropDownOpen={!!showDropdown}>
+                                                        <DeleteItem onClick={() => deleteTodoHandler(todo.id)}>
+                                                            <img src="/delete.svg" alt="Delete" />
+                                                            삭제
+                                                        </DeleteItem>
+                                                    </DropdownMenu>
+                                                )}
+                                            </DotMenuBtnWrapper>
+                                        </TodoListContentContainer>
                                     ))}
-                                </ToDoInputContainer>
-                                <AddTodoBtn onClick={handleAddInput}>
+                                </ul>
+                            )}
+                            <AddToDoBtnContainer>
+                                <AddToDoBtn onClick={() => setShowInput(!showInput)} isOpen={showInput}>
                                     <img src="/add.svg" alt="Add Todo" />
-                                    <p>할 일 항목 추가</p>
-                                </AddTodoBtn>
-                                <TodoSaveAndCancelBtnContainer>
-                                    <CancelBtn onClick={closeModal}>취소</CancelBtn>
-                                    <SaveTodoBtn onClick={saveTodosHandler}>저장</SaveTodoBtn>
-                                </TodoSaveAndCancelBtnContainer>
-                            </ModalContent>
-                        </ModalOverlay>
-                    )}
-                </TodoContainer>
-            ) : (
-                <WantSelectListText>
-                    <span>원하는 날짜를 선택해 주세요.</span>
-                </WantSelectListText>
-            )}
-        </MainTodoListContainer>
+                                </AddToDoBtn>
+                            </AddToDoBtnContainer>
+                        </ProgressTodoContainer>
+                        {(showInput || animateOut) && (
+                            <ModalOverlay>
+                                <ModalContent isOpen={showInput && !animateOut} ref={modalContentRef}>
+                                    <ModalTitleContainer>
+                                        <h2>할 일 추가</h2>
+                                        <p>오늘 해야 할 일을 추가해 보세요.<br />한번에 최대 20개까지 추가 가능해요.</p>
+                                    </ModalTitleContainer>
+                                    <ToDoInputContainer>
+                                        {inputs.map((input, index) => (
+                                            <div key={index}>
+                                                <InputField
+                                                    type="text"
+                                                    value={input}
+                                                    placeholder='할 일을 입력해주세요.'
+                                                    onChange={(e) => handleInputChange(index, e.target.value)}
+                                                />
+                                            </div>
+                                        ))}
+                                    </ToDoInputContainer>
+                                    <AddTodoBtn onClick={handleAddInput}>
+                                        <img src="/add.svg" alt="Add Todo" />
+                                        <p>할 일 항목 추가</p>
+                                    </AddTodoBtn>
+                                    <TodoSaveAndCancelBtnContainer>
+                                        <CancelBtn onClick={closeModal}>취소</CancelBtn>
+                                        <SaveTodoBtn onClick={saveTodosHandler}>저장</SaveTodoBtn>
+                                    </TodoSaveAndCancelBtnContainer>
+                                </ModalContent>
+                            </ModalOverlay>
+                        )}
+                    </TodoContainer>
+                ) : (
+                    <WantSelectListText>
+                        <span>원하는 날짜를 선택해 주세요.</span>
+                    </WantSelectListText>
+                )}
+            </MainTodoListContainer>
+        </Container>
     );
 };
 

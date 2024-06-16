@@ -425,11 +425,15 @@ const DeleteItem = styled.button`
 `;
 
 const WantSelectListText = styled.div`
-    width: 50%;
-    height: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    width: 100%;
+    height: 50vh;
     text-align: center;
     color: #777;
-    
+    margin: auto 0;
 `;
 
 const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) => {
@@ -633,7 +637,13 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
             {selectedDate ? (
                 <TodoContainer>
                     <ProgressTodoContainer>
-                        <h2>진행 중인 일정 - {selectedDate.toDateString()}</h2>
+                        <h2>
+                            진행 중인 일정 - {selectedDate.toLocaleString("ko-KR", {
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                            })}
+                        </h2>
                         {todos.filter(todo => !todo.is_complete).length === 0 ? (
                             <NoTodoListText>현재 진행 중인 일정이 없어요.</NoTodoListText>
                         ) : (
@@ -722,7 +732,9 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
                     )}
                 </TodoContainer>
             ) : (
-                <WantSelectListText>원하는 날짜를 선택해 주세요.</WantSelectListText>
+                <WantSelectListText>
+                    <span>원하는 날짜를 선택해 주세요.</span>
+                </WantSelectListText>
             )}
         </MainTodoListContainer>
     );

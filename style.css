@@ -22,6 +22,7 @@
   padding: 1rem;
   max-width: 100%;
   background: var(--calendar-background);
+  color: var(--tile-color);
   border: none;
   font-family: Arial, Helvetica, sans-serif;
   line-height: 1.125em;
@@ -46,6 +47,7 @@
 .react-calendar__tile {
   height: 80px;
   border-radius: 8px;
+  color: var(--tile-color);
 }
 
 .react-calendar__tile.saturday {

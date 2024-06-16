@@ -76,7 +76,7 @@ const MainTodoListContainer = styled.div`
   flex-direction: column;
   gap: 2rem;
   width: 100%;
-  height: 100vh;
+  height: 92vh;
   max-width: 972px;
   margin: 0 auto;
 
@@ -89,7 +89,7 @@ const MainTodoListContainer = styled.div`
 
 const TodoContainer = styled.div`
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 2rem;
   width: 100%;
   max-width: 972px;

@@ -126,6 +126,7 @@ const commonContainerStyles = css`
   box-sizing: border-box;
   background-color: #ffffff;
   overflow-y: auto;
+  box-shadow: 0px 0px 20px #E0E0E0;
 
   & h2 {
     margin: 0;
@@ -452,6 +453,7 @@ const DotMenuBtnWrapper = styled.div`
     padding: 0;
     display: flex;
     align-items: center;
+    justify-content: center;
   }
 
   & img {
@@ -507,8 +509,10 @@ const CompleteItem = styled.div`
 const DeleteItem = styled.div`
   color: #dc3545;
   padding: 12px 8px;
-    display: flex;
-    align-items: center;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
     '&:hover': {
         background-color: #f7f7f7;
     }

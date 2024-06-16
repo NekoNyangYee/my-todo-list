@@ -251,9 +251,9 @@ const MainTodoListContainer = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 20px;
+  gap: 3rem;
   width: 100%;
-  height: 100vh;
+  padding-top: 10rem;
   max-width: 972px;
   margin: 0 auto;
 
@@ -273,12 +273,13 @@ const TodoContainer = styled.div`
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  height: calc(100vh - 40px); /* Fixed height */
+  height: 58vh;
   padding: 1rem;
   background-color: #FFFFFF;
   border-radius: 12px;
   width: 100%;
   box-sizing: border-box;
+  box-shadow: 0px 0px 20px #E0E0E0;
 `;
 
 const ProgressTodoContainer = styled.div`
@@ -288,8 +289,6 @@ const ProgressTodoContainer = styled.div`
   justify-content: space-between;
   flex-direction: column;
   gap: 12px;
-  border-radius: 12px;
-  padding: 1rem;
   box-sizing: border-box;
   background-color: #ffffff;
   overflow-y: auto;
@@ -607,11 +606,16 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
         }
     };
 
-    const togglePriorityHandler = async (id: string, isPriority: boolean) => {
-        if (user && selectedDate) {
-            await togglePriority(user.id, id, isPriority, setTodos, selectedDate);
+    const tileClassName = ({ date }: { date: Date }) => {
+        // 일요일(0) 또는 토요일(6)인지 확인하여 클래스를 지정합니다.
+        if (date.getDay() === 0 /* 일요일 */) {
+            return 'sunday'; // 일요일에 해당하는 클래스
         }
-    };
+        if (date.getDay() === 6 /* 토요일 */) {
+            return 'saturday'; // 토요일에 해당하는 클래스
+        }
+        return ''; // 다른 날짜는 추가 클래스가 없습니다.
+    }
 
     const importantTodos = todos.filter(todo => todo.is_priority && !todo.is_complete);
     const nonImportantTodos = todos.filter(todo => !todo.is_priority && !todo.is_complete);
@@ -619,7 +623,12 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
     return (
         <MainTodoListContainer>
             <CalendarWrapper>
-                <CalendarStyled onClickDay={handleDateClick} value={value} formatDay={(locale, date) => moment(date).format("DD")} />
+                <CalendarStyled
+                    onClickDay={handleDateClick}
+                    value={value}
+                    formatDay={(locale, date) => moment(date).format("DD")}
+                    tileClassName={tileClassName}
+                />
             </CalendarWrapper>
             {selectedDate ? (
                 <TodoContainer>

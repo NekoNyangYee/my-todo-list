@@ -216,8 +216,10 @@ export const restoreTodo = async (userId: string, id: string, setTodos: (todos: 
         is_priority: archivedTodo.is_priority,
         created_at: archivedTodo.created_at,
         original_order: archivedTodo.original_order,
+        date: archivedTodo.date, // date 속성 추가
         id: uuidv4() // 클라이언트 측에서 새로운 UUID 생성
     };
+
 
     const { data: restoredTodo, error: restoreError } = await supabase
         .from('todos')

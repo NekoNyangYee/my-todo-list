@@ -16,7 +16,6 @@ const LayoutContainer = styled.div`
 const ContentContainer = styled.div`
     width: 100%;
     padding: 20px;
-    transition: margin-left 0.3s ease-in-out;
 `;
 
 const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -38,7 +37,6 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             setLoading(false);
         });
 
-        // Clean up the subscription on unmount
         return () => {
             authListener.subscription.unsubscribe();
         };
@@ -62,7 +60,7 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
     return (
         <LayoutContainer>
-            <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+            <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} session={session} />
             <ContentContainer>
                 {children}
             </ContentContainer>

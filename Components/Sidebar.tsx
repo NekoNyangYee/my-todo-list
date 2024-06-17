@@ -3,10 +3,12 @@
 import React from 'react';
 import styled from '@emotion/styled';
 import Link from 'next/link';
+import { Session } from '@supabase/supabase-js';
 
 interface SidebarProps<T> {
     isOpen: boolean;
     toggleSidebar: T;
+    session: Session | null;
 }
 
 const SidebarContainer = styled.div<{ isOpen: boolean }>`
@@ -19,8 +21,8 @@ const SidebarContainer = styled.div<{ isOpen: boolean }>`
     display: flex;
     flex-direction: column;
     padding: 20px;
-    transition: left 0.2s ease-in-out;
-    z-index: 1000;
+    transition: left 0.2s cubic-bezier(0.8, 0.5, 0.52, 1.0);
+    z-index: 10;
     border-radius: 0 12px 12px 0;
 `;
 
@@ -47,7 +49,7 @@ const ToggleButton = styled.button`
     border-radius: 8px;
     padding: 10px 20px;
     cursor: pointer;
-    z-index: 1100;
+    z-index: 11;
     transition: background-color 0.2s;
 
     &:hover {
@@ -64,15 +66,17 @@ const Overlay = styled.div<{ isOpen: boolean }>`
     bottom: 0;
     background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(4px);
-    z-index: 900;
+    z-index: 1;
 `;
 
-const Sidebar = <T extends () => void>({ isOpen, toggleSidebar }: SidebarProps<T>) => {
+const Sidebar = <T extends () => void>({ isOpen, toggleSidebar, session }: SidebarProps<T>) => {
     return (
         <>
-            <ToggleButton onClick={toggleSidebar}>
-                {isOpen ? '닫기' : '메뉴'}
-            </ToggleButton>
+            {session && (
+                <ToggleButton onClick={toggleSidebar}>
+                    {isOpen ? '닫기' : '메뉴'}
+                </ToggleButton>
+            )}
             <SidebarContainer isOpen={isOpen}>
                 <SidebarLink href="/" onClick={toggleSidebar}>홈</SidebarLink>
                 <SidebarLink href="/calendar" onClick={toggleSidebar}>캘린더</SidebarLink>

@@ -696,14 +696,29 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
     }
   };
 
-  const handleDateClick = (value: Date | Date[]) => {
+  const handleDateClick = async (value: Date | Date[]) => {
     let selected;
     if (Array.isArray(value)) {
       selected = new Date(value[0].getTime() + (9 * 60 * 60 * 1000));
     } else {
       selected = new Date(value.getTime() + (9 * 60 * 60 * 1000));
     }
+  
     setSelectedDate(selected);
+    
+    const koreanDateString = selected.toISOString().split('T')[0];
+    const { data, error } = await supabase
+      .from('todos')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('date', koreanDateString);
+  
+    if (error) {
+      console.error('Error fetching todos:', error);
+    } else {
+      setTodos(data);
+    }
+    
     setShowInput(true); // 날짜를 클릭하면 모달 창을 표시
     setShowTodoModal(true); // 일정 모달 열기
   };

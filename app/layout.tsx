@@ -1,3 +1,4 @@
+import MainLayout from "@components/Components/layout/MainLayout";
 import type { Metadata } from "next";
 import { Noto_Sans_KR } from "next/font/google";
 
@@ -21,7 +22,11 @@ export default function RootLayout({
       <head>
         <link rel="manifest" href="/manifest.json" />
       </head>
-      <body className={noto_sans_kr.className} style={{ margin: "0", height: "100vh" }}>{children}</body>
+      <body className={noto_sans_kr.className} style={{ margin: "0", height: "100vh" }}>
+        <MainLayout>
+          {children}
+        </MainLayout>
+      </body>
     </html>
   );
 }

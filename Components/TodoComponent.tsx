@@ -769,9 +769,6 @@ const TodoComponent: React.FC<TodoComponentProps> = ({ user, selectedDate }) => 
             </CompleteInfoContainer>
           </ComplecatedTodoContainer>
         </TodoContainer>
-        <Link href="/calendar">
-          캘린더로 이동
-        </Link>
       </MainTodoListContainer>
 
       {(showInput || animateOut) && (

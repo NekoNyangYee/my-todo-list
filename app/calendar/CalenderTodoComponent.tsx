@@ -5,12 +5,13 @@ import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import { supabase } from '@components/lib/supabaseClient';
 import styled from '@emotion/styled';
-import { fetchTodosForDate, saveTodos, deleteTodo, toggleTodo, togglePriority } from '@components/util/todoUtil';
+import { fetchTodosForDate, deleteTodo, toggleTodo } from '@components/util/todoUtil';
 import { Todo } from '@components/types/todo';
 import { useTodoStore } from '@components/Store/useAuthTodoStore';
 import moment from 'moment';
 import '/style.css'
 import { keyframes } from '@emotion/react';
+import css from 'styled-jsx/css';
 
 type ValuePiece = Date | null;
 type Value = ValuePiece | [ValuePiece, ValuePiece];
@@ -647,11 +648,11 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
 
   const closeModal = () => {
     setIsFadingOut(true);
-      setShowInput(false);
-      setIsFadingOut(false);
-      resetInputs();
-      setShowAddTodoModal(false);
-      setShowTodoModal(false);
+    setShowInput(false);
+    setIsFadingOut(false);
+    resetInputs();
+    setShowAddTodoModal(false);
+    setShowTodoModal(false);
   };
 
   const saveTodosHandler = async () => {
@@ -703,22 +704,22 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
     } else {
       selected = new Date(value.getTime() + (9 * 60 * 60 * 1000));
     }
-  
+
     setSelectedDate(selected);
-    
+
     const koreanDateString = selected.toISOString().split('T')[0];
     const { data, error } = await supabase
       .from('todos')
       .select('*')
       .eq('user_id', user.id)
       .eq('date', koreanDateString);
-  
+
     if (error) {
       console.error('Error fetching todos:', error);
     } else {
       setTodos(data);
     }
-    
+
     setShowInput(true); // 날짜를 클릭하면 모달 창을 표시
     setShowTodoModal(true); // 일정 모달 열기
   };
@@ -729,11 +730,11 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
 
   const handleAddTodoClick = () => {
     setIsFadingOut(true);
-      setShowTodoModal(false); 
-      setShowAddTodoModal(true);
-      setIsFadingOut(false);
+    setShowTodoModal(false);
+    setShowAddTodoModal(true);
+    setIsFadingOut(false);
   };
-  
+
   const handleOverlayClick = () => {
     if (showAddTodoModal) {
       handleCancelAddTodo();
@@ -742,12 +743,12 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
     }
   };
 
-const handleCancelAddTodo = () => {
-  setIsFadingOut(true);
-    setShowAddTodoModal(false); 
+  const handleCancelAddTodo = () => {
+    setIsFadingOut(true);
+    setShowAddTodoModal(false);
     setShowTodoModal(true);
     setIsFadingOut(false);
-};
+  };
 
 
   const deleteTodoHandler = async (id: string) => {
@@ -772,115 +773,112 @@ const handleCancelAddTodo = () => {
     return null;
   };
 
-  const importantTodos = todos.filter(todo => todo.is_priority && !todo.is_complete);
-  const nonImportantTodos = todos.filter(todo => !todo.is_priority && !todo.is_complete);
-
   return (
-  <Container>
-    <CalendarInfoContainer>
-      <CalendarTite>
-        <img src="/calendar.svg" alt="Calendar" />
-        <h1>캘린더 일정</h1>
-      </CalendarTite>
-      <p>원하는 날짜를 선택하면 해당 날짜의 일정을 확인하거나 추가할 수 있어요.</p>
-    </CalendarInfoContainer>
-    <MainTodoListContainer>
-      <CalendarWrapper>
-        <CalendarStyled
-          onClickDay={handleDateClick}
-          value={value}
-          formatDay={(locale, date) => moment(date).format("DD")}
-          tileContent={tileContent}
-        />
-      </CalendarWrapper>
-      {selectedDate && (showTodoModal || showAddTodoModal) && (
-        <ModalOverlay
-          onClick={handleOverlayClick}
-        >
-          <ModalContent
-            isOpen={showTodoModal || showAddTodoModal}
-            isFadingOut={isFadingOut}
-            ref={modalContentRef}
-            onClick={(e) => e.stopPropagation()}
+    <Container>
+      <CalendarInfoContainer>
+        <CalendarTite>
+          <img src="/calendar.svg" alt="Calendar" />
+          <h1>캘린더 일정</h1>
+        </CalendarTite>
+        <p>원하는 날짜를 선택하면 해당 날짜의 일정을 확인하거나 추가할 수 있어요.</p>
+      </CalendarInfoContainer>
+      <MainTodoListContainer>
+        <CalendarWrapper>
+          <CalendarStyled
+            onClickDay={handleDateClick}
+            value={value}
+            formatDay={(locale, date) => moment(date).format("DD")}
+            tileContent={tileContent}
+          />
+        </CalendarWrapper>
+        {selectedDate && (showTodoModal || showAddTodoModal) && (
+          <ModalOverlay
+            onClick={handleOverlayClick}
           >
-            {showTodoModal ? (
-              <>
-                <ModalTitleContainer>
-                  <h2>
-                    {selectedDate.toLocaleString("ko-KR", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}
-                  </h2>
-                </ModalTitleContainer>
-                {todos.length === 0 ? (
-                  <NoTodoListText>현재 진행 중인 일정이 없어요.</NoTodoListText>
-                ) : (
-                  <ul>
-                    {todos.map((todo) => (
-                      <TodoListContentContainer key={todo.id}>
-                        <li>{todo.content}</li>
-                        <DotMenuBtnWrapper>
-                          <DotMenuBtn onClick={() => handleDotMenuClick(todo.id)} isDropDownOpen={showDropdown === todo.id}>
-                            <img src="/dot-menu.svg" alt="Dot Menu" />
-                          </DotMenuBtn>
-                          {showDropdown === todo.id && (
-                            <DropdownMenu ref={dropdownRef} isDropDownOpen={!!showDropdown}>
-                              <DeleteItem onClick={() => deleteTodoHandler(todo.id)}>
-                                <img src="/delete.svg" alt="Delete" />
-                                삭제
-                              </DeleteItem>
-                            </DropdownMenu>
-                          )}
-                        </DotMenuBtnWrapper>
-                      </TodoListContentContainer>
+            <ModalContent
+              isOpen={showTodoModal || showAddTodoModal}
+              isFadingOut={isFadingOut}
+              ref={modalContentRef}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {showTodoModal ? (
+                <>
+                  <ModalTitleContainer>
+                    <h2>
+                      {selectedDate.toLocaleString("ko-KR", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
+                    </h2>
+                  </ModalTitleContainer>
+                  {todos.length === 0 ? (
+                    <NoTodoListText>현재 진행 중인 일정이 없어요.</NoTodoListText>
+                  ) : (
+                    <ul>
+                      {todos.map((todo) => (
+                        <TodoListContentContainer key={todo.id}>
+                          <li>{todo.content}</li>
+                          <DotMenuBtnWrapper>
+                            <DotMenuBtn onClick={() => handleDotMenuClick(todo.id)} isDropDownOpen={showDropdown === todo.id}>
+                              <img src="/dot-menu.svg" alt="Dot Menu" />
+                            </DotMenuBtn>
+                            {showDropdown === todo.id && (
+                              <DropdownMenu ref={dropdownRef} isDropDownOpen={!!showDropdown}>
+                                <DeleteItem onClick={() => deleteTodoHandler(todo.id)}>
+                                  <img src="/delete.svg" alt="Delete" />
+                                  삭제
+                                </DeleteItem>
+                              </DropdownMenu>
+                            )}
+                          </DotMenuBtnWrapper>
+                        </TodoListContentContainer>
+                      ))}
+                    </ul>
+                  )}
+                  <AddToDoBtnContainer>
+                    <AddToDoBtn onClick={handleAddTodoClick} isOpen={showInput}>
+                      <img src="/add.svg" alt="Add Todo" />
+                    </AddToDoBtn>
+                  </AddToDoBtnContainer>
+                </>
+              ) : (
+                <>
+                  <ModalTitleContainer>
+                    <h2>할 일 추가</h2>
+                    <p>오늘 해야 할 일을 추가해 보세요.<br />한번에 최대 20개까지 추가 가능해요.</p>
+                  </ModalTitleContainer>
+                  <ToDoInputContainer>
+                    {inputs.map((input, index) => (
+                      <div key={index}>
+                        <InputField
+                          type="text"
+                          value={input}
+                          placeholder='할 일을 입력해주세요.'
+                          onChange={(e) => handleInputChange(index, e.target.value)}
+                        />
+                      </div>
                     ))}
-                  </ul>
-                )}
-                <AddToDoBtnContainer>
-                  <AddToDoBtn onClick={handleAddTodoClick} isOpen={showInput}>
+                  </ToDoInputContainer>
+                  <AddTodoBtn onClick={handleAddInput}>
                     <img src="/add.svg" alt="Add Todo" />
-                  </AddToDoBtn>
-                </AddToDoBtnContainer>
-              </>
-            ) : (
-              <>
-                <ModalTitleContainer>
-                  <h2>할 일 추가</h2>
-                  <p>오늘 해야 할 일을 추가해 보세요.<br />한번에 최대 20개까지 추가 가능해요.</p>
-                </ModalTitleContainer>
-                <ToDoInputContainer>
-                  {inputs.map((input, index) => (
-                    <div key={index}>
-                      <InputField
-                        type="text"
-                        value={input}
-                        placeholder='할 일을 입력해주세요.'
-                        onChange={(e) => handleInputChange(index, e.target.value)}
-                      />
-                    </div>
-                  ))}
-                </ToDoInputContainer>
-                <AddTodoBtn onClick={handleAddInput}>
-                  <img src="/add.svg" alt="Add Todo" />
-                  <p>할 일 항목 추가</p>
-                </AddTodoBtn>
-                <TodoSaveAndCancelBtnContainer>
-                  <CancelBtn onClick={handleCancelAddTodo}>돌아가기</CancelBtn>
-                  <SaveTodoBtn onClick={saveTodosHandler}>저장</SaveTodoBtn>
-                </TodoSaveAndCancelBtnContainer>
-              </>
-            )}
-          </ModalContent>
-        </ModalOverlay>
-      )}
-      <WantSelectListText>
-        <span>D-day 구현 예정</span>
-      </WantSelectListText>
-    </MainTodoListContainer>
-  </Container>
-);
+                    <p>할 일 항목 추가</p>
+                  </AddTodoBtn>
+                  <TodoSaveAndCancelBtnContainer>
+                    <CancelBtn onClick={handleCancelAddTodo}>돌아가기</CancelBtn>
+                    <SaveTodoBtn onClick={saveTodosHandler}>저장</SaveTodoBtn>
+                  </TodoSaveAndCancelBtnContainer>
+                </>
+              )}
+            </ModalContent>
+          </ModalOverlay>
+        )}
+        <WantSelectListText>
+          <span>D-day 구현 예정</span>
+        </WantSelectListText>
+      </MainTodoListContainer>
+    </Container>
+  );
 };
 
 export default CalenderTodoComponent;

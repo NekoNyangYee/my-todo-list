@@ -31,10 +31,12 @@ const Page = () => {
     }, []);
 
     useEffect(() => {
-        if (!loading && (!session || !session.user || !session.user.email)) {
-            alert('로그인이 필요합니다.');
-            router.push('/');
-        }
+        setTimeout(() => {
+            if (!loading && (!session || !session.user || !session.user.email)) {
+                alert('로그인이 필요합니다.');
+                router.push('/');
+            }
+        }, 200);
     }, [loading, session]);
 
     if (loading) {

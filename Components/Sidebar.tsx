@@ -15,18 +15,19 @@ interface SidebarProps {
 
 const SidebarContainer = styled.div<{ isOpen: boolean }>`
     width: 250px;
-    height: 100vh;
+    height: 100%;
     position: fixed;
     right: ${({ isOpen }) => (isOpen ? '0' : '-300px')};
     top: 0;
     background-color: #F6F8FC;
     display: flex;
     flex-direction: column;
+    justify-content: flex-end;
     padding: 20px;
     transition: right 0.2s cubic-bezier(0.8, 0.5, 0.52, 1.0);
     z-index: 1000;
     overflow-y: auto;
-    box-sizing: border-box; 
+    box-sizing: border-box;
 
     &::-webkit-scrollbar {
         width: 0;
@@ -41,6 +42,7 @@ const SidebarContainer = styled.div<{ isOpen: boolean }>`
         background: transparent;
     }
 `;
+
 
 const SidebarLink = styled(Link)`
     display: flex;
@@ -100,6 +102,10 @@ const UserInfoText = styled.h2`
     text-align: center;
     font-size: 1.2rem;
     margin: 0;
+    word-break: break-all;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 `;
 
 const EditProfileBtn = styled.button<{ isEditerOpen: boolean }>`

@@ -20,9 +20,8 @@ const ProfileImage = styled.img`
   margin: auto 0;
 `;
 
-const MainLogoImage = styled.img`
-  width: 120px;
-  height: 60px;
+const MainLogoImage = styled(Image)`
+  width: 100px;
   cursor: pointer;
 `;
 
@@ -599,7 +598,7 @@ const AuthHeader = () => {
     <>
       <AuthHeaderContainer>
         <AuthHeaderContent>
-          <MainLogoImage src="./main-logo.svg" alt="Todo" />
+          <MainLogoImage src="./main-logo.svg" width={100} height={50} alt="Todo" />
           {session && (
             <ProfileInfoContainer>
               {profile ? (

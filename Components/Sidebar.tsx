@@ -5,6 +5,7 @@ import styled from '@emotion/styled';
 import Link from 'next/link';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabaseClient';
+import Image from 'next/image';
 
 interface SidebarProps {
     isOpen: boolean;
@@ -24,18 +25,36 @@ const SidebarContainer = styled.div<{ isOpen: boolean }>`
     padding: 20px;
     transition: right 0.2s cubic-bezier(0.8, 0.5, 0.52, 1.0);
     z-index: 1000;
+    overflow-y: auto;
+    box-sizing: border-box; 
+
+    &::-webkit-scrollbar {
+        width: 0;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background-color: transparent;
+        border-radius: 8px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: transparent;
+    }
 `;
 
 const SidebarLink = styled(Link)`
+    display: flex;
+    align-items: center;
+    gap: 12px;
     color: #6a6a6a;
     text-decoration: none;
     padding: 10px 0;
     font-size: 1.2rem;
     border-radius: 8px;
+    padding: 10px 16px;
 
     &:hover {
         background-color: #d3d3d3;
-        padding-left: 10px;
     }
 `;
 
@@ -71,19 +90,19 @@ const ProfileContainer = styled.div`
 `;
 
 const ProfileImage = styled.img`
-    width: 140px;
-    height: 140px;
+    width: 80px;
+    height: 80px;
     border-radius: 50%;
-    margin-bottom: 10px;
 `;
 
 const UserInfoText = styled.h2`
     color: #6a6a6a;
     text-align: center;
+    font-size: 1.2rem;
+    margin: 0;
 `;
 
 const EditProfileBtn = styled.button<{ isEditerOpen: boolean }>`
-    padding: 1rem 3.2rem 1rem;
     background-color: ${({ isEditerOpen }) => (isEditerOpen ? '#e7e7e7' : 'transparent')};
     color: #6a6a6a;
     border: none;
@@ -93,14 +112,8 @@ const EditProfileBtn = styled.button<{ isEditerOpen: boolean }>`
     font-weight: bold;
     transition: background-color 0.2s;
     text-align: left;
-    background-image: url('/edit.svg');
-    background-repeat: no-repeat;
-    background-position: left 20px center;
-    background-size: 1.4rem;
-
-    &:hover {
-        background-color: #e7e7e7;
-    }
+    padding: 8px 16px;
+    background-color: #e7e7e7;
 
     &:disabled {
         background-color: #d3d3d3;
@@ -114,7 +127,7 @@ const InputContainer = styled.div<{ isEditOpen: boolean }>`
     flex-direction: column;
     width: 100%;
     gap: 8px;
-    margin-top: 12px;
+    padding: 1rem 0;
 `;
 
 const InputField = styled.input`
@@ -155,7 +168,7 @@ const LogOutBtn = styled.button`
     border: none;
     border-radius: 8px;
     cursor: pointer;
-    margin: auto 0;
+    margin-top: auto;
     font-size: 0.8rem;
     font-weight: bold;
     transition: background-color 0.2s;
@@ -173,11 +186,29 @@ const WarningText = styled.p`
     margin: 0;
 `;
 
+const ProfileSection = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+`;
+
+const UserInfoSection = styled.div`
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    margin: auto 0;
+`;
+
+const TabImage = styled(Image)`
+    cursor: pointer;
+    transition: transform 0.2s;
+`;
+
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, session }) => {
     const [profile, setProfile] = useState<any>(null);
     const [isEditMode, setIsEditMode] = useState(false);
     const [editedName, setEditedName] = useState('');
-    const modalRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (session) {
@@ -257,11 +288,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, session }) => 
                 </CloseButton>
                 {profile ? (
                     <ProfileContainer>
-                        <ProfileImage src={profile.avatar_url || "./user.svg"} alt="Profile Picture" />
-                        <UserInfoText>{profile.full_name}</UserInfoText>
-                        <EditProfileBtn onClick={handleEditProfile} isEditerOpen={isEditMode}>
-                            프로필 편집
-                        </EditProfileBtn>
+                        <ProfileSection>
+                            <ProfileImage src={profile.avatar_url || "./user.svg"} alt="Profile Picture" />
+                            <UserInfoSection>
+                                <UserInfoText>{profile.full_name}</UserInfoText>
+                                <EditProfileBtn onClick={handleEditProfile} isEditerOpen={isEditMode}>
+                                    프로필 편집
+                                </EditProfileBtn>
+                            </UserInfoSection>
+                        </ProfileSection>
                         {isEditMode && (
                             <InputContainer isEditOpen={isEditMode}>
                                 <label>닉네임</label>
@@ -295,8 +330,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, session }) => 
                 ) : (
                     <SidebarLink href="/">홈</SidebarLink>
                 )}
-                <SidebarLink href="/" onClick={toggleSidebar}>홈</SidebarLink>
-                <SidebarLink href="/calendar" onClick={toggleSidebar}>캘린더</SidebarLink>
+                <SidebarLink href="/" onClick={toggleSidebar}>
+                    <TabImage src="./home.svg" width={24} height={24} alt="Home" />
+                    <span>홈 (대시보드)</span>
+                </SidebarLink>
+                <SidebarLink href="/calendar" onClick={toggleSidebar}>
+                    <TabImage src="./tab-calendar.svg" width={24} height={24} alt="Home" />
+                    <span>캘린더</span>
+                </SidebarLink>
                 <LogOutBtn onClick={handleLogout}>로그아웃</LogOutBtn>
             </SidebarContainer>
             <Overlay isOpen={isOpen} onClick={toggleSidebar} />

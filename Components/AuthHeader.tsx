@@ -7,10 +7,13 @@ import { supabase } from "../lib/supabaseClient";
 import AuthForm from "./AuthForm";
 import { Session } from '@supabase/supabase-js';
 import TodoComponent from "./TodoComponent";
+import Sidebar from "./Sidebar";
+import Link from "next/link";
+import Image from "next/image";
 
 const HeaderFlexBox = styled.div`
     display: flex;
-    gap: 12px;
+    gap: 24px;
 `;
 
 const ProfileImage = styled.img`
@@ -40,7 +43,9 @@ const AuthHeaderContainer = styled.div`
     }
 `;
 
-const UserInfoText = styled.p`
+const UserInfoText = styled.div`
+    display: flex;
+    gap: 24px;
     color: #6a6a6a;
     font-size: 1rem;
     text-align: center;
@@ -195,6 +200,10 @@ const ProfileModalBtn = styled.button`
     &:hover {
         transform: scale(1.1);
     }
+
+    @media (max-width: 768px) {
+        display: none;
+    }
 `;
 
 const ModalUserInfoText = styled.h2`
@@ -300,6 +309,35 @@ const WarningText = styled.p`
     margin: 0;
 `;
 
+const ToggleButton = styled.button`
+    display: none;
+    padding: 1rem;
+    background-color: transparent;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+
+    &:hover {
+        background-color: #FFFFFF;
+    }
+
+    @media (max-width: 768px) {
+        display: block;
+    }
+`;
+
+const LinkTab = styled(Link)`
+    text-decoration: none;
+    color: #6a6a6a;
+
+    &:hover {
+        color: #000000;
+        font-weight: bold;
+    }
+`;
+
 const AuthHeader = () => {
     const [session, setSession] = useState<any>(null);
     const [profile, setProfile] = useState<any>(null);
@@ -307,8 +345,28 @@ const AuthHeader = () => {
     const [animateOut, setAnimateOut] = useState<boolean>(false);
     const [isEditMode, setIsEditMode] = useState(false);
     const [editedName, setEditedName] = useState('');
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const modalRef = useRef<HTMLDivElement>(null);
     const [selectedDate, setSelectedDate] = useState(new Date());
+const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+};
+
+// 기존 useEffect 안에 추가
+useEffect(() => {
+    const handleResize = () => {
+        if (window.innerWidth > 768) {
+            setIsSidebarOpen(false);
+        }
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+        window.removeEventListener('resize', handleResize);
+    };
+}, []);
+
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -488,7 +546,7 @@ const AuthHeader = () => {
     };
 
     useEffect(() => {
-        if (isModalOpen) {
+        if (isModalOpen || isSidebarOpen) {
             document.body.style.overflow = 'hidden';
         } else {
             document.body.style.overflow = '';
@@ -497,7 +555,7 @@ const AuthHeader = () => {
         return () => {
             document.body.style.overflow = '';
         };
-    }, [isModalOpen]);
+    }, [isModalOpen, isSidebarOpen]);
 
     return (
         <>
@@ -508,16 +566,25 @@ const AuthHeader = () => {
                 ) : (
                     <ProfileInfoContainer>
                         {profile ? (
-                            <HeaderFlexBox>
-                                <UserInfoText><strong>{profile.full_name}</strong>님, 환영해요.</UserInfoText>
-                                <ProfileModalBtn onClick={openModal}>
-                                    <ProfileImage src={profile.avatar_url || "./user.svg"} alt="Profile Picture" width={250} height={250} />
-                                </ProfileModalBtn>
-                            </HeaderFlexBox>
+                            <>
+                                <HeaderFlexBox>
+                                    <UserInfoText>
+                                        <LinkTab href="/">홈</LinkTab>
+                                        <LinkTab href="/calendar">캘린더</LinkTab>
+                                    </UserInfoText>
+                                    <ProfileModalBtn onClick={openModal}>
+                                        <ProfileImage src={profile.avatar_url || "./user.svg"} alt="Profile Picture" />
+                                    </ProfileModalBtn>
+                                    <ToggleButton onClick={toggleSidebar}>
+                                        <Image src='./menu.svg' width={24} height={24} alt='메뉴' />
+                                    </ToggleButton>
+                                </HeaderFlexBox>
+                            </>
                         ) : (
                             <>
-                                <ProfileImage src={"./user.svg"} alt="Profile Picture" width={250} height={250} />
-                                <LogOutBtn onClick={handleLogout}>로그아웃</LogOutBtn></>
+                                <ProfileImage src={"./user.svg"} alt="Profile Picture" />
+                                <LogOutBtn onClick={handleLogout}>로그아웃</LogOutBtn>
+                            </>
                         )}
                     </ProfileInfoContainer>
                 )}
@@ -584,10 +651,10 @@ const AuthHeader = () => {
                             )}
                             <LogOutBtn onClick={handleLogout}>로그아웃</LogOutBtn>
                         </ModalInfoSettingContainer>
-
                     </ModalContent>
                 </ModalOverlay>
             )}
+            <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} session={session} />
             <TodoComponent user={session ? { id: session.user.id, email: session.user.email } : null} selectedDate={selectedDate} />
         </>
     );

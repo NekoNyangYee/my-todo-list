@@ -15,7 +15,6 @@ const LayoutContainer = styled.div`
 
 const ContentContainer = styled.div`
     width: 100%;
-    padding: 20px;
 `;
 
 const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {

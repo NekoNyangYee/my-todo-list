@@ -72,8 +72,7 @@ const rotateCancel = keyframes`
 const MainTodoListContainer = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 2rem;
-  padding-top: 8rem;
+  padding: 6rem 0;
   width: 100%;
   max-width: 972px;
   margin: 0 auto;
@@ -81,7 +80,6 @@ const MainTodoListContainer = styled.div`
   @media (max-width: 1224px) {
     max-width: 90%;
     flex-direction: column;
-    gap: 2rem;
   }
 `;
 
@@ -518,6 +516,35 @@ const DeleteItem = styled.div`
     }
 `;
 
+const DateContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  text-align: right;
+  margin-bottom: 1rem;
+
+  & span {
+    color: #a7a7a7;
+    font-size: 1rem;
+  }
+
+  & h2 {
+    margin: 0;
+    color: #333333;
+    font-size: 1.5rem;
+  }
+`;
+
+const DasboardContainer = styled.div`
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+`;
+
+const DashBordText = styled.h2`
+  color: #a7a7a7;
+  font-size: 1.5rem;
+`;
+
 interface TodoComponentProps {
   user: { id: string; email: string } | null;
   selectedDate: Date;
@@ -636,12 +663,29 @@ const TodoComponent: React.FC<TodoComponentProps> = ({ user, selectedDate }) => 
     }
   };
 
+  const date = new Date();
+
   const importantTodos = todos.filter(todo => todo.is_priority && !todo.is_complete);
   const nonImportantTodos = todos.filter(todo => !todo.is_priority && !todo.is_complete);
 
   return (
     <>
       <MainTodoListContainer>
+        <DasboardContainer>
+          <DashBordText>DashBoard</DashBordText>
+          <DateContainer>
+            <span>{date.toLocaleString("ko-KR", {
+              year: "numeric",
+            })}
+            </span>
+            <h2>
+              {date.toLocaleString("ko-KR", {
+                month: "long",
+                day: "numeric",
+              })}
+            </h2>
+          </DateContainer>
+        </DasboardContainer>
         <TodoContainer>
           <ProgressTodoContainer>
             <h2>진행 중인 일정</h2>
@@ -766,7 +810,7 @@ const TodoComponent: React.FC<TodoComponentProps> = ({ user, selectedDate }) => 
             )}
             <CompleteInfoContainer>
               <img src="/info.svg" alt="Info" />
-              완료된 일정은 매일 자정이 되면 쌓이는 것을 방지하기 위해 자동 삭제 처리가 됩니다.
+              "남들이 할 수 있거나 하려는 일을 하지 말고 남들이 할 수 없거나 하지 않으려는 일을 하라" - 아멜리아 에어하트
             </CompleteInfoContainer>
           </ComplecatedTodoContainer>
         </TodoContainer>

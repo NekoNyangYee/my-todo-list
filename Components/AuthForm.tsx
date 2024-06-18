@@ -6,8 +6,9 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "../Store/authStore";
 import { supabase } from "../lib/supabaseClient";
 import { updateProfile } from "../lib/updateProfile";
-import { fetchTodos, setupMidnightCheck } from "@components/util/todoUtil";
+import { fetchTodos, setupMidnightCheck, fetchTodosForDate } from "@components/util/todoUtil";
 import { useTodoStore } from "@components/Store/useAuthTodoStore";
+
 
 const LoginSiginupContainer = styled.div`
   width: 100%;
@@ -227,6 +228,8 @@ const AuthForm = () => {
   const router = useRouter();
 
   const handleAuth = async () => {
+    const currentDate = new Date(); // 현재 날짜를 가져옴
+
     if (authType === "signin") {
       console.log('로그인 시도 중...');
       const { data: user } = await supabase
@@ -259,8 +262,8 @@ const AuthForm = () => {
       } else if (data.session) {
         console.log('로그인 성공:', data.session.user);
         await updateProfile(data.session.user, 'email');
-        router.push('/'); // 로그인 후 메인 페이지로 리다이렉트
-        await fetchTodos(data.session.user.id, setTodos);
+        await fetchTodosForDate(data.session.user.id, currentDate, setTodos); // 해당 날짜의 할 일 목록 불러오기
+        router.push('/'); // 메인 페이지로 이동
         setupMidnightCheck(data.session.user.id, setTodos, setUncompletedTodos);
       }
     } else {
@@ -298,8 +301,8 @@ const AuthForm = () => {
       } else if (data.session) {
         await updateProfile(data.session.user, 'email');
         alert("회원가입이 완료되었습니다. 최초 회원가입 후 자동으로 로그인됩니다.");
-        router.refresh();
-        await fetchTodos(data.session.user.id, setTodos);
+        await fetchTodosForDate(data.session.user.id, currentDate, setTodos); // 해당 날짜의 할 일 목록 불러오기
+        router.push('/'); // 메인 페이지로 이동
         setupMidnightCheck(data.session.user.id, setTodos, setUncompletedTodos);
       }
     }
@@ -312,9 +315,10 @@ const AuthForm = () => {
     } else {
       const user = await supabase.auth.getUser();
       if (user.data.user) {
-        await updateProfile(user.data.user, provider);
-        await setupMidnightCheck(user.data.user.id, setTodos, setUncompletedTodos);
-        router.refresh();
+        updateProfile(user.data.user, provider);
+        setupMidnightCheck(user.data.user.id, setTodos, setUncompletedTodos);
+        fetchTodosForDate(user.data.user.id, new Date(), setTodos);
+        router.push('/');
       }
     }
   };

@@ -22,8 +22,9 @@ const SidebarContainer = styled.div<{ isOpen: boolean }>`
     background-color: #F6F8FC;
     display: flex;
     flex-direction: column;
-    justify-content: flex-end;
+    justify-content: center;
     padding: 20px;
+    gap: 20px;
     transition: right 0.2s cubic-bezier(0.8, 0.5, 0.52, 1.0);
     z-index: 1000;
     overflow-y: auto;
@@ -50,10 +51,8 @@ const SidebarLink = styled(Link)`
     gap: 12px;
     color: #6a6a6a;
     text-decoration: none;
-    padding: 10px 0;
     font-size: 1.2rem;
     border-radius: 8px;
-    padding: 10px 16px;
 
     &:hover {
         background-color: #d3d3d3;
@@ -72,28 +71,9 @@ const Overlay = styled.div<{ isOpen: boolean }>`
     z-index: 101;
 `;
 
-const CloseButton = styled.button`
-    background: none;
-    border: none;
-    cursor: pointer;
-    margin-left: auto;
-
-    & img {
-        width: 40px;
-        height: 40px;
-    }
-`;
-
-const ProfileContainer = styled.div`
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-bottom: 20px;
-`;
-
 const ProfileImage = styled.img`
-    width: 80px;
-    height: 80px;
+    width: 60px;
+    height: 60px;
     border-radius: 50%;
 `;
 
@@ -194,16 +174,9 @@ const WarningText = styled.p`
 
 const ProfileSection = styled.div`
     display: flex;
-    align-items: center;
-    gap: 8px;
-`;
-
-const UserInfoSection = styled.div`
-    display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    margin: auto 0;
+    align-items: flex-start;
+    gap: 8px;
 `;
 
 const TabImage = styled(Image)`
@@ -279,6 +252,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, session }) => 
 
     const handleLogout = async () => {
         alert('로그아웃 되었습니다.');
+        toggleSidebar();
         const { error } = await supabase.auth.signOut();
         if (error) {
             console.error("Error signing out:", error.message);
@@ -289,19 +263,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, session }) => 
     return (
         <>
             <SidebarContainer isOpen={isOpen}>
-                <CloseButton onClick={toggleSidebar}>
-                    <img src="./close.svg" alt="Close" />
-                </CloseButton>
                 {profile ? (
-                    <ProfileContainer>
+                    <>
                         <ProfileSection>
                             <ProfileImage src={profile.avatar_url || "./user.svg"} alt="Profile Picture" />
-                            <UserInfoSection>
-                                <UserInfoText>{profile.full_name}</UserInfoText>
-                                <EditProfileBtn onClick={handleEditProfile} isEditerOpen={isEditMode}>
-                                    프로필 편집
-                                </EditProfileBtn>
-                            </UserInfoSection>
+                            <UserInfoText>{profile.full_name}</UserInfoText>
+                            <EditProfileBtn onClick={handleEditProfile} isEditerOpen={isEditMode}>
+                                프로필 편집
+                            </EditProfileBtn>
                         </ProfileSection>
                         {isEditMode && (
                             <InputContainer isEditOpen={isEditMode}>
@@ -332,7 +301,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, session }) => 
                                 </ButtonContainer>
                             </InputContainer>
                         )}
-                    </ProfileContainer>
+                    </>
                 ) : (
                     <SidebarLink href="/">홈</SidebarLink>
                 )}

@@ -1,3 +1,4 @@
+import AuthHeader from "@components/Components/header/AuthHeader";
 import MainLayout from "@components/Components/layout/MainLayout";
 import type { Metadata } from "next";
 import { Noto_Sans_KR } from "next/font/google";
@@ -24,6 +25,7 @@ export default function RootLayout({
       </head>
       <body className={noto_sans_kr.className} style={{ margin: "0", height: "100vh" }}>
         <MainLayout>
+          <AuthHeader />
           {children}
         </MainLayout>
       </body>

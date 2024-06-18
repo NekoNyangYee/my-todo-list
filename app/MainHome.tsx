@@ -4,11 +4,12 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@components/lib/supabaseClient';
 import AuthForm from '@components/Components/AuthForm';
 import { Session } from '@supabase/supabase-js';
-import AuthHeader from '@components/Components/AuthHeader';
+import TodoComponent from '@components/Components/TodoComponent';
 
 const MainHome = () => {
     const [session, setSession] = useState<Session | null>(null);
     const [loading, setLoading] = useState(true);
+    const [selectedDate, setSelectedDate] = useState(new Date());
 
     useEffect(() => {
         const getSession = async () => {
@@ -37,7 +38,11 @@ const MainHome = () => {
 
     return (
         <>
-            {!session ? <AuthForm /> : <AuthHeader />}
+            {!session ? (
+                <AuthForm />
+            ) : (
+                <TodoComponent user={session.user.email ? { id: session.user.id, email: session.user.email } : null} selectedDate={selectedDate} />
+            )}
         </>
     );
 };

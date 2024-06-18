@@ -23,7 +23,7 @@ const SidebarContainer = styled.div<{ isOpen: boolean }>`
     flex-direction: column;
     padding: 20px;
     transition: right 0.2s cubic-bezier(0.8, 0.5, 0.52, 1.0);
-    z-index: 10;
+    z-index: 1000;
 `;
 
 const SidebarLink = styled(Link)`
@@ -48,7 +48,7 @@ const Overlay = styled.div<{ isOpen: boolean }>`
     bottom: 0;
     background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(4px);
-    z-index: 1;
+    z-index: 101;
 `;
 
 const CloseButton = styled.button`

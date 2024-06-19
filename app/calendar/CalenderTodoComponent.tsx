@@ -115,7 +115,7 @@ const AddToDoBtnContainer = styled.div`
   gap: 12px;
 `;
 
-const ModalOverlay = styled.div`
+const ModalOverlay = styled.div<ModalProps>`
   position: fixed;
   top: 0;
   left: 0;
@@ -142,15 +142,7 @@ const ModalContent = styled.div<{ isOpen: boolean, isFadingOut: boolean }>`
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  animation: ${({ isOpen }) => (isOpen ? fadeInOutModal : fadeOutInModal)} 0.3s ease forwards;
-
-  &.fade-out {
-    animation: ${fadeOutInModal} 0.2s forwards;
-  }
-
-  &.fade-in {
-    animation: ${fadeInOutModal} 0.2s forwards;
-  }
+  animation: ${({ isFadingOut }) => (isFadingOut ? fadeOutInModal : fadeInOutModal)} 0.2s ease forwards;
 
   &::-webkit-scrollbar {
     width: 8px;
@@ -428,14 +420,6 @@ const DropdownMenu = styled.div<{ isDropDownOpen: boolean }>`
   }
 `;
 
-const CompleteItem = styled.div`
-  padding: 10px;
-  cursor: pointer;
-  &:hover {
-    background-color: #f0f0f0;
-  }
-`;
-
 const DeleteItem = styled.button`
   display: flex;
   gap: 10px;
@@ -466,12 +450,15 @@ const WantSelectListText = styled.div`
   margin: auto 0;
 `;
 
+interface ModalProps {
+  isFadingOut: boolean;
+}
+
 const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) => {
   const { addInput, inputs, setInputs, resetInputs } = useTodoStore();
   const [value, onChange] = useState<Value>(new Date());
   const [showInput, setShowInput] = useState<boolean>(false);
   const [todoInputs, setTodoInputs] = useState<string[]>(['']);
-  const [animateOut, setAnimateOut] = useState<boolean>(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [todos, setTodos] = useState<Todo[]>([]);
   const [showDropdown, setShowDropdown] = useState<string | null>(null);
@@ -481,6 +468,7 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
   const [isFadingOut, setIsFadingOut] = useState<boolean>(false);
   const modalContentRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
     if (inputs.length < 3) {
@@ -583,11 +571,13 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
 
   const closeModal = () => {
     setIsFadingOut(true);
-    setShowInput(false);
-    setIsFadingOut(false);
-    resetInputs();
-    setShowAddTodoModal(false);
-    setShowTodoModal(false);
+    setTimeout(() => {
+      setShowInput(false);
+      setIsFadingOut(false);
+      resetInputs();
+      setShowAddTodoModal(false);
+      setShowTodoModal(false);
+    }, 100); // 애니메이션 시간에 맞추어 설정
   };
 
   const saveTodosHandler = async () => {
@@ -683,18 +673,13 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
     setShowAddTodoModal(false);
     setShowTodoModal(true);
     setIsFadingOut(false);
+    resetInputs();
   };
 
 
   const deleteTodoHandler = async (id: string) => {
     if (user && selectedDate) {
       await deleteTodo(user.id, id, setTodos, selectedDate);
-    }
-  };
-
-  const toggleTodoHandler = async (id: string, isComplete: boolean) => {
-    if (user && selectedDate) {
-      await toggleTodo(user.id, id, isComplete, setTodos, selectedDate);
     }
   };
 
@@ -706,6 +691,19 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
       }
     }
     return null;
+  };
+
+  const handleKeyPress = (index: number, event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      if (index < inputs.length - 1) {
+        inputRefs.current[index + 1]?.focus();
+      } else {
+        handleAddInput();
+        setTimeout(() => {
+          inputRefs.current[index + 1]?.focus();
+        }, 100);
+      }
+    }
   };
 
   return (
@@ -729,6 +727,7 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
         {selectedDate && (showTodoModal || showAddTodoModal) && (
           <ModalOverlay
             onClick={handleOverlayClick}
+            isFadingOut={isFadingOut}
           >
             <ModalContent
               isOpen={showTodoModal || showAddTodoModal}
@@ -787,10 +786,14 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
                     {inputs.map((input, index) => (
                       <div key={index}>
                         <InputField
+                          ref={el => {
+                            inputRefs.current[index] = el;
+                          }}
                           type="text"
                           value={input}
                           placeholder='할 일을 입력해주세요.'
                           onChange={(e) => handleInputChange(index, e.target.value)}
+                          onKeyDown={(e) => handleKeyPress(index, e)}
                         />
                       </div>
                     ))}

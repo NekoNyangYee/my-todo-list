@@ -157,6 +157,10 @@ const ModalOverlay = styled.div`
   align-items: center;
   z-index: 1000;
   backdrop-filter: blur(4px);
+
+  @media (max-width: 768px) {
+    display: none;
+  }
 `;
 
 const ModalContent = styled.div<{ isModalOpen: boolean }>`
@@ -362,7 +366,6 @@ const AuthHeader = () => {
   const [editedName, setEditedName] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
-  const [selectedDate, setSelectedDate] = useState(new Date());
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
@@ -510,7 +513,7 @@ const AuthHeader = () => {
     }
   };
 
-  const openModal = () => setIsModalOpen(true);
+  const openModal = () => setIsModalOpen(!isModalOpen);
   const closeModal = () => {
     setAnimateOut(true);
     setTimeout(() => {

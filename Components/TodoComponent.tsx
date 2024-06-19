@@ -557,6 +557,7 @@ const TodoComponent: React.FC<TodoComponentProps> = ({ user, selectedDate }) => 
   const [showDropdown, setShowDropdown] = useState<string | null>(null);
   const modalContentRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
     if (inputs.length < 3) {
@@ -635,6 +636,19 @@ const TodoComponent: React.FC<TodoComponentProps> = ({ user, selectedDate }) => 
     if (user) {
       await saveTodos(user.id, inputs, setTodos, resetInputs, setAnimateOut, setShowInput, selectedDate);
       await fetchTodosForDate(user.id, selectedDate, setTodos);
+    }
+  };
+
+  const handleKeyPress = (index: number, event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      if (index < inputs.length - 1) {
+        inputRefs.current[index + 1]?.focus();
+      } else {
+        handleAddInput();
+        setTimeout(() => {
+          inputRefs.current[index + 1]?.focus();
+        }, 100);
+      }
     }
   };
 
@@ -827,10 +841,14 @@ const TodoComponent: React.FC<TodoComponentProps> = ({ user, selectedDate }) => 
               {inputs.map((input, index) => (
                 <div key={index}>
                   <input
+                    ref={el => {
+                      inputRefs.current[index] = el;
+                    }}
                     type="text"
                     value={input}
                     placeholder='할 일을 입력해주세요.'
                     onChange={(e) => handleInputChange(index, e.target.value)}
+                    onKeyDown={(e) => handleKeyPress(index, e)}
                   />
                 </div>
               ))}

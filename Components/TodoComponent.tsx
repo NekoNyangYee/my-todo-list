@@ -5,7 +5,7 @@ import styled from "@emotion/styled";
 import { useEffect, useRef, useState } from "react";
 import { useTodoStore } from "../Store/useAuthTodoStore";
 import { fetchTodosForDate, deleteTodo, toggleTodo, togglePriority, saveTodos } from "@components/util/todoUtil";
-import Link from "next/link";
+import { useTheme } from "@components/app/Context/ThemeContext";
 
 const fadeInDropDownModal = keyframes`
   from {
@@ -111,7 +111,7 @@ const TodoContainer = styled.div`
   }
 `;
 
-const commonContainerStyles = css`
+const commonContainerStyles = (themeStyles: any = {}) => css`
   flex: 1;
   display: flex;
   justify-content: space-between;
@@ -120,13 +120,13 @@ const commonContainerStyles = css`
   border-radius: 12px;
   padding: 1rem;
   box-sizing: border-box;
-  background-color: #ffffff;
+  background-color: ${themeStyles.colors.containerBackground};
   overflow-y: auto;
-  box-shadow: 0px 0px 20px #E0E0E0;
+  box-shadow: ${themeStyles.colors.shadow};
 
   & h2 {
     margin: 0;
-    color: #333333;
+    color: ${themeStyles.colors.text};
     font-size: 1.5rem;
   }
 
@@ -164,13 +164,13 @@ const commonContainerStyles = css`
   }
 `;
 
-const ProgressTodoContainer = styled.div`
-  ${commonContainerStyles}
+const ProgressTodoContainer = styled.div<{ themeStyles?: any }>`
+  ${({ themeStyles }) => commonContainerStyles(themeStyles)}
   height: 60vh;
 `;
 
-const ComplecatedTodoContainer = styled.div`
-  ${commonContainerStyles}
+const ComplecatedTodoContainer = styled.div<{ themeStyles?: any }>`
+  ${({ themeStyles }) => commonContainerStyles(themeStyles)}
   height: 60vh;
 `;
 
@@ -262,7 +262,6 @@ const ModalContent = styled.div<{ isOpen: boolean }>`
     max-width: 80%;
   }
 `;
-
 
 const ToDoInputContainer = styled.div`
   display: flex;
@@ -511,9 +510,9 @@ const DeleteItem = styled.div`
   align-items: center;
   gap: 0.5rem;
 
-    '&:hover': {
-        background-color: #f7f7f7;
-    }
+  &:hover {
+    background-color: #f7f7f7;
+  }
 `;
 
 const DateContainer = styled.div`
@@ -558,6 +557,7 @@ const TodoComponent: React.FC<TodoComponentProps> = ({ user, selectedDate }) => 
   const modalContentRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const { themeStyles } = useTheme();
 
   useEffect(() => {
     if (inputs.length < 3) {
@@ -701,7 +701,7 @@ const TodoComponent: React.FC<TodoComponentProps> = ({ user, selectedDate }) => 
           </DateContainer>
         </DasboardContainer>
         <TodoContainer>
-          <ProgressTodoContainer>
+          <ProgressTodoContainer themeStyles={themeStyles}>
             <h2>진행 중인 일정</h2>
             {nonImportantTodos.length === 0 && importantTodos.length === 0 ? (
               <NoTodoListText>현재 진행 중인 일정이 없어요.</NoTodoListText>
@@ -802,7 +802,7 @@ const TodoComponent: React.FC<TodoComponentProps> = ({ user, selectedDate }) => 
             </AddToDoBtnContainer>
           </ProgressTodoContainer>
 
-          <ComplecatedTodoContainer>
+          <ComplecatedTodoContainer themeStyles={themeStyles}>
             <h2>완료된 일정</h2>
             {todos.filter(todo => todo.is_complete).length === 0 ? (
               <NoTodoListText>완료된 할 일이 없어요.</NoTodoListText>

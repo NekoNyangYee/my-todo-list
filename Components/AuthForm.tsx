@@ -8,9 +8,9 @@ import { supabase } from "../lib/supabaseClient";
 import { updateProfile } from "../lib/updateProfile";
 import { fetchTodos, setupMidnightCheck, fetchTodosForDate } from "@components/util/todoUtil";
 import { useTodoStore } from "@components/Store/useAuthTodoStore";
+import { useTheme } from "@components/app/Context/ThemeContext";
 
-
-const LoginSiginupContainer = styled.div`
+const LoginSiginupContainer = styled.div<{ themeStyles: any }>`
   width: 100%;
   display: flex;
   max-width: 972px;
@@ -28,14 +28,14 @@ const LoginSiginupContainer = styled.div`
   }
 `;
 
-const MainLobySectionContainer = styled.div`
+const MainLobySectionContainer = styled.div<{ themeStyles: any }>`
   display: flex;
   flex-direction: column;
   gap: 1rem;
   width: 100%;
 
   & p {
-    color: #6a6a6a;
+    color: ${({ themeStyles }) => themeStyles.colors.inputPlaceholderColor};
     font-size: 1.2rem;
     text-align: center;
     font-weight: bold;
@@ -50,14 +50,14 @@ const LoginAuthContainer = styled.div`
   width: 100%;
 `;
 
-const MainLogoImage = styled.img`
+const MainLogoImage = styled.img<{ themeStyles: any }>`
   width: 200px;
   height: 200px;
   margin: 0 auto;
-  filter: drop-shadow(4px 4px 4px #c9c9c9);
+  filter: drop-shadow(${({ themeStyles }) => themeStyles.colors.shadow});
 `;
 
-const AuthInputContainer = styled.div`
+const AuthInputContainer = styled.div<{ themeStyles: any }>`
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -66,7 +66,7 @@ const AuthInputContainer = styled.div`
     padding: 1rem 46px;
     border-radius: 8px;
     border: none;
-    background-image: url('/email.svg');
+    background-color: ${({ themeStyles }) => themeStyles.colors.inputBackground};
     background-repeat: no-repeat;
     background-size: 1.4rem;
     background-position: 1rem center;
@@ -75,7 +75,7 @@ const AuthInputContainer = styled.div`
 
     &:focus {
       outline: none;
-      border: 1px solid #e7e7e7;
+      border: 1px solid ${({ themeStyles }) => themeStyles.colors.inputBorder};
     }
 
     &:nth-of-type(2) {
@@ -108,6 +108,7 @@ const fadeOutModal = keyframes`
 
 interface SignUpInputContainerProps {
   isOpen: boolean;
+  themeStyles: any;
 }
 
 const SignUpInputContainer = styled.div<SignUpInputContainerProps>`
@@ -117,15 +118,20 @@ const SignUpInputContainer = styled.div<SignUpInputContainerProps>`
   animation: ${({ isOpen }) => (isOpen ? fadeInModal : fadeOutModal)} 0.2s;
 
   & input {
-    background-image: url('/password.svg');
+    background-color: ${({ themeStyles }) => themeStyles.colors.inputBackground};
+    border: 1px solid ${({ themeStyles }) => themeStyles.colors.inputBorder};
 
+    &:nth-of-type(1) {
+      background-image: url('/password.svg');
+    }
+      
     &:nth-of-type(2) {
       background-image: url('/user.svg');
     }
   }
 `;
 
-const SocialContainer = styled.div`
+const SocialContainer = styled.div<{ themeStyles: any }>`
   padding: 1rem 0;
   display: flex;
   flex-direction: column;
@@ -150,7 +156,7 @@ const SocialContainer = styled.div`
   }
 `;
 
-const GoogleSocialLoginBtn = styled.button`
+const GoogleSocialLoginBtn = styled.button<{ themeStyles: any }>`
   padding: 0.8rem;
   border-radius: 8px;
   border: none;
@@ -164,7 +170,7 @@ const GoogleSocialLoginBtn = styled.button`
   }
 `;
 
-const KaKaoSocialLoginBtn = styled.button`
+const KaKaoSocialLoginBtn = styled.button<{ themeStyles: any }>`
   padding: 0.8rem;
   border-radius: 8px;
   border: none;
@@ -184,26 +190,26 @@ const LogoImage = styled.img`
   height: 1.6rem;
 `;
 
-const LoginAndSignUpBtn = styled.button`
+const LoginAndSignUpBtn = styled.button<{ themeStyles: any }>`
   padding: 1rem;
   border-radius: 8px;
   border: none;
-  background-color: #0075ff;
-  color: #fff;
+  background-color: ${({ themeStyles }) => themeStyles.colors.buttonBackground};
+  color: ${({ themeStyles }) => themeStyles.colors.buttonColor};
   cursor: pointer;
   font-size: 1rem;
 
   &:hover {
-    background-color: #0059ff;
+    background-color: ${({ themeStyles }) => themeStyles.colors.buttonHoverBackground};
   }
 `;
 
-const SwitchAuthBtn = styled.button`
+const SwitchAuthBtn = styled.button<{ themeStyles: any }>`
   padding: 1rem;
   border-radius: 8px;
   border: none;
   background-color: transparent;
-  color: #0075ff;
+  color: ${({ themeStyles }) => themeStyles.colors.buttonBackground};
   cursor: pointer;
   font-size: 1rem;
 
@@ -211,7 +217,16 @@ const SwitchAuthBtn = styled.button`
     text-decoration: underline;
   }
 `;
+
+const SocialLoginText = styled.p<{ themeStyles: any }>`
+  align-items: center;
+  font-size: 1rem;
+  margin: 0;
+  color: ${({ themeStyles }) => themeStyles.colors.inputPlaceholderColor};
+`;
+
 const AuthForm = () => {
+  const { themeStyles } = useTheme();
   const {
     email,
     setEmail,
@@ -325,19 +340,20 @@ const AuthForm = () => {
 
 
   return (
-    <LoginSiginupContainer>
-      <MainLobySectionContainer>
-        <MainLogoImage src="/web-logo-profile.svg" alt="logo" width={250} height={250} />
+    <LoginSiginupContainer themeStyles={themeStyles}>
+      <MainLobySectionContainer themeStyles={themeStyles}>
+        <MainLogoImage src="/web-logo-profile.svg" alt="logo" themeStyles={themeStyles} />
         <p>하루하루를 계획없이 사시나요?<br />투두 리스트에서 하루를 기록해보세요.</p>
       </MainLobySectionContainer>
       <LoginAuthContainer>
         <h2>{authType === "signin" ? "로그인" : "회원가입"}</h2>
-        <AuthInputContainer>
+        <AuthInputContainer themeStyles={themeStyles}>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="이메일"
+            style={{ backgroundImage: 'url(/email.svg)' }}
           />
           <input
             type="password"
@@ -347,7 +363,7 @@ const AuthForm = () => {
             autoComplete="new-password"
           />
           {authType === "signup" && (
-            <SignUpInputContainer isOpen={authType === 'signup'}>
+            <SignUpInputContainer isOpen={authType === 'signup'} themeStyles={themeStyles}>
               <input
                 type="password"
                 value={confirmPassword}
@@ -364,10 +380,10 @@ const AuthForm = () => {
               />
             </SignUpInputContainer>
           )}
-          <LoginAndSignUpBtn onClick={handleAuth}>
+          <LoginAndSignUpBtn themeStyles={themeStyles} onClick={handleAuth}>
             {authType === "signin" ? "로그인" : "회원가입"}
           </LoginAndSignUpBtn>
-          <SwitchAuthBtn
+          <SwitchAuthBtn themeStyles={themeStyles}
             onClick={() =>
               setAuthType(authType === "signin" ? "signup" : "signin")
             }
@@ -376,8 +392,8 @@ const AuthForm = () => {
           </SwitchAuthBtn>
         </AuthInputContainer>
         {authType === "signin" && (
-          <SocialContainer>
-            <GoogleSocialLoginBtn onClick={() => handleSocialLogin("google")}>
+          <SocialContainer themeStyles={themeStyles}>
+            <GoogleSocialLoginBtn themeStyles={themeStyles} onClick={() => handleSocialLogin("google")}>
               <div className="social-login-flex">
                 <LogoImage
                   src="/google-logo.png"
@@ -385,10 +401,10 @@ const AuthForm = () => {
                   width={250}
                   height={250}
                 />
-                <p style={{ alignItems: 'center', fontSize: "1rem", margin: '0', color: '#6A6A6A' }}>Google로 시작하기</p>
+                <SocialLoginText themeStyles={themeStyles}>Google로 시작하기</SocialLoginText>
               </div>
             </GoogleSocialLoginBtn>
-            <KaKaoSocialLoginBtn onClick={() => handleSocialLogin("kakao")}>
+            <KaKaoSocialLoginBtn themeStyles={themeStyles} onClick={() => handleSocialLogin("kakao")}>
               <div className="social-login-flex">
                 <LogoImage
                   src="/kakao-logo.png"
@@ -396,7 +412,7 @@ const AuthForm = () => {
                   width={250}
                   height={250}
                 />
-                <p style={{ alignItems: 'center', fontSize: "1rem", margin: '0', color: '#6A6A6A' }}>카카오로 시작하기</p>
+                <SocialLoginText themeStyles={themeStyles}>카카오로 시작하기</SocialLoginText>
               </div>
             </KaKaoSocialLoginBtn>
           </SocialContainer>

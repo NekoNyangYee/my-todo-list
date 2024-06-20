@@ -7,6 +7,7 @@ import { supabase } from "@components/lib/supabaseClient";
 import Sidebar from "../Sidebar";
 import Link from "next/link";
 import Image from "next/image";
+import { useTheme } from "@components/app/Context/ThemeContext";
 
 const HeaderFlexBox = styled.div`
   display: flex;
@@ -25,20 +26,20 @@ const MainLogoImage = styled(Image)`
   cursor: pointer;
 `;
 
-const AuthHeaderContainer = styled.div`
+const AuthHeaderContainer = styled.div<{ themeStyles: any }>`
   display: flex;
   justify-content: center;
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  background-color: rgba(246, 248, 252, 0.8); // 배경색에 투명도 추가
+  background-color: ${({ themeStyles }) => themeStyles.headerBackground};
   gap: 12px;
   padding: 12px;
   z-index: 100;
   margin: 0 auto;
   backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px); // 사파리 지원
+  -webkit-backdrop-filter: blur(12px);
 `;
 
 const AuthHeaderContent = styled.div`
@@ -53,16 +54,16 @@ const AuthHeaderContent = styled.div`
   }
 `;
 
-const UserInfoText = styled.div`
+const UserInfoText = styled.div<{ themeStyles: any }>`
   display: flex;
   gap: 24px;
-  color: #6a6a6a;
+  color: ${({ themeStyles }) => themeStyles.text};
   font-size: 1rem;
   text-align: center;
   margin: auto 0;
 
   & strong {
-    color: #0075ff;
+    color: ${({ themeStyles }) => themeStyles.link};
   }
 
   @media (max-width: 768px) {
@@ -70,7 +71,7 @@ const UserInfoText = styled.div`
   }
 `;
 
-const LogOutBtn = styled.button`
+const LogOutBtn = styled.button<{ themeStyles: any }>`
   padding: 12px 16px;
   background-color: #ffb8b8;
   color: #c33c3c;
@@ -88,11 +89,10 @@ const LogOutBtn = styled.button`
   }
 `;
 
-const EditProfileBtn = styled.button<{ isEditerOpen: boolean }>`
+const EditProfileBtn = styled.button<{ isEditerOpen: boolean, themeStyles: any }>`
   padding: 1rem 3.2rem 1rem;
-  background-color: ${({ isEditerOpen }) =>
-    isEditerOpen ? "#e7e7e7" : "transparent"};
-  color: #6a6a6a;
+  background-color: ${({ isEditerOpen, themeStyles }) => isEditerOpen ? themeStyles.inputBackground : "transparent"};
+  color: ${({ themeStyles }) => themeStyles.text};
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -106,7 +106,7 @@ const EditProfileBtn = styled.button<{ isEditerOpen: boolean }>`
   background-size: 1.4rem;
 
   &:hover {
-    background-color: #e7e7e7;
+    background-color: ${({ themeStyles }) => themeStyles.inputBackground};
   }
 
   &:disabled {
@@ -163,8 +163,8 @@ const ModalOverlay = styled.div`
   }
 `;
 
-const ModalContent = styled.div<{ isModalOpen: boolean }>`
-  background: #f6f8fc;
+const ModalContent = styled.div<{ isModalOpen: boolean; themeStyles: any }>`
+  background-color: ${({ themeStyles }) => themeStyles.colors.background};
   padding: 20px;
   border-radius: 12px;
   max-width: 500px;
@@ -172,10 +172,10 @@ const ModalContent = styled.div<{ isModalOpen: boolean }>`
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   cursor: auto;
   position: relative;
-  animation: ${({ isModalOpen }) => (isModalOpen ? fadeInModal : fadeOutModal)}
-    0.2s ease forwards;
+  animation: ${({ isModalOpen }) => (isModalOpen ? fadeInModal : fadeOutModal)} 0.2s ease forwards;
   max-height: 80vh;
   overflow-y: auto;
+  opacity: 1; /* 추가: 투명도를 1로 설정하여 불투명하게 만듭니다. */
 
   &::-webkit-scrollbar {
     width: 8px;
@@ -194,6 +194,7 @@ const ModalContent = styled.div<{ isModalOpen: boolean }>`
     max-width: 80%;
   }
 `;
+
 
 const CloseButton = styled.button`
   background: none;
@@ -222,8 +223,8 @@ const ProfileModalBtn = styled.button`
   }
 `;
 
-const ModalUserInfoText = styled.h2`
-  color: #6a6a6a;
+const ModalUserInfoText = styled.h2<{ themeStyles: any }>`
+  color: ${({ themeStyles }) => themeStyles.text};
   text-align: center;
   margin: auto 0;
 `;
@@ -268,10 +269,10 @@ const LoginWIthBadge = styled.img`
   transform: translate(50%, 50%);
 `;
 
-const ModalInfoSettingContainer = styled.div`
+const ModalInfoSettingContainer = styled.div<{ themeStyles: any }>`
   display: flex;
   flex-direction: column;
-  background-color: #ffffff;
+  background-color: ${({ themeStyles }) => themeStyles.colors.containerBackground};
   justify-content: center;
   gap: 12px;
   margin-top: 20px;
@@ -288,15 +289,20 @@ const InputContainer = styled.div<{ isEditOpen: boolean }>`
     0.2s;
 `;
 
-const InputField = styled.input`
+const InputField = styled.input<{ themeStyles: any }>`
   padding: 1rem;
   border-radius: 8px;
   border: none;
   width: 100%;
   box-sizing: border-box;
-  background-color: #f6f8fc;
+  background-color: ${({ themeStyles }) => themeStyles.inputBackground};
+  color: ${({ themeStyles }) => themeStyles.text};
   font-size: 1rem;
   outline: none;
+
+  &:disabled {
+    background-color: ${({ themeStyles }) => themeStyles.buttonHoverBackground};
+  }
 `;
 
 const ButtonContainer = styled.div`
@@ -306,21 +312,21 @@ const ButtonContainer = styled.div`
   margin-top: 10px;
 `;
 
-const SaveButton = styled.button`
+const SaveButton = styled.button<{ themeStyles: any }>`
   padding: 10px 20px;
   border-radius: 4px;
   border: none;
-  background-color: #0075ff;
-  color: #ffffff;
+  background-color: #0075FF;
+  color: ${({ themeStyles }) => themeStyles.buttonColor};
   cursor: pointer;
 
   &:hover {
-    background-color: #005bb5;
+    background-color: ${({ themeStyles }) => themeStyles.buttonHoverBackground};
   }
 `;
 
-const WarningText = styled.p`
-  color: #ff4949;
+const WarningText = styled.p<{ themeStyles: any }>`
+  color: ${({ themeStyles }) => themeStyles.buttonBackground};
   font-size: 0.8rem;
   text-align: left;
   margin: 0;
@@ -347,17 +353,19 @@ const ToggleButton = styled.button`
   }
 `;
 
-const LinkTab = styled(Link)`
+const LinkTab = styled(Link) <{ themeStyles: any }>`
   text-decoration: none;
-  color: #6a6a6a;
+  color: ${({ themeStyles }) => themeStyles.colors.text};
+  font-size: 1rem;
 
   &:hover {
-    color: #000000;
+    color: ${({ themeStyles }) => themeStyles.linkHover};
     font-weight: bold;
   }
 `;
 
 const AuthHeader = () => {
+  const { themeStyles } = useTheme();
   const [session, setSession] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -599,7 +607,7 @@ const AuthHeader = () => {
 
   return (
     <>
-      <AuthHeaderContainer>
+      <AuthHeaderContainer themeStyles={themeStyles}>
         <AuthHeaderContent>
           <MainLogoImage src="./main-logo.svg" width={100} height={50} alt="Todo" />
           {session && (
@@ -607,9 +615,9 @@ const AuthHeader = () => {
               {profile ? (
                 <>
                   <HeaderFlexBox>
-                    <UserInfoText>
-                      <LinkTab href="/">홈</LinkTab>
-                      <LinkTab href="/calendar">캘린더</LinkTab>
+                    <UserInfoText themeStyles={themeStyles}>
+                      <LinkTab href="/" themeStyles={themeStyles}>홈</LinkTab>
+                      <LinkTab href="/calendar" themeStyles={themeStyles}>캘린더</LinkTab>
                     </UserInfoText>
                     <ProfileModalBtn onClick={openModal}>
                       <ProfileImage
@@ -625,7 +633,7 @@ const AuthHeader = () => {
               ) : (
                 <>
                   <ProfileImage src={"./user.svg"} alt="Profile Picture" />
-                  <LogOutBtn onClick={handleLogout}>로그아웃</LogOutBtn>
+                  <LogOutBtn themeStyles={themeStyles} onClick={handleLogout}>로그아웃</LogOutBtn>
                 </>
               )}
             </ProfileInfoContainer>
@@ -634,7 +642,7 @@ const AuthHeader = () => {
       </AuthHeaderContainer>
       {(isModalOpen || animateOut) && (
         <ModalOverlay onClick={handleOverlayClick}>
-          <ModalContent isModalOpen={isModalOpen && !animateOut} ref={modalRef}>
+          <ModalContent isModalOpen={isModalOpen && !animateOut} ref={modalRef} themeStyles={themeStyles}>
             <CloseButton onClick={closeModal}>
               <img src="./close.svg" alt="Close" />
             </CloseButton>
@@ -666,7 +674,7 @@ const AuthHeader = () => {
                     )}
                   </ProfileContainer>
                 </ModalProfileSection>
-                <ModalUserInfoText>{profile.full_name}</ModalUserInfoText>
+                <ModalUserInfoText themeStyles={themeStyles}>{profile.full_name}</ModalUserInfoText>
               </ModalFlexBox>
             ) : (
               <ModalProfileImage
@@ -674,10 +682,11 @@ const AuthHeader = () => {
                 alt="Profile Picture"
               />
             )}
-            <ModalInfoSettingContainer>
+            <ModalInfoSettingContainer themeStyles={themeStyles}>
               <EditProfileBtn
                 onClick={handleEditProfile}
                 isEditerOpen={isEditMode}
+                themeStyles={themeStyles}
               >
                 프로필 편집
               </EditProfileBtn>
@@ -689,12 +698,13 @@ const AuthHeader = () => {
                     value={editedName}
                     onChange={(e) => setEditedName(e.target.value)}
                     disabled={profile.provider !== "email"}
+                    themeStyles={themeStyles}
                   />
                   {profile.provider === "email" || (
-                    <WarningText>{`${profile.provider}로 로그인 한 경우 프로필 편집을 할 수 없습니다.`}</WarningText>
+                    <WarningText themeStyles={themeStyles}>{`${profile.provider}로 로그인 한 경우 프로필 편집을 할 수 없습니다.`}</WarningText>
                   )}
                   <label>이메일</label>
-                  <InputField type="text" value={profile.email} disabled />
+                  <InputField type="text" value={profile.email} disabled themeStyles={themeStyles} />
                   <label>가입일자</label>
                   <InputField
                     type="text"
@@ -703,18 +713,20 @@ const AuthHeader = () => {
                       { year: "numeric", month: "long", day: "numeric" }
                     )}
                     disabled
+                    themeStyles={themeStyles}
                   />
                   <ButtonContainer>
                     <SaveButton
                       onClick={handleSaveProfile}
                       disabled={editedName.length === 0}
+                      themeStyles={themeStyles}
                     >
                       저장
                     </SaveButton>
                   </ButtonContainer>
                 </InputContainer>
               )}
-              <LogOutBtn onClick={handleLogout}>로그아웃</LogOutBtn>
+              <LogOutBtn themeStyles={themeStyles} onClick={handleLogout}>로그아웃</LogOutBtn>
             </ModalInfoSettingContainer>
           </ModalContent>
         </ModalOverlay>

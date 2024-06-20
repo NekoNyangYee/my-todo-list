@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabaseClient';
 import Image from 'next/image';
+import { useTheme } from "@components/app/Context/ThemeContext";
 
 interface SidebarProps {
     isOpen: boolean;
@@ -13,13 +14,13 @@ interface SidebarProps {
     session: Session | null;
 }
 
-const SidebarContainer = styled.div<{ isOpen: boolean }>`
+const SidebarContainer = styled.div<{ isOpen: boolean, themeStyles: any }>`
     width: 250px;
     height: 100%;
     position: fixed;
     right: ${({ isOpen }) => (isOpen ? '0' : '-300px')};
     top: 0;
-    background-color: #F6F8FC;
+    background-color: ${({ themeStyles }) => themeStyles.colors.background};
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -44,18 +45,17 @@ const SidebarContainer = styled.div<{ isOpen: boolean }>`
     }
 `;
 
-
-const SidebarLink = styled(Link)`
+const SidebarLink = styled(Link) <{ themeStyles: any }>`
     display: flex;
     align-items: center;
     gap: 12px;
-    color: #6a6a6a;
+    color: ${({ themeStyles }) => themeStyles.colors.text};
     text-decoration: none;
     font-size: 1.2rem;
     border-radius: 8px;
 
     &:hover {
-        background-color: #d3d3d3;
+        background-color: ${({ themeStyles }) => themeStyles.colors.buttonHoverBackground};
     }
 `;
 
@@ -77,8 +77,8 @@ const ProfileImage = styled.img`
     border-radius: 50%;
 `;
 
-const UserInfoText = styled.h2`
-    color: #6a6a6a;
+const UserInfoText = styled.h2<{ themeStyles: any }>`
+    color: ${({ themeStyles }) => themeStyles.colors.text};
     text-align: center;
     font-size: 1.2rem;
     margin: 0;
@@ -88,9 +88,9 @@ const UserInfoText = styled.h2`
     text-overflow: ellipsis;
 `;
 
-const EditProfileBtn = styled.button<{ isEditerOpen: boolean }>`
-    background-color: ${({ isEditerOpen }) => (isEditerOpen ? '#e7e7e7' : 'transparent')};
-    color: #6a6a6a;
+const EditProfileBtn = styled.button<{ isEditerOpen: boolean, themeStyles: any }>`
+    background-color: ${({ isEditerOpen, themeStyles }) => isEditerOpen ? themeStyles.colors.inputBackground : 'transparent'};
+    color: ${({ themeStyles }) => themeStyles.colors.text};
     border: none;
     border-radius: 8px;
     cursor: pointer;
@@ -99,10 +99,9 @@ const EditProfileBtn = styled.button<{ isEditerOpen: boolean }>`
     transition: background-color 0.2s;
     text-align: left;
     padding: 8px 16px;
-    background-color: #e7e7e7;
 
     &:disabled {
-        background-color: #d3d3d3;
+        background-color: ${({ themeStyles }) => themeStyles.colors.buttonHoverBackground};
         cursor: not-allowed;
         opacity: 0.5;
     }
@@ -116,15 +115,20 @@ const InputContainer = styled.div<{ isEditOpen: boolean }>`
     padding: 1rem 0;
 `;
 
-const InputField = styled.input`
+const InputField = styled.input<{ themeStyles: any }>`
     padding: 1rem;
     border-radius: 8px;
     border: none;
     width: 100%;
     box-sizing: border-box;
-    background-color: #FFFFFF;
+    background-color: ${({ themeStyles }) => themeStyles.colors.inputBackground};
+    color: ${({ themeStyles }) => themeStyles.colors.text};
     font-size: 1rem;
     outline: none;
+
+    &:disabled {
+        background-color: ${({ themeStyles }) => themeStyles.colors.buttonHoverBackground};
+    }
 `;
 
 const ButtonContainer = styled.div`
@@ -134,20 +138,20 @@ const ButtonContainer = styled.div`
     margin-top: 10px;
 `;
 
-const SaveButton = styled.button`
+const SaveButton = styled.button<{ themeStyles: any }>`
     padding: 10px 20px;
     border-radius: 4px;
     border: none;
-    background-color: #0075ff;
-    color: #ffffff;
+    background-color: ${({ themeStyles }) => themeStyles.colors.buttonBackground};
+    color: ${({ themeStyles }) => themeStyles.colors.buttonColor};
     cursor: pointer;
 
     &:hover {
-        background-color: #005bb5;
+        background-color: ${({ themeStyles }) => themeStyles.colors.buttonHoverBackground};
     }
 `;
 
-const LogOutBtn = styled.button`
+const LogOutBtn = styled.button<{ themeStyles: any }>`
     padding: 12px 16px;
     background-color: #ffb8b8;
     color: #c33c3c;
@@ -165,8 +169,8 @@ const LogOutBtn = styled.button`
     }
 `;
 
-const WarningText = styled.p`
-    color: #ff4949;
+const WarningText = styled.p<{ themeStyles: any }>`
+    color: ${({ themeStyles }) => themeStyles.colors.buttonBackground};
     font-size: 0.8rem;
     text-align: left;
     margin: 0;
@@ -185,6 +189,7 @@ const TabImage = styled(Image)`
 `;
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, session }) => {
+    const { themeStyles } = useTheme();
     const [profile, setProfile] = useState<any>(null);
     const [isEditMode, setIsEditMode] = useState(false);
     const [editedName, setEditedName] = useState('');
@@ -262,13 +267,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, session }) => 
     };
     return (
         <>
-            <SidebarContainer isOpen={isOpen}>
+            <SidebarContainer isOpen={isOpen} themeStyles={themeStyles}>
                 {profile ? (
                     <>
                         <ProfileSection>
                             <ProfileImage src={profile.avatar_url || "./user.svg"} alt="Profile Picture" />
-                            <UserInfoText>{profile.full_name}</UserInfoText>
-                            <EditProfileBtn onClick={handleEditProfile} isEditerOpen={isEditMode}>
+                            <UserInfoText themeStyles={themeStyles}>{profile.full_name}</UserInfoText>
+                            <EditProfileBtn onClick={handleEditProfile} isEditerOpen={isEditMode} themeStyles={themeStyles}>
                                 프로필 편집
                             </EditProfileBtn>
                         </ProfileSection>
@@ -280,40 +285,43 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, session }) => 
                                     value={editedName}
                                     onChange={(e) => setEditedName(e.target.value)}
                                     disabled={profile.provider !== 'email'}
+                                    themeStyles={themeStyles}
                                 />
                                 {profile.provider === 'email' || (
-                                    <WarningText>{`${profile.provider}로 로그인 한 경우 프로필 편집을 할 수 없습니다.`}</WarningText>
+                                    <WarningText themeStyles={themeStyles}>{`${profile.provider}로 로그인 한 경우 프로필 편집을 할 수 없습니다.`}</WarningText>
                                 )}
                                 <label>이메일</label>
                                 <InputField
                                     type="text"
                                     value={profile.email}
                                     disabled
+                                    themeStyles={themeStyles}
                                 />
                                 <label>가입일자</label>
                                 <InputField
                                     type="text"
                                     value={new Date(profile.created_at).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}
                                     disabled
+                                    themeStyles={themeStyles}
                                 />
                                 <ButtonContainer>
-                                    <SaveButton onClick={handleSaveProfile} disabled={editedName.length === 0}>저장</SaveButton>
+                                    <SaveButton onClick={handleSaveProfile} disabled={editedName.length === 0} themeStyles={themeStyles}>저장</SaveButton>
                                 </ButtonContainer>
                             </InputContainer>
                         )}
                     </>
                 ) : (
-                    <SidebarLink href="/">홈</SidebarLink>
+                    <SidebarLink href="/" themeStyles={themeStyles}>홈</SidebarLink>
                 )}
-                <SidebarLink href="/" onClick={toggleSidebar}>
+                <SidebarLink href="/" onClick={toggleSidebar} themeStyles={themeStyles}>
                     <TabImage src="./home.svg" width={24} height={24} alt="Home" />
                     <span>홈 (대시보드)</span>
                 </SidebarLink>
-                <SidebarLink href="/calendar" onClick={toggleSidebar}>
+                <SidebarLink href="/calendar" onClick={toggleSidebar} themeStyles={themeStyles}>
                     <TabImage src="./tab-calendar.svg" width={24} height={24} alt="Home" />
                     <span>캘린더</span>
                 </SidebarLink>
-                <LogOutBtn onClick={handleLogout}>로그아웃</LogOutBtn>
+                <LogOutBtn onClick={handleLogout} themeStyles={themeStyles}>로그아웃</LogOutBtn>
             </SidebarContainer>
             <Overlay isOpen={isOpen} onClick={toggleSidebar} />
         </>

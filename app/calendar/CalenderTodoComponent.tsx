@@ -5,13 +5,12 @@ import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import { supabase } from '@components/lib/supabaseClient';
 import styled from '@emotion/styled';
-import { fetchTodosForDate, deleteTodo, toggleTodo } from '@components/util/todoUtil';
+import { fetchTodosForDate, deleteTodo } from '@components/util/todoUtil';
 import { Todo } from '@components/types/todo';
 import { useTodoStore } from '@components/Store/useAuthTodoStore';
 import moment from 'moment';
-import '/style.css'
 import { keyframes } from '@emotion/react';
-import css from 'styled-jsx/css';
+import { useTheme } from '@components/app/Context/ThemeContext';
 
 type ValuePiece = Date | null;
 type Value = ValuePiece | [ValuePiece, ValuePiece];
@@ -24,25 +23,6 @@ interface User {
 interface CalenderTodoComponentProps {
   user: User;
 }
-
-// 스타일링 키프레임
-const rotateAdd = keyframes`
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(135deg);
-  }
-`;
-
-const rotateCancel = keyframes`
-  from {
-    transform: rotate(135deg);
-  }
-  to {
-    transform: rotate(0deg);
-  }
-`;
 
 const fadeInOutModal = keyframes`
   from {
@@ -89,10 +69,10 @@ const fadeOutDropDownModal = keyframes`
 `;
 
 // 스타일링 컴포넌트
-const AddToDoBtn = styled.button<{ isOpen: boolean }>`
+const AddToDoBtn = styled.button<{ isOpen: boolean, themeStyles: any }>`
   padding: 12px;
-  background-color: #0075ff;
-  color: #fff;
+  background-color: ${({ themeStyles }) => themeStyles.colors.buttonBackground};
+  color: ${({ themeStyles }) => themeStyles.colors.buttonColor};
   border: none;
   cursor: pointer;
   border-radius: 50%;
@@ -129,9 +109,9 @@ const ModalOverlay = styled.div<ModalProps>`
   z-index: 1000;
 `;
 
-const ModalContent = styled.div<{ isOpen: boolean, isFadingOut: boolean }>`
+const ModalContent = styled.div<{ isOpen: boolean, isFadingOut: boolean, themeStyles: any }>`
   position: relative;
-  background: #f6f8fc;
+  background: ${({ themeStyles }) => themeStyles.colors.background};
   padding: 1rem 1rem 0;
   border-radius: 12px;
   max-width: 572px;
@@ -174,7 +154,7 @@ const ToDoInputContainer = styled.div`
   gap: 12px;
 `;
 
-const InputField = styled.input`
+const InputField = styled.input<{ themeStyles: any }>`
   width: 100%;
   padding: 1rem;
   border-radius: 8px;
@@ -182,21 +162,27 @@ const InputField = styled.input`
   outline: none;
   box-sizing: border-box;
   font-size: 1rem;
-  background-color: #ffffff;
+  background-color: ${({ themeStyles }) => themeStyles.colors.inputBackground};
+  color: ${({ themeStyles }) => themeStyles.colors.text};
+  border: 1px solid ${({ themeStyles }) => themeStyles.colors.inputBorder};
 
   &:focus {
     outline: none;
-    border: 1px solid #e7e7e7;
+    border: 1px solid ${({ themeStyles }) => themeStyles.colors.inputBorder};
+  }
+
+  &::placeholder {
+    color: ${({ themeStyles }) => themeStyles.colors.inputPlaceholderColor};
   }
 `;
 
-const AddTodoBtn = styled.button`
+const AddTodoBtn = styled.button<{ themeStyles: any }>`
   display: flex;
   gap: 8px;
   justify-content: center;
   padding: 12px;
-  background-color: #0075ff;
-  color: #fff;
+  background-color: ${({ themeStyles }) => themeStyles.colors.buttonBackground};
+  color: ${({ themeStyles }) => themeStyles.colors.buttonColor};
   border: none;
   cursor: pointer;
   border-radius: 8px;
@@ -214,11 +200,11 @@ const AddTodoBtn = styled.button`
   }
 
   &:hover {
-    background-color: #0055cc;
+    background-color: ${({ themeStyles }) => themeStyles.colors.buttonHoverBackground};
   }
 `;
 
-const TodoSaveAndCancelBtnContainer = styled.div`
+const TodoSaveAndCancelBtnContainer = styled.div<{ themeStyles: any }>`
   display: flex;
   gap: 12px;
   justify-content: space-between;
@@ -228,7 +214,7 @@ const TodoSaveAndCancelBtnContainer = styled.div`
   width: 100%;
   position: sticky;
   bottom: 0;
-  background: #f6f8fc;
+  background: ${({ themeStyles }) => themeStyles.colors.background};
 `;
 
 const CancelBtn = styled.button`
@@ -248,10 +234,10 @@ const CancelBtn = styled.button`
   }
 `;
 
-const SaveTodoBtn = styled.button`
+const SaveTodoBtn = styled.button<{ themeStyles: any }>`
   padding: 12px 1.6rem;
-  background-color: #0075ff;
-  color: #ffffff;
+  background-color: ${({ themeStyles }) => themeStyles.colors.buttonBackground};
+  color: ${({ themeStyles }) => themeStyles.colors.buttonColor};
   font-size: 0.8rem;
   border: none;
   cursor: pointer;
@@ -261,7 +247,7 @@ const SaveTodoBtn = styled.button`
   font-weight: bold;
 
   &:hover {
-    background-color: #0055cc;
+    background-color: ${({ themeStyles }) => themeStyles.colors.buttonHoverBackground};
   }
 `;
 
@@ -278,7 +264,7 @@ const Container = styled.div`
   }
 `;
 
-const CalendarInfoContainer = styled.div`
+const CalendarInfoContainer = styled.div<{ themeStyles: any }>`
   display: flex;
   flex-direction: column;
   gap: 0.4em;
@@ -291,7 +277,7 @@ const CalendarInfoContainer = styled.div`
 
   p {
     margin: 0;
-    color: #777;
+    color: ${({ themeStyles }) => themeStyles.colors.text};
   }
 `;
 
@@ -333,7 +319,7 @@ const CalendarWrapper = styled.div`
   max-height: 800px; /* 최대 높이 */
 `;
 
-const CalendarStyled = styled(Calendar)`
+const CalendarStyled = styled(Calendar) <{ themeStyles: any }>`
   display: flex;
   justify-content: center;
   align-items: center;
@@ -342,6 +328,15 @@ const CalendarStyled = styled(Calendar)`
   height: auto;
   min-height: 400px; /* 최소 높이 */
   max-height: 600px; /* 최대 높이 */
+  padding: 1rem;
+  max-width: 100%;
+  background: ${({ themeStyles }) => themeStyles.colors.containerBackground};
+  color: ${({ themeStyles }) => themeStyles.colors.text};
+  border: none;
+  font-family: Arial, Helvetica, sans-serif;
+  line-height: 1.125em;
+  border-radius: 10px;
+  box-shadow: ${({ themeStyles }) => themeStyles.colors.shadow};
 
   & .react-calendar__tile {
     position: relative;
@@ -349,14 +344,40 @@ const CalendarStyled = styled(Calendar)`
     justify-content: flex-start;
     align-items: center;
     flex-direction: column;
+    height: 80px;
+    border-radius: 8px;
+    color: ${({ themeStyles }) => themeStyles.colors.text};
+    transition: background-color 0.2s, color 0.2s;
+
+    &:hover {
+      background-color: ${({ themeStyles }) => themeStyles.colors.buttonHoverBackground};
+      color: ${({ themeStyles }) => themeStyles.colors.buttonColor};
+    }
+  }
+    
+  & .react-calendar__tile--hasActive {
+    background: ${({ themeStyles }) => themeStyles.colors.buttonBackground};
   }
 
-  & .tile-content {
-    position: absolute;
-    bottom: 5px; /* 숫자 아래로 위치 조정 */
+  & .react-calendar__tile--active:hover {
+    background: ${({ themeStyles }) => themeStyles.colors.buttonHoverBackground};
+    color: ${({ themeStyles }) => themeStyles.colors.buttonColor};
   }
 
-  & .dot {
+  & .react-calendar__tile--active:enabled:focus {
+    background: ${({ themeStyles }) => themeStyles.colors.buttonHoverBackground};
+    color: ${({ themeStyles }) => themeStyles.colors.buttonColor};
+  }
+
+  & .react-calendar__tile--active {
+    background-color: ${({ themeStyles }) => themeStyles.colors.buttonBackground};
+    color: #FFFFFF;
+    font-size: 18px;
+    font-weight: bold;
+    border-radius: 8px;
+  }
+
+  & .react-calendar__tile .dot {
     height: 6px;
     width: 6px;
     background-color: #4caf50;
@@ -364,15 +385,45 @@ const CalendarStyled = styled(Calendar)`
     display: inline-block;
     margin-top: 2px;
   }
+
+  & .react-calendar__month-view__weekdays__weekday {
+    font-size: 1rem;
+    font-weight: bold;
+  }
+
+  & .react-calendar__month-view__weekdays__weekday abbr {
+    text-decoration: none;
+  }
+
+  & .react-calendar__navigation__label {
+    font-size: 1rem;
+    font-weight: bold;
+  }
+
+  & .react-calendar__navigation__arrow.react-calendar__navigation__prev-button,
+  & .react-calendar__navigation__arrow.react-calendar__navigation__prev2-button,
+  & .react-calendar__navigation__arrow.react-calendar__navigation__next-button,
+  & .react-calendar__navigation__arrow.react-calendar__navigation__next2-button {
+    background: ${({ themeStyles }) => themeStyles.colors.containerBackground};
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    font-size: 1rem;
+    color: ${({ themeStyles }) => themeStyles.colors.text};
+  }
+
+  & .react-calendar__month-view__days__day--neighboringMonth {
+    color: ${({ themeStyles }) => themeStyles.colors.inputBorder};
+  }
 `;
 
-const NoTodoListText = styled.p`
+
+
+const NoTodoListText = styled.p<{ themeStyles: any }>`
   text-align: center;
-  color: #777;
-`;
-
-const ImportantTodoContainer = styled.div`
-  margin-bottom: 20px;
+  color: ${({ themeStyles }) => themeStyles.colors.text};
 `;
 
 const TodoListContentContainer = styled.div`
@@ -398,12 +449,12 @@ const DotMenuBtn = styled.button<{ isDropDownOpen: boolean }>`
   cursor: pointer;
 `;
 
-const DropdownMenu = styled.div<{ isDropDownOpen: boolean }>`
+const DropdownMenu = styled.div<{ isDropDownOpen: boolean, themeStyles: any }>`
   position: absolute;
   top: 100%;
   right: 0;
-  background: white;
-  border: 1px solid #e7e7e7;
+  background: ${({ themeStyles }) => themeStyles.colors.background};
+  border: 1px solid ${({ themeStyles }) => themeStyles.colors.inputBorder};
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   z-index: 10;
@@ -420,13 +471,13 @@ const DropdownMenu = styled.div<{ isDropDownOpen: boolean }>`
   }
 `;
 
-const DeleteItem = styled.button`
+const DeleteItem = styled.button<{ themeStyles: any }>`
   display: flex;
   gap: 10px;
   align-items: center;
   box-sizing: border-box;
   width: 150px;
-  background-color: #FFFFFF;
+  background-color: ${({ themeStyles }) => themeStyles.colors.background};
   padding: 10px;
   cursor: pointer;
   border: none;
@@ -438,7 +489,7 @@ const DeleteItem = styled.button`
   }
 `;
 
-const WantSelectListText = styled.div`
+const WantSelectListText = styled.div<{ themeStyles: any }>`
   display: flex;
   justify-content: center;
   align-items: center;
@@ -446,7 +497,7 @@ const WantSelectListText = styled.div`
   width: 100%;
   height: 50vh;
   text-align: center;
-  color: #777;
+  color: ${({ themeStyles }) => themeStyles.colors.text};
   margin: auto 0;
 `;
 
@@ -469,6 +520,8 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
   const modalContentRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  const { themeStyles } = useTheme();
 
   useEffect(() => {
     if (inputs.length < 3) {
@@ -708,7 +761,7 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
 
   return (
     <Container>
-      <CalendarInfoContainer>
+      <CalendarInfoContainer themeStyles={themeStyles}>
         <CalendarTite>
           <img src="/calendar.svg" alt="Calendar" />
           <h1>캘린더 일정</h1>
@@ -722,6 +775,7 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
             value={value}
             formatDay={(locale, date) => moment(date).format("DD")}
             tileContent={tileContent}
+            themeStyles={themeStyles}
           />
         </CalendarWrapper>
         {selectedDate && (showTodoModal || showAddTodoModal) && (
@@ -734,6 +788,7 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
               isFadingOut={isFadingOut}
               ref={modalContentRef}
               onClick={(e) => e.stopPropagation()}
+              themeStyles={themeStyles}
             >
               {showTodoModal ? (
                 <>
@@ -747,7 +802,7 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
                     </h2>
                   </ModalTitleContainer>
                   {todos.length === 0 ? (
-                    <NoTodoListText>현재 진행 중인 일정이 없어요.</NoTodoListText>
+                    <NoTodoListText themeStyles={themeStyles}>현재 진행 중인 일정이 없어요.</NoTodoListText>
                   ) : (
                     <ul>
                       {todos.map((todo) => (
@@ -758,8 +813,8 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
                               <img src="/dot-menu.svg" alt="Dot Menu" />
                             </DotMenuBtn>
                             {showDropdown === todo.id && (
-                              <DropdownMenu ref={dropdownRef} isDropDownOpen={!!showDropdown}>
-                                <DeleteItem onClick={() => deleteTodoHandler(todo.id)}>
+                              <DropdownMenu ref={dropdownRef} isDropDownOpen={!!showDropdown} themeStyles={themeStyles}>
+                                <DeleteItem onClick={() => deleteTodoHandler(todo.id)} themeStyles={themeStyles}>
                                   <img src="/delete.svg" alt="Delete" />
                                   삭제
                                 </DeleteItem>
@@ -771,7 +826,7 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
                     </ul>
                   )}
                   <AddToDoBtnContainer>
-                    <AddToDoBtn onClick={handleAddTodoClick} isOpen={showInput}>
+                    <AddToDoBtn onClick={handleAddTodoClick} isOpen={showInput} themeStyles={themeStyles}>
                       <img src="/add.svg" alt="Add Todo" />
                     </AddToDoBtn>
                   </AddToDoBtnContainer>
@@ -794,24 +849,25 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
                           placeholder='할 일을 입력해주세요.'
                           onChange={(e) => handleInputChange(index, e.target.value)}
                           onKeyDown={(e) => handleKeyPress(index, e)}
+                          themeStyles={themeStyles}
                         />
                       </div>
                     ))}
                   </ToDoInputContainer>
-                  <AddTodoBtn onClick={handleAddInput}>
+                  <AddTodoBtn onClick={handleAddInput} themeStyles={themeStyles} >
                     <img src="/add.svg" alt="Add Todo" />
                     <p>할 일 항목 추가</p>
                   </AddTodoBtn>
-                  <TodoSaveAndCancelBtnContainer>
+                  <TodoSaveAndCancelBtnContainer themeStyles={themeStyles}>
                     <CancelBtn onClick={handleCancelAddTodo}>돌아가기</CancelBtn>
-                    <SaveTodoBtn onClick={saveTodosHandler}>저장</SaveTodoBtn>
+                    <SaveTodoBtn onClick={saveTodosHandler} themeStyles={themeStyles}>저장</SaveTodoBtn>
                   </TodoSaveAndCancelBtnContainer>
                 </>
               )}
             </ModalContent>
           </ModalOverlay>
         )}
-        <WantSelectListText>
+        <WantSelectListText themeStyles={themeStyles}>
           <span>D-day 구현 예정</span>
         </WantSelectListText>
       </MainTodoListContainer>

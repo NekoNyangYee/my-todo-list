@@ -13,7 +13,8 @@ export const lightTheme: Theme = {
         inputBackground: '#FFFFFF',
         inputBorder: '#e7e7e7',
         inputPlaceholderColor: '#6a6a6a',  // 여기 추가
-        shadow: '0px 0px 20px #E0E0E0;',
+        shadow: '0px 0px 20px #E0E0E0',
+        toggleThemeButtonHoverBackground: '#D4D4D4',
     }
 };
 
@@ -30,6 +31,7 @@ export const darkTheme: Theme = {
         inputBackground: '#333333',
         inputBorder: '#555555',
         inputPlaceholderColor: '#BBBBBB',  // 여기 추가
-        shadow: '0px 0px 0px none;',
+        shadow: '0px 0px 0px none',
+        toggleThemeButtonHoverBackground: '#202020',
     }
 };

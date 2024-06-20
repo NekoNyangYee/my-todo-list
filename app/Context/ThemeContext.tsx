@@ -5,8 +5,7 @@ import { ThemeProvider as EmotionThemeProvider } from '@emotion/react';
 import { lightTheme, darkTheme } from '../styles/style';
 import GlobalStyles from '../styles/globalStyle';
 import { Theme } from '@components/types/theme';
-
-type ThemeMode = 'light' | 'dark' | 'system'; // ThemeMode 타입 정의
+import { ThemeMode } from '@components/types/toggleTheme';
 
 interface ThemeContextProps {
     theme: ThemeMode;
@@ -17,25 +16,36 @@ interface ThemeContextProps {
 const ThemeContext = createContext<ThemeContextProps | undefined>(undefined);
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
-    const [theme, setTheme] = useState<ThemeMode>('system');
+    const [theme, setTheme] = useState<ThemeMode>(() => {
+        if (typeof window !== 'undefined') {
+            return (window.localStorage.getItem('theme') as ThemeMode) || 'light';
+        }
+        return 'light';
+    });
     const [themeStyles, setThemeStyles] = useState<Theme>(lightTheme);
+    const [isThemeLoaded, setIsThemeLoaded] = useState(false);
 
     useEffect(() => {
-        if (typeof window !== 'undefined') {
-            const savedTheme = window.localStorage.getItem('theme') as ThemeMode;
-            const initialTheme = savedTheme || 'system';
+        const initializeTheme = () => {
+            if (typeof window !== 'undefined') {
+                const savedTheme = window.localStorage.getItem('theme') as ThemeMode;
+                const initialTheme = savedTheme || 'light';
 
-            const getCurrentThemeStyles = (currentTheme: ThemeMode): Theme => {
-                if (currentTheme === 'system') {
-                    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                    return prefersDark ? darkTheme : lightTheme;
-                }
-                return currentTheme === 'dark' ? darkTheme : lightTheme;
-            };
+                const getCurrentThemeStyles = (currentTheme: ThemeMode): Theme => {
+                    if (currentTheme === 'system') {
+                        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                        return prefersDark ? darkTheme : lightTheme;
+                    }
+                    return currentTheme === 'dark' ? darkTheme : lightTheme;
+                };
 
-            setTheme(initialTheme);
-            setThemeStyles(getCurrentThemeStyles(initialTheme));
-        }
+                setTheme(initialTheme);
+                setThemeStyles(getCurrentThemeStyles(initialTheme));
+                setIsThemeLoaded(true);
+            }
+        };
+
+        initializeTheme();
     }, []);
 
     useEffect(() => {
@@ -64,6 +74,10 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
             window.localStorage.setItem('theme', theme);
         }
     }, [theme]);
+
+    if (!isThemeLoaded) {
+        return null; // 테마가 로드될 때까지 아무것도 렌더링하지 않음
+    }
 
     return (
         <ThemeContext.Provider value={{ theme, themeStyles, setTheme }}>

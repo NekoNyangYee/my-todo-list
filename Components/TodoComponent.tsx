@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTodoStore } from "../Store/useAuthTodoStore";
 import { fetchTodosForDate, deleteTodo, toggleTodo, togglePriority, saveTodos } from "@components/util/todoUtil";
 import { useTheme } from "@components/app/Context/ThemeContext";
+import PriorityIcon from "./icons/Priority/PriorityIcon";
 
 const fadeInDropDownModal = keyframes`
   from {
@@ -88,7 +89,6 @@ const TodoContainer = styled.div`
   flex-direction: row;
   gap: 2rem;
   width: 100%;
-  height: 100vh;
   max-width: 972px;
   margin: 0 auto;
 
@@ -106,6 +106,7 @@ const TodoContainer = styled.div`
 
   @media (max-width: 1224px) {
     max-width: 100%;
+    height: 100%; // 화면 전체 높이를 기준으로 설정
     flex-direction: column;
     gap: 2rem;
   }
@@ -166,14 +167,17 @@ const commonContainerStyles = (themeStyles: any = {}) => css`
 
 const ProgressTodoContainer = styled.div<{ themeStyles?: any }>`
   ${({ themeStyles }) => commonContainerStyles(themeStyles)}
-  height: 60vh;
+  height: 500px; /* 고정된 높이 설정 */
+  min-height: 500px; /* 최소 높이 설정 */
+  max-height: 500px; /* 최대 높이 설정 */
 `;
 
 const ComplecatedTodoContainer = styled.div<{ themeStyles?: any }>`
   ${({ themeStyles }) => commonContainerStyles(themeStyles)}
-  height: 60vh;
+  height: 500px; /* 고정된 높이 설정 */
+  min-height: 500px; /* 최소 높이 설정 */
+  max-height: 500px; /* 최대 높이 설정 */
 `;
-
 
 const CompleteInfoContainer = styled.div`
   display: flex;
@@ -232,17 +236,20 @@ const ModalOverlay = styled.div`
   z-index: 1000; /* Ensure the modal overlay is above other content */
 `;
 
-const ModalContent = styled.div<{ isOpen: boolean }>`
+const ModalContent = styled.div<{ isOpen: boolean, themeStyles: any }>`
   position: relative;
-  background: #f6f8fc;
-  padding: 1rem 1rem 0 1rem;
+  background: ${({ themeStyles }) => themeStyles.colors.background};
+  padding: 1rem 1rem 0;
   border-radius: 12px;
   max-width: 572px;
   width: 100%;
+  min-height: 30vh;
   max-height: 80vh;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
+  border: 1px solid ${({ themeStyles }) => themeStyles.colors.inputBorder};
   animation: ${({ isOpen }) => (isOpen ? fadeInModal : fadeOutModal)} 0.2s ease forwards;
 
   &::-webkit-scrollbar {
@@ -263,7 +270,7 @@ const ModalContent = styled.div<{ isOpen: boolean }>`
   }
 `;
 
-const ToDoInputContainer = styled.div`
+const ToDoInputContainer = styled.div<{ themeStyles: any }>`
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -276,7 +283,8 @@ const ToDoInputContainer = styled.div`
     outline: none;
     box-sizing: border-box;
     font-size: 1rem;
-    background-color: #ffffff;
+    background-color: ${({ themeStyles }) => themeStyles.colors.inputBackground};
+    border: 1px solid ${({ themeStyles }) => themeStyles.colors.inputBorder};
 
     &:focus {
       outline: none;
@@ -285,7 +293,7 @@ const ToDoInputContainer = styled.div`
   }
 `;
 
-const TodoSaveAndCancelBtnContainer = styled.div`
+const TodoSaveAndCancelBtnContainer = styled.div<{ themeStyles: any }>`
   display: flex;
   gap: 12px;
   justify-content: flex-end;
@@ -295,7 +303,7 @@ const TodoSaveAndCancelBtnContainer = styled.div`
   width: 100%;
   position: sticky;
   bottom: 0;
-  background: #f6f8fc;
+  background: ${({ themeStyles }) => themeStyles.colors.background};
 `;
 
 const CancelBtn = styled.button`
@@ -391,20 +399,6 @@ const TodoListContentContainer = styled.div`
   }
 `;
 
-const TodoListIncompleteContentContainer = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  justify-content: space-between;
-
-  & li {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin: auto 0;
-  }
-`;
-
 const NoTodoListText = styled.p`
   color: #a7a7a7;
   font-size: 1rem;
@@ -424,11 +418,7 @@ const PriorityButton = styled.button<{ isPriority: boolean }>`
   & svg {
     width: 24px;
     height: 24px;
-    fill: ${({ isPriority }) => (isPriority ? '#f9e000' : '#d3d3d3')};
-    stroke: ${({ isPriority }) => (isPriority ? '#f9e000' : '#d3d3d3')};
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
+    fill: ${({ isPriority }) => (isPriority ? '#F9E000' : '#C8C8C8')};
   }
 `;
 
@@ -443,6 +433,7 @@ const ImportantTodoContainer = styled.div`
 const DotMenuBtnWrapper = styled.div`
   position: relative;
   display: inline-block;
+
   & button {
     background: none;
     border: none;
@@ -475,23 +466,24 @@ const DotMenuBtn = styled.button<{ isDropDownOpen: boolean }>`
   }
 `;
 
-const DropdownMenu = styled.div<{ isDropDownOpen: boolean }>`
+const DropdownMenu = styled.div<{ isDropDownOpen: boolean, themeStyles: any }>`
   position: absolute;
   top: 100%;
   right: 0;
-  background: white;
-  border: 1px solid #e7e7e7;
+  background: ${({ themeStyles }) => themeStyles.colors.containerBackground};
+  border: 1px solid ${({ themeStyles }) => themeStyles.colors.inputBorder};
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   z-index: 10;
   width: 150px;
+  overflow: hidden;
   animation: ${({ isDropDownOpen }) => (isDropDownOpen ? fadeInDropDownModal : fadeOutDropDownModal)} 0.2s ease forwards;
 
   & > * {
     padding: 12px 8px;
     cursor: pointer;
     &:hover {
-      background-color: #f5f5f5;
+      background-color: ${({ themeStyles }) => themeStyles.colors.background};
     }
   }
 `;
@@ -503,15 +495,15 @@ const CompleteItem = styled.div`
   gap: 0.5rem;
 `;
 
-const DeleteItem = styled.div`
-  color: #dc3545;
+const DeleteItem = styled.div<{ themeStyles: any }>`
+  color: #FF4F4F;
   padding: 12px 8px;
   display: flex;
   align-items: center;
   gap: 0.5rem;
 
   &:hover {
-    background-color: #f7f7f7;
+    background-color: ${({ themeStyles }) => themeStyles.colors.background};
   }
 `;
 
@@ -716,18 +708,7 @@ const TodoComponent: React.FC<TodoComponentProps> = ({ user, selectedDate }) => 
                             isPriority={todo.is_priority}
                             onClick={() => togglePriorityHandler(todo.id, todo.is_priority)}
                           >
-                            <svg
-                              width="24"
-                              height="24"
-                              viewBox="0 0 24 24"
-                              fill={todo.is_priority ? "#F9E000" : "none"}
-                              stroke="#F9E000"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-                            </svg>
+                            <PriorityIcon isPriority={todo.is_priority} />
                           </PriorityButton>
                           {todo.content}
                         </li>
@@ -736,12 +717,12 @@ const TodoComponent: React.FC<TodoComponentProps> = ({ user, selectedDate }) => 
                             <img src="/dot-menu.svg" alt="Dot Menu" />
                           </DotMenuBtn>
                           {showDropdown === todo.id && (
-                            <DropdownMenu ref={dropdownRef} isDropDownOpen={!!showDropdown}>
+                            <DropdownMenu ref={dropdownRef} isDropDownOpen={!!showDropdown} themeStyles={themeStyles}>
                               <CompleteItem onClick={() => toggleTodoHandler(todo.id, todo.is_complete)}>
                                 <img src="/check.svg" alt="Check" />
                                 일정 완료
                               </CompleteItem>
-                              <DeleteItem onClick={() => deleteTodoHandler(todo.id)}>
+                              <DeleteItem onClick={() => deleteTodoHandler(todo.id)} themeStyles={themeStyles}>
                                 <img src="/delete.svg" alt="Delete" />
                                 삭제
                               </DeleteItem>
@@ -759,18 +740,7 @@ const TodoComponent: React.FC<TodoComponentProps> = ({ user, selectedDate }) => 
                         isPriority={todo.is_priority}
                         onClick={() => togglePriorityHandler(todo.id, todo.is_priority)}
                       >
-                        <svg
-                          width="24"
-                          height="24"
-                          viewBox="0 0 24 24"
-                          fill={todo.is_priority ? "#F9E000" : "none"}
-                          stroke="#F9E000"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-                        </svg>
+                        <PriorityIcon isPriority={todo.is_priority} />
                       </PriorityButton>
                       {todo.content}
                     </li>
@@ -779,12 +749,12 @@ const TodoComponent: React.FC<TodoComponentProps> = ({ user, selectedDate }) => 
                         <img src="/dot-menu.svg" alt="Dot Menu" />
                       </DotMenuBtn>
                       {showDropdown === todo.id && (
-                        <DropdownMenu ref={dropdownRef} isDropDownOpen={!!showDropdown}>
+                        <DropdownMenu ref={dropdownRef} isDropDownOpen={!!showDropdown} themeStyles={themeStyles}>
                           <CompleteItem onClick={() => toggleTodoHandler(todo.id, todo.is_complete)}>
                             <img src="/check.svg" alt="Check" />
                             일정 완료
                           </CompleteItem>
-                          <DeleteItem onClick={() => deleteTodoHandler(todo.id)}>
+                          <DeleteItem onClick={() => deleteTodoHandler(todo.id)} themeStyles={themeStyles}>
                             <img src="/delete.svg" alt="Delete" />
                             삭제
                           </DeleteItem>
@@ -794,6 +764,7 @@ const TodoComponent: React.FC<TodoComponentProps> = ({ user, selectedDate }) => 
                   </TodoListContentContainer>
                 ))}
               </ul>
+
             )}
             <AddToDoBtnContainer>
               <AddToDoBtn onClick={() => setShowInput(!showInput)} isOpen={showInput}>
@@ -832,12 +803,12 @@ const TodoComponent: React.FC<TodoComponentProps> = ({ user, selectedDate }) => 
 
       {(showInput || animateOut) && (
         <ModalOverlay>
-          <ModalContent isOpen={showInput && !animateOut} ref={modalContentRef}>
+          <ModalContent isOpen={showInput && !animateOut} ref={modalContentRef} themeStyles={themeStyles}>
             <ModalTitleContainer>
               <h2>할 일 추가</h2>
               <p>오늘 해야 할 일을 추가해 보세요.<br />한번에 최대 20개까지 추가 가능해요.</p>
             </ModalTitleContainer>
-            <ToDoInputContainer>
+            <ToDoInputContainer themeStyles={themeStyles}>
               {inputs.map((input, index) => (
                 <div key={index}>
                   <input
@@ -857,7 +828,7 @@ const TodoComponent: React.FC<TodoComponentProps> = ({ user, selectedDate }) => 
               <img src="/add.svg" alt="Add Todo" />
               <p>할 일 항목 추가</p>
             </AddTodoBtn>
-            <TodoSaveAndCancelBtnContainer>
+            <TodoSaveAndCancelBtnContainer themeStyles={themeStyles}>
               <CancelBtn onClick={closeModal}>취소</CancelBtn>
               <SaveTodoBtn onClick={saveTodosHandler}>저장</SaveTodoBtn>
             </TodoSaveAndCancelBtnContainer>

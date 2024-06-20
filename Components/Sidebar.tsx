@@ -7,6 +7,7 @@ import { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabaseClient';
 import Image from 'next/image';
 import { useTheme } from "@components/app/Context/ThemeContext";
+import ThemeToggle from './ThemeToggle';
 
 interface SidebarProps {
     isOpen: boolean;
@@ -23,10 +24,10 @@ const SidebarContainer = styled.div<{ isOpen: boolean, themeStyles: any }>`
     background-color: ${({ themeStyles }) => themeStyles.colors.background};
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: space-between;
     padding: 20px;
     gap: 20px;
-    transition: right 0.2s cubic-bezier(0.8, 0.5, 0.52, 1.0);
+    transition: all 0.2s cubic-bezier(0.8, 0.5, 0.52, 1.0);
     z-index: 1000;
     overflow-y: auto;
     box-sizing: border-box;
@@ -43,6 +44,18 @@ const SidebarContainer = styled.div<{ isOpen: boolean, themeStyles: any }>`
     &::-webkit-scrollbar-track {
         background: transparent;
     }
+`;
+
+const ProfileAndNavContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+`;
+
+const ToggleAndLogOutContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 `;
 
 const SidebarLink = styled(Link) <{ themeStyles: any }>`
@@ -89,8 +102,8 @@ const UserInfoText = styled.h2<{ themeStyles: any }>`
 `;
 
 const EditProfileBtn = styled.button<{ isEditerOpen: boolean, themeStyles: any }>`
-    background-color: ${({ isEditerOpen, themeStyles }) => isEditerOpen ? themeStyles.colors.inputBackground : 'transparent'};
-    color: ${({ themeStyles }) => themeStyles.colors.text};
+    background-color: ${({ themeStyles }) => themeStyles.colors.inputBackground};
+    color: #6A6A6A;
     border: none;
     border-radius: 8px;
     cursor: pointer;
@@ -127,7 +140,7 @@ const InputField = styled.input<{ themeStyles: any }>`
     outline: none;
 
     &:disabled {
-        background-color: ${({ themeStyles }) => themeStyles.colors.buttonHoverBackground};
+        background-color: ${({ themeStyles }) => themeStyles.colors.inputBackground};
     }
 `;
 
@@ -158,7 +171,6 @@ const LogOutBtn = styled.button<{ themeStyles: any }>`
     border: none;
     border-radius: 8px;
     cursor: pointer;
-    margin-top: auto;
     font-size: 0.8rem;
     font-weight: bold;
     transition: background-color 0.2s;
@@ -265,63 +277,69 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, session }) => 
             window.location.reload();
         }
     };
+
     return (
         <>
             <SidebarContainer isOpen={isOpen} themeStyles={themeStyles}>
-                {profile ? (
-                    <>
-                        <ProfileSection>
-                            <ProfileImage src={profile.avatar_url || "./user.svg"} alt="Profile Picture" />
-                            <UserInfoText themeStyles={themeStyles}>{profile.full_name}</UserInfoText>
-                            <EditProfileBtn onClick={handleEditProfile} isEditerOpen={isEditMode} themeStyles={themeStyles}>
-                                프로필 편집
-                            </EditProfileBtn>
-                        </ProfileSection>
-                        {isEditMode && (
-                            <InputContainer isEditOpen={isEditMode}>
-                                <label>닉네임</label>
-                                <InputField
-                                    type="text"
-                                    value={editedName}
-                                    onChange={(e) => setEditedName(e.target.value)}
-                                    disabled={profile.provider !== 'email'}
-                                    themeStyles={themeStyles}
-                                />
-                                {profile.provider === 'email' || (
-                                    <WarningText themeStyles={themeStyles}>{`${profile.provider}로 로그인 한 경우 프로필 편집을 할 수 없습니다.`}</WarningText>
-                                )}
-                                <label>이메일</label>
-                                <InputField
-                                    type="text"
-                                    value={profile.email}
-                                    disabled
-                                    themeStyles={themeStyles}
-                                />
-                                <label>가입일자</label>
-                                <InputField
-                                    type="text"
-                                    value={new Date(profile.created_at).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}
-                                    disabled
-                                    themeStyles={themeStyles}
-                                />
-                                <ButtonContainer>
-                                    <SaveButton onClick={handleSaveProfile} disabled={editedName.length === 0} themeStyles={themeStyles}>저장</SaveButton>
-                                </ButtonContainer>
-                            </InputContainer>
-                        )}
-                    </>
-                ) : (
-                    <SidebarLink href="/" themeStyles={themeStyles}>홈</SidebarLink>
-                )}
-                <SidebarLink href="/" onClick={toggleSidebar} themeStyles={themeStyles}>
-                    <TabImage src="./home.svg" width={24} height={24} alt="Home" />
-                    <span>홈 (대시보드)</span>
-                </SidebarLink>
-                <SidebarLink href="/calendar" onClick={toggleSidebar} themeStyles={themeStyles}>
-                    <TabImage src="./tab-calendar.svg" width={24} height={24} alt="Home" />
-                    <span>캘린더</span>
-                </SidebarLink>
-                <LogOutBtn onClick={handleLogout} themeStyles={themeStyles}>로그아웃</LogOutBtn>
+                <ProfileAndNavContainer>
+                    {profile ? (
+                        <>
+                            <ProfileSection>
+                                <ProfileImage src={profile.avatar_url || "./user.svg"} alt="Profile Picture" />
+                                <UserInfoText themeStyles={themeStyles}>{profile.full_name}</UserInfoText>
+                                <EditProfileBtn onClick={handleEditProfile} isEditerOpen={isEditMode} themeStyles={themeStyles}>
+                                    프로필 편집
+                                </EditProfileBtn>
+                            </ProfileSection>
+                            {isEditMode && (
+                                <InputContainer isEditOpen={isEditMode}>
+                                    <label>닉네임</label>
+                                    <InputField
+                                        type="text"
+                                        value={editedName}
+                                        onChange={(e) => setEditedName(e.target.value)}
+                                        disabled={profile.provider !== 'email'}
+                                        themeStyles={themeStyles}
+                                    />
+                                    {profile.provider === 'email' || (
+                                        <WarningText themeStyles={themeStyles}>{`${profile.provider}로 로그인 한 경우 프로필 편집을 할 수 없습니다.`}</WarningText>
+                                    )}
+                                    <label>이메일</label>
+                                    <InputField
+                                        type="text"
+                                        value={profile.email}
+                                        disabled
+                                        themeStyles={themeStyles}
+                                    />
+                                    <label>가입일자</label>
+                                    <InputField
+                                        type="text"
+                                        value={new Date(profile.created_at).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}
+                                        disabled
+                                        themeStyles={themeStyles}
+                                    />
+                                    <ButtonContainer>
+                                        <SaveButton onClick={handleSaveProfile} disabled={editedName.length === 0} themeStyles={themeStyles}>저장</SaveButton>
+                                    </ButtonContainer>
+                                </InputContainer>
+                            )}
+                        </>
+                    ) : (
+                        <SidebarLink href="/" themeStyles={themeStyles}>홈</SidebarLink>
+                    )}
+                    <SidebarLink href="/" onClick={toggleSidebar} themeStyles={themeStyles}>
+                        <TabImage src="./home.svg" width={24} height={24} alt="Home" />
+                        <span>홈 (대시보드)</span>
+                    </SidebarLink>
+                    <SidebarLink href="/calendar" onClick={toggleSidebar} themeStyles={themeStyles}>
+                        <TabImage src="./tab-calendar.svg" width={24} height={24} alt="Home" />
+                        <span>캘린더</span>
+                    </SidebarLink>
+                </ProfileAndNavContainer>
+                <ToggleAndLogOutContainer>
+                    <ThemeToggle />
+                    <LogOutBtn onClick={handleLogout} themeStyles={themeStyles}>로그아웃</LogOutBtn>
+                </ToggleAndLogOutContainer>
             </SidebarContainer>
             <Overlay isOpen={isOpen} onClick={toggleSidebar} />
         </>

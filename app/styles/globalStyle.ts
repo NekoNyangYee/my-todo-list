@@ -43,11 +43,6 @@ const GlobalStyle = createGlobalStyle<{ theme: Theme }>`
   & rect {
     fill: ${({ theme }) => theme.colors.text};
   }
-
-  & path {
-    stroke: ${({ theme }) => theme.colors.text};
-    fill: ${({ theme }) => theme.colors.text};
-  }
 `;
 
 export default GlobalStyle;

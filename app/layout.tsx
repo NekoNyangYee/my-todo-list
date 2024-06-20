@@ -30,8 +30,8 @@ export default function RootLayout({
           <MainLayout>
             <AuthHeader />
             {children}
+            <ThemeToggle />
           </MainLayout>
-          <ThemeToggle />
         </ThemeProvider>
       </body>
     </html>

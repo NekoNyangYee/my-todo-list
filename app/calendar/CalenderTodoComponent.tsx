@@ -122,6 +122,7 @@ const ModalContent = styled.div<{ isOpen: boolean, isFadingOut: boolean, themeSt
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  border: 1px solid ${({ themeStyles }) => themeStyles.colors.inputBorder};
   animation: ${({ isFadingOut }) => (isFadingOut ? fadeOutInModal : fadeInOutModal)} 0.2s ease forwards;
 
   &::-webkit-scrollbar {
@@ -350,8 +351,8 @@ const CalendarStyled = styled(Calendar) <{ themeStyles: any }>`
     transition: background-color 0.2s, color 0.2s;
 
     &:hover {
-      background-color: ${({ themeStyles }) => themeStyles.colors.buttonHoverBackground};
-      color: ${({ themeStyles }) => themeStyles.colors.buttonColor};
+      background-color: ${({ themeStyles }) => themeStyles.colors.background};
+      color: ${({ themeStyles }) => themeStyles.colors.text};
     }
   }
     
@@ -483,6 +484,7 @@ const DeleteItem = styled.button<{ themeStyles: any }>`
   border: none;
   border-radius: 8px;
   z-index: 10;
+  color: #FF4F4F;
 
   &:hover {
     background-color: #f0f0f0;

@@ -9,6 +9,7 @@ export type ThemeColors = {
     inputBorder: string;
     inputPlaceholderColor: string;  // 여기 추가
     shadow: string;
+    toggleThemeButtonHoverBackground: string;
 };
 
 export type Theme = {

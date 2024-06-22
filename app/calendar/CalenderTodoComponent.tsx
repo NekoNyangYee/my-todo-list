@@ -162,7 +162,7 @@ const InputField = styled.input<{ themeStyles: any }>`
   border: none;
   outline: none;
   box-sizing: border-box;
-  font-size: 1.0625rem;
+  font-size: 1.2rem;
   background-color: ${({ themeStyles }) => themeStyles.colors.inputBackground};
   color: ${({ themeStyles }) => themeStyles.colors.text};
   border: 1px solid ${({ themeStyles }) => themeStyles.colors.inputBorder};

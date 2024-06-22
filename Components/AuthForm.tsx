@@ -9,6 +9,7 @@ import { updateProfile } from "../lib/updateProfile";
 import { fetchTodos, setupMidnightCheck, fetchTodosForDate } from "@components/util/todoUtil";
 import { useTodoStore } from "@components/Store/useAuthTodoStore";
 import { useTheme } from "@components/app/Context/ThemeContext";
+import { useEffect, useState } from "react";
 
 const LoginSiginupContainer = styled.div<{ themeStyles: any }>`
   width: 100%;
@@ -68,10 +69,10 @@ const AuthInputContainer = styled.div<{ themeStyles: any }>`
     border: none;
     background-color: ${({ themeStyles }) => themeStyles.colors.inputBackground};
     background-repeat: no-repeat;
-    background-size: 1.4rem;
+    background-size: 1.6rem;
     background-position: 1rem center;
     z-index: 10;
-    font-size: 1.0625rem;
+    font-size: 1.2rem;
     border: 1px solid ${({ themeStyles }) => themeStyles.colors.inputBorder};
 
     &:focus {
@@ -106,6 +107,47 @@ const fadeOutModal = keyframes`
   }
 `;
 
+const fadeInSignUp = keyframes`
+  from {
+    transform: translateX(-20px);
+  }
+  to {
+    transform: translateX(0);
+  }
+`;
+
+const fadeOutLogin = keyframes`
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0px);
+  }
+`;
+
+const fadeInLogin = keyframes`
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+`;
+
+const fadeOutSignUp = keyframes`
+  from {
+    transform: translateX(20px);
+  }
+  to {
+    transform: translateX(0px);
+  }
+`;
+
+
 interface SignUpInputContainerProps {
   isOpen: boolean;
   themeStyles: any;
@@ -115,7 +157,6 @@ const SignUpInputContainer = styled.div<SignUpInputContainerProps>`
   display: flex;
   flex-direction: column;
   gap: 12px;
-  animation: ${({ isOpen }) => (isOpen ? fadeInModal : fadeOutModal)} 0.2s;
 
   & input {
     background-color: ${({ themeStyles }) => themeStyles.colors.inputBackground};
@@ -123,10 +164,12 @@ const SignUpInputContainer = styled.div<SignUpInputContainerProps>`
 
     &:nth-of-type(1) {
       background-image: url('/password.svg');
+      animation: ${({ isOpen }) => (isOpen ? fadeInModal : fadeOutModal)} 0.2s;
     }
       
     &:nth-of-type(2) {
       background-image: url('/user.svg');
+      animation: ${({ isOpen }) => (isOpen ? fadeInModal : fadeOutModal)} 0.4s;
     }
   }
 `;
@@ -225,6 +268,11 @@ const SocialLoginText = styled.p<{ themeStyles: any }>`
   color: ${({ themeStyles }) => themeStyles.colors.inputPlaceholderColor};
 `;
 
+const AuthTitle = styled.h2<{ authType: 'signin' | 'signup' }>`
+  animation: ${({ authType }) => (authType === 'signin' ? fadeInLogin : fadeInSignUp)} 0.3s forwards,
+             ${({ authType }) => (authType === 'signin' ? fadeOutSignUp : fadeOutLogin)} 0.3s forwards;
+`;
+
 const AuthForm = () => {
   const { themeStyles } = useTheme();
   const {
@@ -242,6 +290,11 @@ const AuthForm = () => {
   const { setTodos, setUncompletedTodos } = useTodoStore();
   const router = useRouter();
 
+  const [isSignUp, setIsSignUp] = useState<boolean>(authType === "signup");
+
+  useEffect(() => {
+    setIsSignUp(authType === "signup");
+  }, [authType]);
   const handleAuth = async () => {
     const currentDate = new Date(); // 현재 날짜를 가져옴
 
@@ -346,7 +399,9 @@ const AuthForm = () => {
         <p>하루하루를 계획없이 사시나요?<br />투두 리스트에서 하루를 기록해보세요.</p>
       </MainLobySectionContainer>
       <LoginAuthContainer>
-        <h2>{authType === "signin" ? "로그인" : "회원가입"}</h2>
+        <AuthTitle authType={authType}>
+          {authType === "signin" ? "로그인" : "회원가입"}
+        </AuthTitle>
         <AuthInputContainer themeStyles={themeStyles}>
           <input
             type="email"

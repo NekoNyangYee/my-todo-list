@@ -282,7 +282,7 @@ const ToDoInputContainer = styled.div<{ themeStyles: any }>`
     border: none;
     outline: none;
     box-sizing: border-box;
-    font-size: 1rem;
+    font-size: 1.0625rem;
     background-color: ${({ themeStyles }) => themeStyles.colors.inputBackground};
     border: 1px solid ${({ themeStyles }) => themeStyles.colors.inputBorder};
 

@@ -71,11 +71,11 @@ const AuthInputContainer = styled.div<{ themeStyles: any }>`
     background-size: 1.4rem;
     background-position: 1rem center;
     z-index: 10;
-    font-size: 1rem;
+    font-size: 1.0625rem;
+    border: 1px solid ${({ themeStyles }) => themeStyles.colors.inputBorder};
 
     &:focus {
       outline: none;
-      border: 1px solid ${({ themeStyles }) => themeStyles.colors.inputBorder};
     }
 
     &:nth-of-type(2) {

@@ -21,9 +21,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="ko" translate="no">
       <head>
         <link rel="manifest" href="/manifest.json" />
+        <meta name="google" content="notranslate" />
       </head>
       <body className={noto_sans_kr.className}>
         <ThemeProvider>

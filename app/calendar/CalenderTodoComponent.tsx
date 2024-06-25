@@ -11,6 +11,8 @@ import { useTodoStore } from '@components/Store/useAuthTodoStore';
 import moment from 'moment';
 import { keyframes } from '@emotion/react';
 import { useTheme } from '@components/app/Context/ThemeContext';
+import AddIcon from '@components/Components/icons/Utils/AddIcon';
+import DeleteIcon from '@components/Components/icons/Utils/DeleteIcon';
 
 type ValuePiece = Date | null;
 type Value = ValuePiece | [ValuePiece, ValuePiece];
@@ -278,7 +280,7 @@ const CalendarInfoContainer = styled.div<{ themeStyles: any }>`
 
   p {
     margin: 0;
-    color: ${({ themeStyles }) => themeStyles.colors.text};
+    color: #a7a7a7;
   }
 `;
 
@@ -817,7 +819,7 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
                             {showDropdown === todo.id && (
                               <DropdownMenu ref={dropdownRef} isDropDownOpen={!!showDropdown} themeStyles={themeStyles}>
                                 <DeleteItem onClick={() => deleteTodoHandler(todo.id)} themeStyles={themeStyles}>
-                                  <img src="/delete.svg" alt="Delete" />
+                                  <DeleteIcon />
                                   삭제
                                 </DeleteItem>
                               </DropdownMenu>
@@ -829,7 +831,7 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
                   )}
                   <AddToDoBtnContainer>
                     <AddToDoBtn onClick={handleAddTodoClick} isOpen={showInput} themeStyles={themeStyles}>
-                      <img src="/add.svg" alt="Add Todo" />
+                      <AddIcon />
                     </AddToDoBtn>
                   </AddToDoBtnContainer>
                 </>
@@ -857,7 +859,7 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
                     ))}
                   </ToDoInputContainer>
                   <AddTodoBtn onClick={handleAddInput} themeStyles={themeStyles} >
-                    <img src="/add.svg" alt="Add Todo" />
+                    <AddIcon />
                     <p>할 일 항목 추가</p>
                   </AddTodoBtn>
                   <TodoSaveAndCancelBtnContainer themeStyles={themeStyles}>

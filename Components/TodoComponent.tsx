@@ -7,6 +7,8 @@ import { useTodoStore } from "../Store/useAuthTodoStore";
 import { fetchTodosForDate, deleteTodo, toggleTodo, togglePriority, saveTodos } from "@components/util/todoUtil";
 import { useTheme } from "@components/app/Context/ThemeContext";
 import PriorityIcon from "./icons/Priority/PriorityIcon";
+import DeleteIcon from "./icons/Utils/DeleteIcon";
+import AddIcon from "./icons/Utils/AddIcon";
 
 const fadeInDropDownModal = keyframes`
   from {
@@ -459,11 +461,6 @@ const DotMenuBtn = styled.button<{ isDropDownOpen: boolean }>`
   background-color: ${({ isDropDownOpen }) => (isDropDownOpen ? '#f7f7f7' : 'transparent')};
   border-radius: 50%;
   position: relative;
-
-  & img {
-    width: 24px;
-    height: 24px;
-  }
 `;
 
 const DropdownMenu = styled.div<{ isDropDownOpen: boolean, themeStyles: any }>`
@@ -507,7 +504,7 @@ const DeleteItem = styled.div<{ themeStyles: any }>`
   }
 `;
 
-const DateContainer = styled.div`
+const DateContainer = styled.div<{ themeStyles: any }>`
   display: flex;
   flex-direction: column;
   text-align: right;
@@ -520,7 +517,7 @@ const DateContainer = styled.div`
 
   & h2 {
     margin: 0;
-    color: #333333;
+    color: ${({ themeStyles }) => themeStyles.colors.text};
     font-size: 1.5rem;
   }
 `;
@@ -679,7 +676,7 @@ const TodoComponent: React.FC<TodoComponentProps> = ({ user, selectedDate }) => 
       <MainTodoListContainer>
         <DasboardContainer>
           <DashBordText>DashBoard</DashBordText>
-          <DateContainer>
+          <DateContainer themeStyles={themeStyles}>
             <span>{date.toLocaleString("ko-KR", {
               year: "numeric",
             })}
@@ -723,7 +720,7 @@ const TodoComponent: React.FC<TodoComponentProps> = ({ user, selectedDate }) => 
                                 일정 완료
                               </CompleteItem>
                               <DeleteItem onClick={() => deleteTodoHandler(todo.id)} themeStyles={themeStyles}>
-                                <img src="/delete.svg" alt="Delete" />
+                                <DeleteIcon />
                                 삭제
                               </DeleteItem>
                             </DropdownMenu>
@@ -755,7 +752,7 @@ const TodoComponent: React.FC<TodoComponentProps> = ({ user, selectedDate }) => 
                             일정 완료
                           </CompleteItem>
                           <DeleteItem onClick={() => deleteTodoHandler(todo.id)} themeStyles={themeStyles}>
-                            <img src="/delete.svg" alt="Delete" />
+                            <DeleteIcon />
                             삭제
                           </DeleteItem>
                         </DropdownMenu>
@@ -768,7 +765,7 @@ const TodoComponent: React.FC<TodoComponentProps> = ({ user, selectedDate }) => 
             )}
             <AddToDoBtnContainer>
               <AddToDoBtn onClick={() => setShowInput(!showInput)} isOpen={showInput}>
-                <img src="/add.svg" alt="Add Todo" />
+                <AddIcon />
               </AddToDoBtn>
             </AddToDoBtnContainer>
           </ProgressTodoContainer>
@@ -825,7 +822,7 @@ const TodoComponent: React.FC<TodoComponentProps> = ({ user, selectedDate }) => 
               ))}
             </ToDoInputContainer>
             <AddTodoBtn onClick={handleAddInput}>
-              <img src="/add.svg" alt="Add Todo" />
+              <AddIcon />
               <p>할 일 항목 추가</p>
             </AddTodoBtn>
             <TodoSaveAndCancelBtnContainer themeStyles={themeStyles}>

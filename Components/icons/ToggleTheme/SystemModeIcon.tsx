@@ -1,5 +1,4 @@
 import React from 'react';
-import DarkModeSvg from '../../public/dark-mode.svg';
 
 const SystemModeIcon = () => (
     <svg viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg">

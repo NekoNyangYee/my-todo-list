@@ -66,10 +66,17 @@ const SidebarLink = styled(Link) <{ themeStyles: any }>`
     text-decoration: none;
     font-size: 1.2rem;
     border-radius: 8px;
+    padding: 1rem 0;
 
     &:hover {
-        background-color: ${({ themeStyles }) => themeStyles.colors.buttonHoverBackground};
+        background-color: ${({ themeStyles }) => themeStyles.colors.toggleThemeButtonHoverBackground};
     }
+`;
+
+const NavContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+
 `;
 
 const Overlay = styled.div<{ isOpen: boolean }>`
@@ -327,14 +334,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, session }) => 
                     ) : (
                         <SidebarLink href="/" themeStyles={themeStyles}>홈</SidebarLink>
                     )}
-                    <SidebarLink href="/" onClick={toggleSidebar} themeStyles={themeStyles}>
-                        <TabImage src="./home.svg" width={24} height={24} alt="Home" />
-                        <span>홈 (대시보드)</span>
-                    </SidebarLink>
-                    <SidebarLink href="/calendar" onClick={toggleSidebar} themeStyles={themeStyles}>
-                        <TabImage src="./tab-calendar.svg" width={24} height={24} alt="Home" />
-                        <span>캘린더</span>
-                    </SidebarLink>
+                    <NavContainer>
+                        <SidebarLink href="/" onClick={toggleSidebar} themeStyles={themeStyles}>
+                            <TabImage src="./home.svg" width={24} height={24} alt="Home" />
+                            <span>홈 (대시보드)</span>
+                        </SidebarLink>
+                        <SidebarLink href="/calendar" onClick={toggleSidebar} themeStyles={themeStyles}>
+                            <TabImage src="./tab-calendar.svg" width={24} height={24} alt="Home" />
+                            <span>캘린더</span>
+                        </SidebarLink>
+                    </NavContainer>
                 </ProfileAndNavContainer>
                 <ToggleAndLogOutContainer>
                     <ThemeToggle />

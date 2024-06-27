@@ -13,9 +13,10 @@ const ThemeBtnContainer = styled.div<{ themeStyles: any }>`
   justify-content: space-between;
   background-color: ${({ themeStyles }) => themeStyles.colors.containerBackground};
   border-radius: 8px;
+  border: 1px solid ${({ themeStyles }) => themeStyles.colors.inputBorder};
   transition: background-color 0.2s;
   max-width: 372px;
-  margin: 30px auto;
+  margin: 0 auto;
   width: 100%;
 
   button {
@@ -36,8 +37,8 @@ const ThemeBtnContainer = styled.div<{ themeStyles: any }>`
     }
 
     svg {
-      width: 24px;  // 아이콘의 너비 설정
-      height: 24px; // 아이콘의 높이 설정
+      width: 24px;
+      height: 24px;
     }
   }
 `;

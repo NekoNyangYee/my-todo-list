@@ -505,12 +505,26 @@ const WantSelectListText = styled.div<{ themeStyles: any }>`
   margin: auto 0;
 `;
 
+const FetchItem = styled.button<{ themeStyles: any }>`
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  box-sizing: border-box;
+  width: 150px;
+  background-color: ${({ themeStyles }) => themeStyles.colors.background};
+  padding: 10px;
+  cursor: pointer;
+  border: none;
+  border-radius: 8px;
+  z-index: 10;
+`;
+
 interface ModalProps {
   isFadingOut: boolean;
 }
 
 const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) => {
-  const { addInput, inputs, setInputs, resetInputs } = useTodoStore();
+  const { addInput, inputs, setInputs, resetInputs, removeInput } = useTodoStore();
   const [value, onChange] = useState<Value>(new Date());
   const [showInput, setShowInput] = useState<boolean>(false);
   const [todoInputs, setTodoInputs] = useState<string[]>(['']);
@@ -518,8 +532,8 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
   const [todos, setTodos] = useState<Todo[]>([]);
   const [showDropdown, setShowDropdown] = useState<string | null>(null);
   const [datesWithTodos, setDatesWithTodos] = useState<Set<string>>(new Set());
-  const [showTodoModal, setShowTodoModal] = useState<boolean>(false); // 일정 모달 상태
-  const [showAddTodoModal, setShowAddTodoModal] = useState<boolean>(false); // 할 일 추가 모달 상태
+  const [showTodoModal, setShowTodoModal] = useState<boolean>(false);
+  const [showAddTodoModal, setShowAddTodoModal] = useState<boolean>(false);
   const [isFadingOut, setIsFadingOut] = useState<boolean>(false);
   const modalContentRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -750,6 +764,28 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
     return null;
   };
 
+  const fetchTodoToToday = async (todoId: string) => {
+    if (!user || !selectedDate) return;
+
+    const today = new Date();
+    const koreanToday = new Date(today.getTime() + (9 * 60 * 60 * 1000)); // 한국 시간으로 변경
+    const koreanTodayString = koreanToday.toISOString().split('T')[0];
+
+    const { data, error } = await supabase
+      .from('todos')
+      .update({ date: koreanTodayString })
+      .eq('id', todoId);
+
+    if (error) {
+      console.error('Error updating todo date:', error);
+    } else {
+      console.log('Todo date updated successfully', data);
+      // 날짜를 업데이트한 후에는 목록을 다시 가져와서 UI를 업데이트합니다.
+      fetchTodosForDate(user.id, selectedDate, setTodos);
+    }
+  };
+
+
   const handleKeyPress = (index: number, event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
       if (index < inputs.length - 1) {
@@ -758,6 +794,15 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
         handleAddInput();
         setTimeout(() => {
           inputRefs.current[index + 1]?.focus();
+        }, 100);
+      }
+    } else if (event.key === 'Backspace' && inputs[index] === '') {
+      if (inputs.length > 3) {
+        removeInput(index);
+        setTimeout(() => {
+          if (index > 0) {
+            inputRefs.current[index - 1]?.focus();
+          }
         }, 100);
       }
     }
@@ -818,6 +863,9 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
                             </DotMenuBtn>
                             {showDropdown === todo.id && (
                               <DropdownMenu ref={dropdownRef} isDropDownOpen={!!showDropdown} themeStyles={themeStyles}>
+                                <FetchItem onClick={() => fetchTodoToToday(todo.id)} themeStyles={themeStyles}>
+                                  끌어오기
+                                </FetchItem>
                                 <DeleteItem onClick={() => deleteTodoHandler(todo.id)} themeStyles={themeStyles}>
                                   <DeleteIcon />
                                   삭제
@@ -826,6 +874,7 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
                             )}
                           </DotMenuBtnWrapper>
                         </TodoListContentContainer>
+
                       ))}
                     </ul>
                   )}

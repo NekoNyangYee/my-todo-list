@@ -82,7 +82,6 @@ const MainTodoListContainer = styled.div`
 
   @media (max-width: 1224px) {
     max-width: 90%;
-    flex-direction: column;
   }
 `;
 
@@ -106,7 +105,7 @@ const TodoContainer = styled.div`
     list-style: none;
   }
 
-  @media (max-width: 1224px) {
+  @media (max-width: 768px) {
     max-width: 100%;
     height: 100%; // 화면 전체 높이를 기준으로 설정
     flex-direction: column;

@@ -110,7 +110,7 @@ const UserInfoText = styled.h2<{ themeStyles: any }>`
 
 const EditProfileBtn = styled.button<{ isEditerOpen: boolean, themeStyles: any }>`
     background-color: ${({ themeStyles }) => themeStyles.colors.inputBackground};
-    color: #6A6A6A;
+    color: ${({ themeStyles }) => themeStyles.colors.text};
     border: none;
     border-radius: 8px;
     cursor: pointer;
@@ -168,6 +168,12 @@ const SaveButton = styled.button<{ themeStyles: any }>`
 
     &:hover {
         background-color: ${({ themeStyles }) => themeStyles.colors.buttonHoverBackground};
+    }
+
+    &:disabled {
+        background-color: ${({ themeStyles }) => themeStyles.buttonBackground};
+        cursor: not-allowed;
+        opacity: 0.5;
     }
 `;
 
@@ -301,13 +307,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, session }) => 
                             {isEditMode && (
                                 <InputContainer isEditOpen={isEditMode}>
                                     <label>닉네임</label>
-                                    <InputField
-                                        type="text"
-                                        value={editedName}
-                                        onChange={(e) => setEditedName(e.target.value)}
-                                        disabled={profile.provider !== 'email'}
-                                        themeStyles={themeStyles}
-                                    />
+                                    <ButtonContainer>
+                                        <InputField
+                                            type="text"
+                                            value={editedName}
+                                            onChange={(e) => setEditedName(e.target.value)}
+                                            disabled={profile.provider !== "email"}
+                                            themeStyles={themeStyles}
+                                        />
+                                        <SaveButton
+                                            onClick={handleSaveProfile}
+                                            disabled={editedName.length === 0 || editedName === profile.full_name}
+                                            themeStyles={themeStyles}
+                                        >
+                                            저장
+                                        </SaveButton>
+                                    </ButtonContainer>
                                     {profile.provider === 'email' || (
                                         <WarningText themeStyles={themeStyles}>{`${profile.provider}로 로그인 한 경우 프로필 편집을 할 수 없습니다.`}</WarningText>
                                     )}
@@ -325,9 +340,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, session }) => 
                                         disabled
                                         themeStyles={themeStyles}
                                     />
-                                    <ButtonContainer>
-                                        <SaveButton onClick={handleSaveProfile} disabled={editedName.length === 0} themeStyles={themeStyles}>저장</SaveButton>
-                                    </ButtonContainer>
                                 </InputContainer>
                             )}
                         </>

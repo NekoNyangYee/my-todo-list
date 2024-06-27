@@ -3,7 +3,6 @@ import MainLayout from "@components/Components/layout/MainLayout";
 import type { Metadata } from "next";
 import { Noto_Sans_KR } from "next/font/google";
 import { ThemeProvider } from "./Context/ThemeContext";
-import ThemeToggle from "@components/Components/ThemeToggle";
 
 const noto_sans_kr = Noto_Sans_KR({
   subsets: ['latin'],
@@ -31,7 +30,6 @@ export default function RootLayout({
           <MainLayout>
             <AuthHeader />
             {children}
-            <ThemeToggle />
           </MainLayout>
         </ThemeProvider>
       </body>

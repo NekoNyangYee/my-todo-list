@@ -8,6 +8,8 @@ import Sidebar from "../Sidebar";
 import Link from "next/link";
 import Image from "next/image";
 import { useTheme } from "@components/app/Context/ThemeContext";
+import ThemeToggle from "../ThemeToggle";
+import { set } from "mongoose";
 
 const HeaderFlexBox = styled.div`
   display: flex;
@@ -175,7 +177,8 @@ const ModalContent = styled.div<{ isModalOpen: boolean; themeStyles: any }>`
   animation: ${({ isModalOpen }) => (isModalOpen ? fadeInModal : fadeOutModal)} 0.2s ease forwards;
   max-height: 80vh;
   overflow-y: auto;
-  opacity: 1; /* 추가: 투명도를 1로 설정하여 불투명하게 만듭니다. */
+  opacity: 1;
+  border: 1px solid ${({ themeStyles }) => themeStyles.colors.inputBorder};
 
   &::-webkit-scrollbar {
     width: 8px;
@@ -322,6 +325,12 @@ const SaveButton = styled.button<{ themeStyles: any }>`
 
   &:hover {
     background-color: ${({ themeStyles }) => themeStyles.buttonHoverBackground};
+  }
+
+  &:disabled {
+    background-color: ${({ themeStyles }) => themeStyles.buttonBackground};
+    cursor: not-allowed;
+    opacity: 0.5;
   }
 `;
 
@@ -693,13 +702,23 @@ const AuthHeader = () => {
               {isEditMode && (
                 <InputContainer isEditOpen={isEditMode}>
                   <label>닉네임</label>
-                  <InputField
-                    type="text"
-                    value={editedName}
-                    onChange={(e) => setEditedName(e.target.value)}
-                    disabled={profile.provider !== "email"}
-                    themeStyles={themeStyles}
-                  />
+                  <ButtonContainer>
+                    <InputField
+                      type="text"
+                      value={editedName}
+                      onChange={(e) => setEditedName(e.target.value)}
+                      disabled={profile.provider !== "email"}
+                      themeStyles={themeStyles}
+                    />
+
+                    <SaveButton
+                      onClick={handleSaveProfile}
+                      disabled={editedName.length === 0 || editedName === profile.full_name}
+                      themeStyles={themeStyles}
+                    >
+                      저장
+                    </SaveButton>
+                  </ButtonContainer>
                   {profile.provider === "email" || (
                     <WarningText themeStyles={themeStyles}>{`${profile.provider}로 로그인 한 경우 프로필 편집을 할 수 없습니다.`}</WarningText>
                   )}
@@ -715,17 +734,9 @@ const AuthHeader = () => {
                     disabled
                     themeStyles={themeStyles}
                   />
-                  <ButtonContainer>
-                    <SaveButton
-                      onClick={handleSaveProfile}
-                      disabled={editedName.length === 0}
-                      themeStyles={themeStyles}
-                    >
-                      저장
-                    </SaveButton>
-                  </ButtonContainer>
                 </InputContainer>
               )}
+              <ThemeToggle />
               <LogOutBtn themeStyles={themeStyles} onClick={handleLogout}>로그아웃</LogOutBtn>
             </ModalInfoSettingContainer>
           </ModalContent>

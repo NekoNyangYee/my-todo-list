@@ -22,7 +22,7 @@ const LoginSiginupContainer = styled.div<{ themeStyles: any }>`
   padding-top: 12rem;
 
   @media (max-width: 1224px) {
-    padding-top: 4rem;
+    padding-top: 8rem;
     gap: 2rem;
     max-width: 80%;
     flex-direction: column;
@@ -265,7 +265,7 @@ const SocialLoginText = styled.p<{ themeStyles: any }>`
   align-items: center;
   font-size: 1rem;
   margin: 0;
-  color: ${({ themeStyles }) => themeStyles.colors.inputPlaceholderColor};
+  color: #6a6a6a;
 `;
 
 const AuthTitle = styled.h2<{ authType: 'signin' | 'signup' }>`

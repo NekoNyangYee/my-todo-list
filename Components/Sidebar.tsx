@@ -236,7 +236,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, session }) => 
             console.error('Error fetching profile:', error.message);
         } else {
             setProfile(data);
-            console.log('Profile fetched successfully:', data);
         }
     };
 

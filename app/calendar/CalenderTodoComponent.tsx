@@ -742,7 +742,30 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
     if (confirm('정말 삭제하시겠습니까?')) {
       alert('삭제되었습니다.');
       if (user && selectedDate) {
-        await deleteTodo(user.id, id, setTodos, selectedDate);
+        await supabase
+          .from('todos')
+          .delete()
+          .eq('id', id);
+
+        const koreanDateString = selectedDate.toISOString().split('T')[0];
+        const { data: remainingTodos, error } = await supabase
+          .from('todos')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('date', koreanDateString);
+
+        if (error) {
+          console.error('Error fetching remaining todos:', error);
+        } else {
+          setTodos(remainingTodos);
+          if (remainingTodos.length === 0) {
+            setDatesWithTodos(prev => {
+              const updatedDates = new Set(prev);
+              updatedDates.delete(koreanDateString);
+              return updatedDates;
+            });
+          }
+        }
       }
     }
   };
@@ -752,6 +775,8 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
       const formattedDate = moment(date).format('YYYY-MM-DD');
       if (datesWithTodos.has(formattedDate)) {
         return <div className="dot"></div>;
+      } else {
+        return null;
       }
     }
     return null;

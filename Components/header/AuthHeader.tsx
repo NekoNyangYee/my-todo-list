@@ -492,17 +492,12 @@ const AuthHeader = () => {
           console.error("Error fetching new profile:", newError.message);
         } else {
           setProfile(newData);
-          console.log(
-            "New profile inserted and fetched successfully:",
-            newData
-          ); // 로그 추가
         }
       }
     } else if (error) {
       console.error("Error fetching profile:", error.message);
     } else {
       setProfile(data);
-      console.log("Profile fetched successfully:", data); // 로그 추가
     }
   };
 
@@ -572,7 +567,6 @@ const AuthHeader = () => {
     if (error) {
       console.error("Error updating profile:", error.message);
     } else {
-      console.log("Profile updated successfully");
       const { error: metaError } = await supabase.auth.updateUser({
         data: { full_name: editedName },
       });

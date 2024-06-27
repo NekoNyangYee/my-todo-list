@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "../Store/authStore";
 import { supabase } from "../lib/supabaseClient";
 import { updateProfile } from "../lib/updateProfile";
-import { fetchTodos, setupMidnightCheck, fetchTodosForDate } from "@components/util/todoUtil";
+import { setupMidnightCheck, fetchTodosForDate } from "@components/util/todoUtil";
 import { useTodoStore } from "@components/Store/useAuthTodoStore";
 import { useTheme } from "@components/app/Context/ThemeContext";
 import { useEffect, useState } from "react";

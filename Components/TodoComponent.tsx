@@ -497,10 +497,6 @@ const DeleteItem = styled.div<{ themeStyles: any }>`
   display: flex;
   align-items: center;
   gap: 0.5rem;
-
-  &:hover {
-    background-color: ${({ themeStyles }) => themeStyles.colors.background};
-  }
 `;
 
 const DateContainer = styled.div<{ themeStyles: any }>`
@@ -538,7 +534,7 @@ interface TodoComponentProps {
 }
 
 const TodoComponent: React.FC<TodoComponentProps> = ({ user, selectedDate }) => {
-  const { todos, setTodos, inputs, addInput, setInputs, resetInputs } = useTodoStore();
+  const { todos, setTodos, inputs, addInput, setInputs, resetInputs, removeInput } = useTodoStore();
   const [showInput, setShowInput] = useState<boolean>(false);
   const [animateOut, setAnimateOut] = useState<boolean>(false);
   const [showDropdown, setShowDropdown] = useState<string | null>(null);
@@ -603,8 +599,11 @@ const TodoComponent: React.FC<TodoComponentProps> = ({ user, selectedDate }) => 
   };
 
   const deleteTodoHandler = async (id: string) => {
-    if (user) {
-      await deleteTodo(user.id, id, setTodos, selectedDate);
+    if (confirm('정말 삭제하시겠습니까?')) {
+      alert('삭제되었습니다.');
+      if (user) {
+        await deleteTodo(user.id, id, setTodos, selectedDate);
+      }
     }
   };
 
@@ -636,6 +635,13 @@ const TodoComponent: React.FC<TodoComponentProps> = ({ user, selectedDate }) => 
         setTimeout(() => {
           inputRefs.current[index + 1]?.focus();
         }, 100);
+      }
+    } else if (event.key === 'Backspace' && inputs[index] === '') {
+      if (inputs.length > 3) {
+        removeInput(index);
+        if (index > 0) {
+          inputRefs.current[index - 1]?.focus();
+        }
       }
     }
   };

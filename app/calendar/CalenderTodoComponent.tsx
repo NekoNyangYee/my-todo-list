@@ -456,42 +456,46 @@ const DropdownMenu = styled.div<{ isDropDownOpen: boolean, themeStyles: any }>`
   position: absolute;
   top: 100%;
   right: 0;
-  background: ${({ themeStyles }) => themeStyles.colors.background};
+  background: ${({ themeStyles }) => themeStyles.colors.containerBackground};
   border: 1px solid ${({ themeStyles }) => themeStyles.colors.inputBorder};
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   z-index: 10;
   width: 150px;
+  overflow: hidden;
   animation: ${({ isDropDownOpen }) => (isDropDownOpen ? fadeInDropDownModal : fadeOutDropDownModal)} 0.2s ease forwards;
-  z-index: 1;
 
   & > * {
     padding: 12px 8px;
     cursor: pointer;
     &:hover {
-      background-color: #f5f5f5;
+      background-color: ${({ themeStyles }) => themeStyles.colors.background};
     }
   }
 `;
 
-const DeleteItem = styled.button<{ themeStyles: any }>`
+const SelectItem = styled.button<{ themeStyles: any }>`
   display: flex;
   gap: 10px;
   align-items: center;
   box-sizing: border-box;
   width: 150px;
-  background-color: ${({ themeStyles }) => themeStyles.colors.background};
+  background-color: transparent;
   padding: 10px;
   cursor: pointer;
   border: none;
-  border-radius: 8px;
   z-index: 10;
-  color: #FF4F4F;
-
-  &:hover {
-    background-color: #f0f0f0;
-  }
+  font-size: 1rem;
 `;
+
+const FetchItem = styled(SelectItem) <{ themeStyles: any }>`
+  color: #0075ff;
+`;
+
+const DeleteItem = styled(SelectItem) <{ themeStyles: any }>`
+  color: #FF4F4F;
+`;
+
 
 const WantSelectListText = styled.div<{ themeStyles: any }>`
   display: flex;
@@ -503,20 +507,6 @@ const WantSelectListText = styled.div<{ themeStyles: any }>`
   text-align: center;
   color: ${({ themeStyles }) => themeStyles.colors.text};
   margin: auto 0;
-`;
-
-const FetchItem = styled.button<{ themeStyles: any }>`
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  box-sizing: border-box;
-  width: 150px;
-  background-color: ${({ themeStyles }) => themeStyles.colors.background};
-  padding: 10px;
-  cursor: pointer;
-  border: none;
-  border-radius: 8px;
-  z-index: 10;
 `;
 
 interface ModalProps {
@@ -716,8 +706,8 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
       setTodos(data);
     }
 
-    setShowInput(true); // 날짜를 클릭하면 모달 창을 표시
-    setShowTodoModal(true); // 일정 모달 열기
+    setShowInput(true);
+    setShowTodoModal(true);
   };
 
   const handleDotMenuClick = (todoId: string) => {
@@ -749,8 +739,11 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
 
 
   const deleteTodoHandler = async (id: string) => {
-    if (user && selectedDate) {
-      await deleteTodo(user.id, id, setTodos, selectedDate);
+    if (confirm('정말 삭제하시겠습니까?')) {
+      alert('삭제되었습니다.');
+      if (user && selectedDate) {
+        await deleteTodo(user.id, id, setTodos, selectedDate);
+      }
     }
   };
 
@@ -780,11 +773,15 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
       console.error('Error updating todo date:', error);
     } else {
       console.log('Todo date updated successfully', data);
-      // 날짜를 업데이트한 후에는 목록을 다시 가져와서 UI를 업데이트합니다.
       fetchTodosForDate(user.id, selectedDate, setTodos);
     }
   };
 
+  const isToday = (date: string) => {
+    const today = moment().startOf('day');
+    const selected = moment(date).startOf('day');
+    return today.isSame(selected);
+  };
 
   const handleKeyPress = (index: number, event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
@@ -799,11 +796,9 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
     } else if (event.key === 'Backspace' && inputs[index] === '') {
       if (inputs.length > 3) {
         removeInput(index);
-        setTimeout(() => {
-          if (index > 0) {
-            inputRefs.current[index - 1]?.focus();
-          }
-        }, 100);
+        if (index > 0) {
+          inputRefs.current[index - 1]?.focus();
+        }
       }
     }
   };
@@ -863,9 +858,11 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
                             </DotMenuBtn>
                             {showDropdown === todo.id && (
                               <DropdownMenu ref={dropdownRef} isDropDownOpen={!!showDropdown} themeStyles={themeStyles}>
-                                <FetchItem onClick={() => fetchTodoToToday(todo.id)} themeStyles={themeStyles}>
-                                  끌어오기
-                                </FetchItem>
+                                {!isToday(todo.date) && (
+                                  <FetchItem onClick={() => fetchTodoToToday(todo.id)} themeStyles={themeStyles}>
+                                    끌어오기
+                                  </FetchItem>
+                                )}
                                 <DeleteItem onClick={() => deleteTodoHandler(todo.id)} themeStyles={themeStyles}>
                                   <DeleteIcon />
                                   삭제

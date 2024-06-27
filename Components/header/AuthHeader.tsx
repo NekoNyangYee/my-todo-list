@@ -9,7 +9,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { useTheme } from "@components/app/Context/ThemeContext";
 import ThemeToggle from "../ThemeToggle";
-import { set } from "mongoose";
 
 const HeaderFlexBox = styled.div`
   display: flex;

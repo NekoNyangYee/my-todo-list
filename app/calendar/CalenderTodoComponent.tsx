@@ -460,7 +460,7 @@ const DropdownMenu = styled.div<{ isDropDownOpen: boolean, themeStyles: any }>`
   border: 1px solid ${({ themeStyles }) => themeStyles.colors.inputBorder};
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  z-index: 10;
+  z-index: 9999;  // z-index 값을 높게 설정
   width: 150px;
   overflow: hidden;
   animation: ${({ isDropDownOpen }) => (isDropDownOpen ? fadeInDropDownModal : fadeOutDropDownModal)} 0.2s ease forwards;
@@ -828,6 +828,12 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
     }
   };
 
+  const sortTodos = (todos: any[]) => {
+    return todos.sort((a, b) => a.original_order - b.original_order);
+  };
+
+  const completedTodos = sortTodos(todos);
+
   return (
     <Container>
       <CalendarInfoContainer themeStyles={themeStyles}>
@@ -874,7 +880,7 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
                     <NoTodoListText themeStyles={themeStyles}>현재 진행 중인 일정이 없어요.</NoTodoListText>
                   ) : (
                     <ul>
-                      {todos.map((todo) => (
+                      {completedTodos.map((todo) => (
                         <TodoListContentContainer key={todo.id}>
                           <li>{todo.content}</li>
                           <DotMenuBtnWrapper>

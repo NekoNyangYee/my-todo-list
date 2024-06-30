@@ -43,9 +43,10 @@ export const fetchTodosForDate = async (userId: string, date: Date, setTodos: (t
     if (error) {
         console.error('Error fetching todos:', error);
     } else {
-        setTodos(data);
+        setTodos(data as Todo[]); // 여기 수정됨
     }
 };
+
 
 export const archiveTodos = async (userId: string, setTodos: (todos: Todo[]) => void, setUncompletedTodos: (todos: Todo[]) => void): Promise<void> => {
     const { data: todos, error: fetchError } = await supabase

@@ -633,10 +633,12 @@ const AuthHeader = () => {
                   </HeaderFlexBox>
                 </>
               ) : (
-                <>
-                  <ProfileImage src={"./user.svg"} alt="Profile Picture" />
-                  <LogOutBtn themeStyles={themeStyles} onClick={handleLogout}>로그아웃</LogOutBtn>
-                </>
+                <ProfileModalBtn onClick={openModal}>
+                  <ProfileImage
+                    src={"./user.svg"}
+                    alt="Profile Picture"
+                  />
+                </ProfileModalBtn>
               )}
             </ProfileInfoContainer>
           )}

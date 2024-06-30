@@ -72,6 +72,17 @@ const rotateCancel = keyframes`
   }
 `;
 
+const deleteTodoAnimation = keyframes`
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+`;
+
 const MainTodoListContainer = styled.div`
   display: flex;
   flex-direction: column;
@@ -388,16 +399,18 @@ const AddTodoBtn = styled.button`
 const TodoListContentContainer = styled.div`
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 1rem;
   justify-content: space-between;
   position: relative;
+`;
 
-  & li {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin: auto 0;
-  }
+const TodoList = styled.li`
+  display: flex;
+  align-items: center;
+  height: 40px;
+  gap: 8px;
+  margin: auto 0;
+  font-size: 1.2rem;
 `;
 
 const NoTodoListText = styled.p`
@@ -528,16 +541,82 @@ const DashBordText = styled.h2`
   font-size: 1.5rem;
 `;
 
+const HeaderTitleSection = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+`;
+
+const EditBtn = styled.button`
+  padding: 8px 12px;
+  background-color: transparent;
+  color: #0075ff;
+  border: none;
+  cursor: pointer;
+  border-radius: 8px;
+  font-size: 1rem;
+`;
+
+const CheckAndDeleteContainer = styled.div`
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+`;
+
+const HeaderEditSection = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+`;
+
+const EditDeleteBtn = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 8px 12px;
+  background-color: #FF4F4F;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  border-radius: 8px;
+  font-size: 1rem;
+
+  & svg {
+    width: 24px;
+    height: 24px;
+    fill: #fff;
+  }
+
+  &:disabled {
+    background-color: #e7e7e7;
+    color: #afafaf;
+    cursor: not-allowed;
+  }
+`;
+
+const SelectBtn = styled.button`
+  padding: 8px 12px;
+  background-color: #DDE9F6;
+  color: #0075ff;
+  border: none;
+  cursor: pointer;
+  border-radius: 8px;
+  font-size: 1rem;
+`;
+
 interface TodoComponentProps {
   user: { id: string; email: string } | null;
   selectedDate: Date;
 }
 
-const TodoComponent: React.FC<TodoComponentProps> = ({ user, selectedDate }) => {
+const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) => {
   const { todos, setTodos, inputs, addInput, setInputs, resetInputs, removeInput } = useTodoStore();
   const [showInput, setShowInput] = useState<boolean>(false);
   const [animateOut, setAnimateOut] = useState<boolean>(false);
   const [showDropdown, setShowDropdown] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [isAllSelected, setIsAllSelected] = useState<boolean>(false);
+  const [selectedTodos, setSelectedTodos] = useState<string[]>([]);
   const modalContentRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -619,6 +698,38 @@ const TodoComponent: React.FC<TodoComponentProps> = ({ user, selectedDate }) => 
     }
   };
 
+  const handleCheckboxChange = (id: string) => {
+    setSelectedTodos((prevSelectedTodos) =>
+      prevSelectedTodos.includes(id)
+        ? prevSelectedTodos.filter((todoId) => todoId !== id)
+        : [...prevSelectedTodos, id]
+    );
+  };
+  const deleteSelectedTodosHandler = async () => {
+    if (selectedTodos.length === 0) {
+      alert('삭제할 항목을 선택해주세요.');
+      return;
+    }
+    if (confirm('선택된 항목들을 정말 삭제하시겠습니까?')) {
+      alert('삭제되었습니다.');
+      if (user) {
+        await Promise.all(selectedTodos.map(todoId => deleteTodo(user.id, todoId, setTodos, selectedDate)));
+        setSelectedTodos([]); // 선택된 항목 초기화
+        await fetchTodosForDate(user.id, selectedDate, setTodos); // 삭제 후 목록 업데이트
+      }
+    }
+  };
+
+  const selectAllTodos = () => {
+    if (isAllSelected) {
+      setSelectedTodos([]);
+    } else {
+      const allTodoIds = [...importantTodos, ...nonImportantTodos].map((todo) => todo.id);
+      setSelectedTodos(allTodoIds);
+    }
+    setIsAllSelected(!isAllSelected);
+  };
+
   const saveTodosHandler = async () => {
     if (user) {
       await saveTodos(user.id, inputs, setTodos, resetInputs, setAnimateOut, setShowInput, selectedDate);
@@ -655,6 +766,15 @@ const TodoComponent: React.FC<TodoComponentProps> = ({ user, selectedDate }) => 
     }, 100);
   };
 
+  const toggleEdit = () => {
+    setIsEditing(!isEditing);
+    if (isEditing) {
+      setSelectedTodos([]);
+      setIsAllSelected(false);
+    }
+  };
+
+
   const handleAddInput = () => {
     if (inputs.length >= 20) {
       alert('한번에 최대 20개까지 추가할 수 있어요.');
@@ -671,10 +791,16 @@ const TodoComponent: React.FC<TodoComponentProps> = ({ user, selectedDate }) => 
     }
   };
 
-  const date = new Date();
+  const date: Date = new Date(selectedDate);
 
-  const importantTodos = todos.filter(todo => todo.is_priority && !todo.is_complete);
-  const nonImportantTodos = todos.filter(todo => !todo.is_priority && !todo.is_complete);
+  const sortTodos = (todos: any[]) => {
+    return todos.sort((a, b) => a.original_order - b.original_order);
+  };
+
+
+  const importantTodos = sortTodos(todos.filter(todo => todo.is_priority && !todo.is_complete));
+  const nonImportantTodos = sortTodos(todos.filter(todo => !todo.is_priority && !todo.is_complete));
+  const completedTodos = sortTodos(todos.filter(todo => todo.is_complete));
 
   return (
     <>
@@ -696,7 +822,23 @@ const TodoComponent: React.FC<TodoComponentProps> = ({ user, selectedDate }) => 
         </DasboardContainer>
         <TodoContainer>
           <ProgressTodoContainer themeStyles={themeStyles}>
-            <h2>진행 중인 일정</h2>
+            <HeaderEditSection>
+              <HeaderTitleSection>
+                <h2>진행 중인 일정</h2>
+                <EditBtn onClick={toggleEdit}>{isEditing ? '취소' : '편집'}</EditBtn>
+              </HeaderTitleSection>
+              <CheckAndDeleteContainer>
+                {isEditing && (
+                  <SelectBtn onClick={selectAllTodos}>{isAllSelected ? '전체 해제' : '전체 선택'}</SelectBtn>
+                )}
+                {isEditing && (
+                  <EditDeleteBtn onClick={deleteSelectedTodosHandler} disabled={selectedTodos.length === 0}>
+                    <DeleteIcon />
+                    삭제
+                  </EditDeleteBtn>
+                )}
+              </CheckAndDeleteContainer>
+            </HeaderEditSection>
             {nonImportantTodos.length === 0 && importantTodos.length === 0 ? (
               <NoTodoListText>현재 진행 중인 일정이 없어요.</NoTodoListText>
             ) : (
@@ -705,19 +847,29 @@ const TodoComponent: React.FC<TodoComponentProps> = ({ user, selectedDate }) => 
                   <ImportantTodoContainer>
                     {importantTodos.map((todo) => (
                       <TodoListContentContainer key={todo.id}>
-                        <li>
-                          <PriorityButton
-                            isPriority={todo.is_priority}
-                            onClick={() => togglePriorityHandler(todo.id, todo.is_priority)}
-                          >
-                            <PriorityIcon isPriority={todo.is_priority} />
-                          </PriorityButton>
+                        <TodoList>
+                          {isEditing ? (
+                            <input
+                              type="checkbox"
+                              checked={selectedTodos.includes(todo.id)}
+                              onChange={() => handleCheckboxChange(todo.id)}
+                            />
+                          ) : (
+                            <PriorityButton
+                              isPriority={todo.is_priority}
+                              onClick={() => togglePriorityHandler(todo.id, todo.is_priority)}
+                            >
+                              <PriorityIcon isPriority={todo.is_priority} />
+                            </PriorityButton>
+                          )}
                           {todo.content}
-                        </li>
+                        </TodoList>
                         <DotMenuBtnWrapper>
-                          <DotMenuBtn onClick={() => handleDotMenuClick(todo.id)} isDropDownOpen={showDropdown === todo.id}>
-                            <img src="/dot-menu.svg" alt="Dot Menu" />
-                          </DotMenuBtn>
+                          {!isEditing && (
+                            <DotMenuBtn onClick={() => handleDotMenuClick(todo.id)} isDropDownOpen={showDropdown === todo.id}>
+                              <img src="/dot-menu.svg" alt="Dot Menu" />
+                            </DotMenuBtn>
+                          )}
                           {showDropdown === todo.id && (
                             <DropdownMenu ref={dropdownRef} isDropDownOpen={!!showDropdown} themeStyles={themeStyles}>
                               <CompleteItem onClick={() => toggleTodoHandler(todo.id, todo.is_complete)}>
@@ -737,19 +889,29 @@ const TodoComponent: React.FC<TodoComponentProps> = ({ user, selectedDate }) => 
                 )}
                 {nonImportantTodos.map((todo) => (
                   <TodoListContentContainer key={todo.id}>
-                    <li>
-                      <PriorityButton
-                        isPriority={todo.is_priority}
-                        onClick={() => togglePriorityHandler(todo.id, todo.is_priority)}
-                      >
-                        <PriorityIcon isPriority={todo.is_priority} />
-                      </PriorityButton>
+                    <TodoList>
+                      {isEditing ? (
+                        <input
+                          type="checkbox"
+                          checked={selectedTodos.includes(todo.id)}
+                          onChange={() => handleCheckboxChange(todo.id)}
+                        />
+                      ) : (
+                        <PriorityButton
+                          isPriority={todo.is_priority}
+                          onClick={() => togglePriorityHandler(todo.id, todo.is_priority)}
+                        >
+                          <PriorityIcon isPriority={todo.is_priority} />
+                        </PriorityButton>
+                      )}
                       {todo.content}
-                    </li>
+                    </TodoList>
                     <DotMenuBtnWrapper>
-                      <DotMenuBtn onClick={() => handleDotMenuClick(todo.id)} isDropDownOpen={showDropdown === todo.id}>
-                        <img src="/dot-menu.svg" alt="Dot Menu" />
-                      </DotMenuBtn>
+                      {!isEditing && (
+                        <DotMenuBtn onClick={() => handleDotMenuClick(todo.id)} isDropDownOpen={showDropdown === todo.id}>
+                          <img src="/dot-menu.svg" alt="Dot Menu" />
+                        </DotMenuBtn>
+                      )}
                       {showDropdown === todo.id && (
                         <DropdownMenu ref={dropdownRef} isDropDownOpen={!!showDropdown} themeStyles={themeStyles}>
                           <CompleteItem onClick={() => toggleTodoHandler(todo.id, todo.is_complete)}>
@@ -766,7 +928,6 @@ const TodoComponent: React.FC<TodoComponentProps> = ({ user, selectedDate }) => 
                   </TodoListContentContainer>
                 ))}
               </ul>
-
             )}
             <AddToDoBtnContainer>
               <AddToDoBtn onClick={() => setShowInput(!showInput)} isOpen={showInput}>
@@ -777,11 +938,11 @@ const TodoComponent: React.FC<TodoComponentProps> = ({ user, selectedDate }) => 
 
           <ComplecatedTodoContainer themeStyles={themeStyles}>
             <h2>완료된 일정</h2>
-            {todos.filter(todo => todo.is_complete).length === 0 ? (
+            {completedTodos.length === 0 ? (
               <NoTodoListText>완료된 할 일이 없어요.</NoTodoListText>
             ) : (
               <ul>
-                {todos.filter(todo => todo.is_complete).map((todo) => (
+                {completedTodos.map((todo) => (
                   <TodoListContentContainer key={todo.id}>
                     <li>
                       <input
@@ -802,7 +963,6 @@ const TodoComponent: React.FC<TodoComponentProps> = ({ user, selectedDate }) => 
           </ComplecatedTodoContainer>
         </TodoContainer>
       </MainTodoListContainer>
-
       {(showInput || animateOut) && (
         <ModalOverlay>
           <ModalContent isOpen={showInput && !animateOut} ref={modalContentRef} themeStyles={themeStyles}>
@@ -839,6 +999,7 @@ const TodoComponent: React.FC<TodoComponentProps> = ({ user, selectedDate }) => 
       )}
     </>
   );
+
 };
 
 export default TodoComponent;

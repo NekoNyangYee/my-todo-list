@@ -705,6 +705,7 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
         : [...prevSelectedTodos, id]
     );
   };
+
   const deleteSelectedTodosHandler = async () => {
     if (selectedTodos.length === 0) {
       alert('삭제할 항목을 선택해주세요.');
@@ -715,11 +716,16 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
       if (user) {
         await Promise.all(selectedTodos.map(todoId => deleteTodo(user.id, todoId, setTodos, selectedDate)));
         setSelectedTodos([]); // 선택된 항목 초기화
-        await fetchTodosForDate(user.id, selectedDate, setTodos); // 삭제 후 목록 업데이트
+        await fetchTodosForDate(user.id, selectedDate, updatedTodos => {
+          setTodos(updatedTodos);
+          if (updatedTodos.length === 0) {
+            setIsEditing(false);
+          }
+        }); // 삭제 후 목록 업데이트 및 확인
       }
     }
   };
-
+  
   const selectAllTodos = () => {
     if (isAllSelected) {
       setSelectedTodos([]);
@@ -771,6 +777,10 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
     if (isEditing) {
       setSelectedTodos([]);
       setIsAllSelected(false);
+    }
+    if (todos.length === 0) {
+      alert("편집할 일정이 없어요.");
+      setIsEditing(false);
     }
   };
 

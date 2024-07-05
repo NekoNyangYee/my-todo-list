@@ -319,20 +319,6 @@ const AuthForm = () => {
 
   const handleAuth = async () => {
     const currentDate = new Date(); // 현재 날짜를 가져옴
-
-    const fetchUserCount = async () => {
-      const { data, error } = await supabase.auth.admin.listUsers();
-      if (error) {
-        console.error('Error fetching user count:', error);
-      } else {
-        setUserCount(data.users.length);
-      }
-    };
-  
-    useEffect(() => {
-      fetchUserCount();
-    }, []);  
-
     if (authType === "signin") {
       console.log('로그인 시도 중...');
       const { data: user } = await supabase

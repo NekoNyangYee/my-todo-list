@@ -721,11 +721,11 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
           if (updatedTodos.length === 0) {
             setIsEditing(false);
           }
-        }); // 삭제 후 목록 업데이트 및 확인
+        });
       }
     }
   };
-  
+
   const selectAllTodos = () => {
     if (isAllSelected) {
       setSelectedTodos([]);

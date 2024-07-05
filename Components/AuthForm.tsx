@@ -291,12 +291,47 @@ const AuthForm = () => {
   const router = useRouter();
 
   const [isSignUp, setIsSignUp] = useState<boolean>(authType === "signup");
+  const [userCount, setUserCount] = useState<number>(0);
+
 
   useEffect(() => {
     setIsSignUp(authType === "signup");
   }, [authType]);
+
+  const fetchUserCount = async () => {
+    try {
+      const response = await fetch('/api/userCount');
+      const data = await response.json();
+      console.log("data is", data);
+      if (response.ok) {
+        setUserCount(data.count);
+      } else {
+        console.error('Error fetching user count:', data.error);
+      }
+    } catch (error) {
+      console.error('Unexpected error fetching user count:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchUserCount();
+  }, []);
+
   const handleAuth = async () => {
     const currentDate = new Date(); // 현재 날짜를 가져옴
+
+    const fetchUserCount = async () => {
+      const { data, error } = await supabase.auth.admin.listUsers();
+      if (error) {
+        console.error('Error fetching user count:', error);
+      } else {
+        setUserCount(data.users.length);
+      }
+    };
+  
+    useEffect(() => {
+      fetchUserCount();
+    }, []);  
 
     if (authType === "signin") {
       console.log('로그인 시도 중...');
@@ -397,6 +432,7 @@ const AuthForm = () => {
       <MainLobySectionContainer themeStyles={themeStyles}>
         <MainLogoImage src="/web-logo-profile.svg" alt="logo" themeStyles={themeStyles} />
         <p>하루하루를 계획없이 사시나요?<br />투두 리스트에서 하루를 기록해보세요.</p>
+        <p>지금까지 가입한 회원 수: {userCount}명</p> {/* 추가된 부분 */}
       </MainLobySectionContainer>
       <LoginAuthContainer>
         <AuthTitle authType={authType}>

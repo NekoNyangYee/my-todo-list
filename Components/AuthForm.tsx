@@ -11,20 +11,32 @@ import { useTodoStore } from "@components/Store/useAuthTodoStore";
 import { useTheme } from "@components/app/Context/ThemeContext";
 import { useEffect, useState } from "react";
 
-const LoginSiginupContainer = styled.div<{ themeStyles: any }>`
+const AuthFormContainer = styled.div`
   width: 100%;
   display: flex;
-  max-width: 972px;
   justify-content: center;
   align-items: center;
   gap: 4rem;
   margin: 0 auto;
+  max-width: 972px;
+  flex-direction: column;
+
+  @media (max-width: 1224px) {
+    gap: 2rem;
+    max-width: 80%;
+  }
+`;
+
+const LoginSiginupContainer = styled.div<{ themeStyles: any }>`
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4rem;
   padding-top: 12rem;
 
   @media (max-width: 1224px) {
-    padding-top: 8rem;
     gap: 2rem;
-    max-width: 80%;
     flex-direction: column;
   }
 `;
@@ -273,6 +285,28 @@ const AuthTitle = styled.h2<{ authType: 'signin' | 'signup' }>`
              ${({ authType }) => (authType === 'signin' ? fadeOutSignUp : fadeOutLogin)} 0.3s forwards;
 `;
 
+const SitInfoContainer = styled.div`
+  width: 100%;
+  display: flex;
+  gap: 1rem;
+  text-align: center;
+  justify-content: space-around;
+
+  & p {
+    font-size: 1.2rem;
+    color: #6a6a6a;
+  }
+
+  & strong {
+    font-size: 2.6rem;
+    color: #000;
+  }
+
+  @media (max-width: 1224px) {
+    flex-direction: column;
+  }
+`;
+
 const AuthForm = () => {
   const { themeStyles } = useTheme();
   const {
@@ -292,6 +326,7 @@ const AuthForm = () => {
 
   const [isSignUp, setIsSignUp] = useState<boolean>(authType === "signup");
   const [userCount, setUserCount] = useState<number>(0);
+  const [listCount, setListCount] = useState<number>(0);
 
 
   useEffect(() => {
@@ -302,7 +337,6 @@ const AuthForm = () => {
     try {
       const response = await fetch('/api/userCount');
       const data = await response.json();
-      console.log("data is", data);
       if (response.ok) {
         setUserCount(data.count);
       } else {
@@ -313,8 +347,24 @@ const AuthForm = () => {
     }
   };
 
+  const fetchTodoListTodos = async () => {
+    try {
+      const response = await fetch('/api/todos'); // 새로운 엔드포인트
+      const data = await response.json();
+      if (response.ok) {
+        setTodos(data.todos);
+        setListCount(data.todos.length);
+      } else {
+        console.error('Error fetching todos:', data.error);
+      }
+    } catch (error) {
+      console.error('Unexpected error fetching todos:', error);
+    }
+  };
+
   useEffect(() => {
     fetchUserCount();
+    fetchTodoListTodos();
   }, []);
 
   const handleAuth = async () => {
@@ -414,88 +464,93 @@ const AuthForm = () => {
 
 
   return (
-    <LoginSiginupContainer themeStyles={themeStyles}>
-      <MainLobySectionContainer themeStyles={themeStyles}>
-        <MainLogoImage src="/web-logo-profile.svg" alt="logo" themeStyles={themeStyles} />
-        <p>하루하루를 계획없이 사시나요?<br />투두 리스트에서 하루를 기록해보세요.</p>
-        <p>지금까지 가입한 회원 수: {userCount}명</p> {/* 추가된 부분 */}
-      </MainLobySectionContainer>
-      <LoginAuthContainer>
-        <AuthTitle authType={authType}>
-          {authType === "signin" ? "로그인" : "회원가입"}
-        </AuthTitle>
-        <AuthInputContainer themeStyles={themeStyles}>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="이메일"
-            style={{ backgroundImage: 'url(/email.svg)' }}
-          />
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="비밀번호"
-            autoComplete="new-password"
-          />
-          {authType === "signup" && (
-            <SignUpInputContainer isOpen={authType === 'signup'} themeStyles={themeStyles}>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="비밀번호 확인"
-                autoComplete="new-password"
-              />
-              <input
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="닉네임"
-                autoComplete="new-password"
-              />
-            </SignUpInputContainer>
-          )}
-          <LoginAndSignUpBtn themeStyles={themeStyles} onClick={handleAuth}>
+    <AuthFormContainer>
+      <LoginSiginupContainer themeStyles={themeStyles}>
+        <MainLobySectionContainer themeStyles={themeStyles}>
+          <MainLogoImage src="/web-logo-profile.svg" alt="logo" themeStyles={themeStyles} />
+          <p>하루하루를 계획없이 사시나요?<br />투두 리스트에서 하루를 기록해보세요.</p>
+        </MainLobySectionContainer>
+        <LoginAuthContainer>
+          <AuthTitle authType={authType}>
             {authType === "signin" ? "로그인" : "회원가입"}
-          </LoginAndSignUpBtn>
-          <SwitchAuthBtn themeStyles={themeStyles}
-            onClick={() =>
-              setAuthType(authType === "signin" ? "signup" : "signin")
-            }
-          >
-            {authType === "signin" ? "계정이 없는 경우 회원가입하세요." : "계정이 있는 경우 로그인하세요."}
-          </SwitchAuthBtn>
-        </AuthInputContainer>
-        {authType === "signin" && (
-          <SocialContainer themeStyles={themeStyles}>
-            <GoogleSocialLoginBtn themeStyles={themeStyles} onClick={() => handleSocialLogin("google")}>
-              <div className="social-login-flex">
-                <LogoImage
-                  src="/google-logo.png"
-                  alt="google"
-                  width={250}
-                  height={250}
+          </AuthTitle>
+          <AuthInputContainer themeStyles={themeStyles}>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="이메일"
+              style={{ backgroundImage: 'url(/email.svg)' }}
+            />
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="비밀번호"
+              autoComplete="new-password"
+            />
+            {authType === "signup" && (
+              <SignUpInputContainer isOpen={authType === 'signup'} themeStyles={themeStyles}>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="비밀번호 확인"
+                  autoComplete="new-password"
                 />
-                <SocialLoginText themeStyles={themeStyles}>Google로 시작하기</SocialLoginText>
-              </div>
-            </GoogleSocialLoginBtn>
-            <KaKaoSocialLoginBtn themeStyles={themeStyles} onClick={() => handleSocialLogin("kakao")}>
-              <div className="social-login-flex">
-                <LogoImage
-                  src="/kakao-logo.png"
-                  alt="kakao"
-                  width={250}
-                  height={250}
+                <input
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="닉네임"
+                  autoComplete="new-password"
                 />
-                <SocialLoginText themeStyles={themeStyles}>카카오로 시작하기</SocialLoginText>
-              </div>
-            </KaKaoSocialLoginBtn>
-          </SocialContainer>
-        )}
-      </LoginAuthContainer>
-    </LoginSiginupContainer>
+              </SignUpInputContainer>
+            )}
+            <LoginAndSignUpBtn themeStyles={themeStyles} onClick={handleAuth}>
+              {authType === "signin" ? "로그인" : "회원가입"}
+            </LoginAndSignUpBtn>
+            <SwitchAuthBtn themeStyles={themeStyles}
+              onClick={() =>
+                setAuthType(authType === "signin" ? "signup" : "signin")
+              }
+            >
+              {authType === "signin" ? "계정이 없는 경우 회원가입하세요." : "계정이 있는 경우 로그인하세요."}
+            </SwitchAuthBtn>
+          </AuthInputContainer>
+          {authType === "signin" && (
+            <SocialContainer themeStyles={themeStyles}>
+              <GoogleSocialLoginBtn themeStyles={themeStyles} onClick={() => handleSocialLogin("google")}>
+                <div className="social-login-flex">
+                  <LogoImage
+                    src="/google-logo.png"
+                    alt="google"
+                    width={250}
+                    height={250}
+                  />
+                  <SocialLoginText themeStyles={themeStyles}>Google로 시작하기</SocialLoginText>
+                </div>
+              </GoogleSocialLoginBtn>
+              <KaKaoSocialLoginBtn themeStyles={themeStyles} onClick={() => handleSocialLogin("kakao")}>
+                <div className="social-login-flex">
+                  <LogoImage
+                    src="/kakao-logo.png"
+                    alt="kakao"
+                    width={250}
+                    height={250}
+                  />
+                  <SocialLoginText themeStyles={themeStyles}>카카오로 시작하기</SocialLoginText>
+                </div>
+              </KaKaoSocialLoginBtn>
+            </SocialContainer>
+          )}
+        </LoginAuthContainer>
+      </LoginSiginupContainer>
+      <SitInfoContainer>
+        <p>지금까지 가입한 회원 수<br /> <strong>{userCount}</strong>명</p> {/* 추가된 부분 */}
+        <p>지금까지 작성된 할 일 목록 수<br /> <strong>{listCount}</strong>개</p> {/* 추가된 부분 */}
+      </SitInfoContainer>
+    </AuthFormContainer>
   );
 };
 

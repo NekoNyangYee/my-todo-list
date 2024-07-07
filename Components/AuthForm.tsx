@@ -351,6 +351,7 @@ const AuthForm = () => {
     try {
       const response = await fetch('/api/todos'); // 새로운 엔드포인트
       const data = await response.json();
+      console.log('Data fetched:', data);
       if (response.ok) {
         setTodos(data.todos);
         setListCount(data.todos.length);

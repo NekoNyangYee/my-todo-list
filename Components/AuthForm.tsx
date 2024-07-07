@@ -365,7 +365,27 @@ const AuthForm = () => {
   useEffect(() => {
     fetchUserCount();
     fetchTodoListTodos();
+
+    const userSubscription = supabase
+      .channel('public:users')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, payload => {
+        fetchUserCount();
+      })
+      .subscribe();
+
+    const todoSubscription = supabase
+      .channel('public:todos')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'todos' }, payload => {
+        fetchTodoListTodos();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(userSubscription);
+      supabase.removeChannel(todoSubscription);
+    };
   }, []);
+
 
   const handleAuth = async () => {
     const currentDate = new Date(); // 현재 날짜를 가져옴

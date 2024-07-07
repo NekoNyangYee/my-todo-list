@@ -333,43 +333,44 @@ const AuthForm = () => {
     setIsSignUp(authType === "signup");
   }, [authType]);
 
-  const fetchUserCount = async () => {
-    try {
-      const response = await fetch('/api/userCount');
-      const data = await response.json();
-      if (response.ok) {
-        setUserCount(data.count);
-      } else {
-        console.error('Error fetching user count:', data.error);
-      }
-    } catch (error) {
-      console.error('Unexpected error fetching user count:', error);
-    }
-  };
-
-  const fetchTodoListTodos = async () => {
-    try {
-      const response = await fetch('/api/todos'); // 새로운 엔드포인트
-      const data = await response.json();
-      console.log('Data fetched:', data);
-      if (response.ok) {
-        setTodos(data.todos);
-        setListCount(data.todos.length);
-      } else {
-        console.error('Error fetching todos:', data.error);
-      }
-    } catch (error) {
-      console.error('Unexpected error fetching todos:', error);
-    }
-  };
-
   useEffect(() => {
+    const fetchUserCount = async () => {
+      try {
+        const response = await fetch('/api/userCount', { cache: 'no-store' });
+        const data = await response.json();
+        if (response.ok) {
+          setUserCount(data.count);
+        } else {
+          console.error('Error fetching user count:', data.error);
+        }
+      } catch (error) {
+        console.error('Unexpected error fetching user count:', error);
+      }
+    };
+
+    const fetchTodoListTodos = async () => {
+      try {
+        const response = await fetch('/api/todos', { cache: 'no-store' });
+        const data = await response.json();
+        console.log('Data fetched:', data); // 로깅 추가
+        if (response.ok) {
+          setTodos(data.todos);
+          setListCount(data.todos.length);
+        } else {
+          console.error('Error fetching todos:', data.error);
+        }
+      } catch (error) {
+        console.error('Unexpected error fetching todos:', error);
+      }
+    };
+
     fetchUserCount();
     fetchTodoListTodos();
 
     const userSubscription = supabase
       .channel('public:users')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, payload => {
+        console.log('User change detected:', payload);
         fetchUserCount();
       })
       .subscribe();
@@ -377,6 +378,7 @@ const AuthForm = () => {
     const todoSubscription = supabase
       .channel('public:todos')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'todos' }, payload => {
+        console.log('Todo change detected:', payload);
         fetchTodoListTodos();
       })
       .subscribe();
@@ -386,6 +388,7 @@ const AuthForm = () => {
       supabase.removeChannel(todoSubscription);
     };
   }, []);
+
 
 
   const handleAuth = async () => {

@@ -285,6 +285,11 @@ const AuthTitle = styled.h2<{ authType: 'signin' | 'signup' }>`
              ${({ authType }) => (authType === 'signin' ? fadeOutSignUp : fadeOutLogin)} 0.3s forwards;
 `;
 
+const MessageText = styled.span`
+  font-size: 1rem;
+  color: #6a6a6a;
+`;
+
 const AuthForm = () => {
   const { themeStyles } = useTheme();
   const {
@@ -301,27 +306,29 @@ const AuthForm = () => {
     setUser,
   } = useAuthStore();
   const { setTodos, setUncompletedTodos } = useTodoStore();
+  const [emailMessage, setEmailMessage] = useState<string>('실제로 쓰이는 이메일로 등록해주세요. 나중에 아이디 찾기에 쓰입니다.');
+  const [passwordMessage, setPasswordMessage] = useState<string>('비밀번호는 6자 이상이어야 하며, 숫자와 문자를 포함해야 합니다.');
+  const [confirmPasswordMessage, setConfirmPasswordMessage] = useState<string>('');
+  const [nameMessage, setNameMessage] = useState<string>('');
   const router = useRouter();
 
+  const emailRegex: RegExp = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const passwordRegex: RegExp = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[\W_])[A-Za-z\d\W_]{6,}$/;
+
   const handleAuth = async () => {
-    const currentDate = new Date(); // 현재 날짜를 가져옴
+    const currentDate = new Date();
     if (authType === "signin") {
-      console.log('로그인 시도 중...');
+      if (email === "" || password === "") {
+        alert("이메일과 비밀번호를 입력해주세요.");
+        return;
+      }
       const { data: user } = await supabase
         .from("users")
         .select("provider")
         .eq("email", email)
         .single();
 
-      console.log('User data fetched:', user);
-
-      if (email === "") {
-        alert("이메일을 입력해주세요.");
-        return;
-      } else if (password === "") {
-        alert("비밀번호를 입력해주세요.");
-        return;
-      } else if (user && user.provider !== "email") {
+      if (user && user.provider !== "email") {
         alert("이 이메일은 소셜 로그인 계정입니다. 소셜 로그인을 사용해주세요.");
         return;
       }
@@ -335,25 +342,27 @@ const AuthForm = () => {
         alert("비밀번호나 이메일이 일치하지 않습니다.");
         console.error("로그인 중 오류 발생:", error.message);
       } else if (data.session) {
-        console.log('로그인 성공:', data.session.user);
-        setUser(data.session.user); // 로그인 성공 시 사용자 정보 설정
+        setUser(data.session.user);
         await updateProfile(data.session.user, 'email');
-        await fetchTodosForDate(data.session.user.id, currentDate, setTodos); // 해당 날짜의 할 일 목록 불러오기
-        router.push('/'); // 메인 페이지로 이동
+        await fetchTodosForDate(data.session.user.id, currentDate, setTodos);
+        router.push('/');
         setupMidnightCheck(data.session.user.id, setTodos, setUncompletedTodos);
       }
     } else {
+      if (!emailRegex.test(email)) {
+        alert("유효한 이메일 주소를 입력해주세요.");
+        return;
+      }
+      if (!passwordRegex.test(password)) {
+        alert("비밀번호를 입력해주세요.");
+        return;
+      }
       if (password !== confirmPassword) {
         alert("비밀번호가 일치하지 않습니다.");
         return;
-      } else if (password === "" || confirmPassword === "") {
-        alert("비밀번호를 입력해주세요.");
-        return;
-      } else if (!fullName) {
+      }
+      if (fullName === "") {
         alert("닉네임을 입력해주세요.");
-        return;
-      } else if (!email) {
-        alert("이메일을 입력해주세요.");
         return;
       }
 
@@ -375,12 +384,11 @@ const AuthForm = () => {
           console.error("Error signing up:", error.message);
         }
       } else if (data.user) {
-        alert("회원가입이 완료되었습니다. 로그인해 주세요.");
-        setAuthType("signin"); // 로그인 화면으로 전환
+        alert("회원가입이 완료되었습니다. 첫 회원가입 후 자동로그인 됩니다.");
+        setAuthType("signin");
       }
     }
   };
-
 
   const handleSocialLogin = async (provider: "google" | 'kakao') => {
     const { data, error } = await supabase.auth.signInWithOAuth({ provider });
@@ -402,15 +410,45 @@ const AuthForm = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         setUser(session.user);
-        // 이미 로그인된 상태
       } else {
-        // 로그인되지 않은 상태
         router.push('/');
       }
     };
 
     checkSession();
   }, []);
+
+  const handleEmailValidation = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setEmail(value);
+    if (!emailRegex.test(value)) {
+      setEmailMessage('이메일 형식이 올바르지 않습니다.');
+    } else {
+      setEmailMessage('실제로 쓰이는 이메일로 등록해주세요. 나중에 아이디 찾기에 쓰입니다.');
+    }
+  };
+
+  const handlePasswordValidation = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setPassword(value);
+    if (passwordRegex.test(value) && value.length > 6) {
+      setPasswordMessage('좋아요! 이정도면 사용가능한 비밀번호에요!');
+    } else if (!passwordRegex.test(value)) {
+      setPasswordMessage('숫자와 문자를 섞어서 사용해야 해요.');
+    } else if (value === '') {
+      setPasswordMessage('');
+    }
+  };
+
+  const handleConfirmPasswordValidation = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setConfirmPassword(value);
+    if (value !== password) {
+      setConfirmPasswordMessage('비밀번호가 일치하지 않습니다.');
+    } else if (value.length === 0) {
+      setConfirmPasswordMessage('');
+    }
+  };
 
   return (
     <AuthFormContainer>
@@ -427,26 +465,29 @@ const AuthForm = () => {
             <input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={handleEmailValidation}
               placeholder="이메일"
               style={{ backgroundImage: 'url(/email.svg)' }}
+              autoComplete="new-password"
             />
+            {authType === "signup" && <MessageText>{emailMessage}</MessageText>}
             <input
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={handlePasswordValidation}
               placeholder="비밀번호"
-              autoComplete="new-password"
+              autoComplete='off'
             />
+            {authType === "signup" && <MessageText>{passwordMessage}</MessageText>}
             {authType === "signup" && (
               <SignUpInputContainer isOpen={authType === 'signup'} themeStyles={themeStyles}>
                 <input
                   type="password"
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onChange={handleConfirmPasswordValidation}
                   placeholder="비밀번호 확인"
-                  autoComplete="new-password"
                 />
+                {authType === "signup" && <MessageText style={{ color: 'red' }}>{confirmPasswordMessage}</MessageText>}
                 <input
                   type="text"
                   value={fullName}
@@ -454,6 +495,7 @@ const AuthForm = () => {
                   placeholder="닉네임"
                   autoComplete="new-password"
                 />
+                {authType === "signup" && <MessageText>{nameMessage}</MessageText>}
               </SignUpInputContainer>
             )}
             <LoginAndSignUpBtn themeStyles={themeStyles} onClick={handleAuth}>

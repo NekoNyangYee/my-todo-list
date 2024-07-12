@@ -9,6 +9,7 @@ import { useTheme } from "@components/app/Context/ThemeContext";
 import PriorityIcon from "./icons/Priority/PriorityIcon";
 import DeleteIcon from "./icons/Utils/DeleteIcon";
 import AddIcon from "./icons/Utils/AddIcon";
+import CheckIcon from "./icons/Utils/CheckIcon";
 
 const fadeInDropDownModal = keyframes`
   from {
@@ -883,7 +884,7 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
                           {showDropdown === todo.id && (
                             <DropdownMenu ref={dropdownRef} isDropDownOpen={!!showDropdown} themeStyles={themeStyles}>
                               <CompleteItem onClick={() => toggleTodoHandler(todo.id, todo.is_complete)}>
-                                <img src="/check.svg" alt="Check" />
+                                <CheckIcon />
                                 일정 완료
                               </CompleteItem>
                               <DeleteItem onClick={() => deleteTodoHandler(todo.id)} themeStyles={themeStyles}>
@@ -925,7 +926,7 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
                       {showDropdown === todo.id && (
                         <DropdownMenu ref={dropdownRef} isDropDownOpen={!!showDropdown} themeStyles={themeStyles}>
                           <CompleteItem onClick={() => toggleTodoHandler(todo.id, todo.is_complete)}>
-                            <img src="/check.svg" alt="Check" />
+                            <CheckIcon />
                             일정 완료
                           </CompleteItem>
                           <DeleteItem onClick={() => deleteTodoHandler(todo.id)} themeStyles={themeStyles}>

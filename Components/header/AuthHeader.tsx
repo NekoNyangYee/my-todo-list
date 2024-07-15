@@ -619,7 +619,7 @@ const AuthHeader = () => {
                   <HeaderFlexBox>
                     <UserInfoText themeStyles={themeStyles}>
                       <LinkTab href="/" themeStyles={themeStyles}>홈</LinkTab>
-                      <LinkTab href="/calendar" themeStyles={themeStyles}>캘린더</LinkTab>
+                      <LinkTab href="/calendar" themeStyles={themeStyles}>캘린더 / 디데이</LinkTab>
                     </UserInfoText>
                     <ProfileModalBtn onClick={openModal}>
                       <ProfileImage

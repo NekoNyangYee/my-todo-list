@@ -352,7 +352,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, session }) => 
                         </SidebarLink>
                         <SidebarLink href="/calendar" onClick={toggleSidebar} themeStyles={themeStyles}>
                             <TabImage src="./tab-calendar.svg" width={24} height={24} alt="Home" />
-                            <span>캘린더</span>
+                            <span>캘린더 / 디데이</span>
                         </SidebarLink>
                     </NavContainer>
                 </ProfileAndNavContainer>

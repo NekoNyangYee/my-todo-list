@@ -318,7 +318,7 @@ const CalendarWrapper = styled.div`
   width: 100%;
   max-width: 480px; /* Fixed width */
   margin: 0 auto;
-  min-height: 560px; /* 최소 높이 */
+  min-height: 530px; /* 최소 높이 */
   max-height: 800px; /* 최대 높이 */
 `;
 
@@ -504,9 +504,12 @@ const WantSelectListText = styled.div<{ themeStyles: any }>`
   flex-direction: column;
   width: 100%;
   height: 50vh;
-  text-align: center;
+  background-color: ${({ themeStyles }) => themeStyles.colors.containerBackground};
   color: ${({ themeStyles }) => themeStyles.colors.text};
-  margin: auto 0;
+  border-radius: 12px;
+  box-shadow: ${({ themeStyles }) => themeStyles.colors.shadow};
+  min-height: 515px;
+  max-height: 800px;
 `;
 
 const NoDdayText = styled.p<{ themeStyles: any }>`
@@ -516,11 +519,10 @@ const NoDdayText = styled.p<{ themeStyles: any }>`
 const DdayItem = styled.li<{ themeStyles: any }>`
   display: flex;
   justify-content: space-between;
+  gap: 12px;
   align-items: center;
   padding: 12px;
-  background-color: ${({ themeStyles }) => themeStyles.colors.containerBackground};
   border-radius: 8px;
-  margin-bottom: 12px;
 `;
 
 const DdayCount = styled.span<{ themeStyles: any }>`
@@ -883,39 +885,36 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
 
   const completedTodos = sortTodos(todos);
 
-  const isWithinCurrentMonth = (date: Date, today: Date): boolean => {
-    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-    date.setHours(0, 0, 0, 0); // 할 일 날짜의 시간을 00:00:00으로 설정
-    endOfMonth.setHours(23, 59, 59, 999); // 해당 달의 마지막 날의 시간을 23:59:59.999로 설정
-    return date >= startOfMonth && date <= endOfMonth;
+  const isWithinRange = (date: Date): boolean => {
+    const today = new Date();
+    const hundredYearsLater = new Date(today.getFullYear() + 100, today.getMonth(), today.getDate());
+    return date <= hundredYearsLater;
   };
 
   const fetchDdayTodos = async () => {
     if (user) {
       const today = new Date();
       today.setHours(0, 0, 0, 0); // 오늘 날짜의 시간을 00:00:00으로 설정
-
+  
       const { data, error } = await supabase
         .from('todos')
         .select('*')
         .eq('user_id', user.id)
         .eq('is_dday', true);
-
+  
       if (error) {
         console.error('Error fetching D-day todos:', error);
       } else {
         console.log("Fetched D-day todos:", data); // 결과를 콘솔에 출력하여 확인
         const filteredDdayTodos = data.filter((todo: Todo) => {
           const todoDate = new Date(todo.date);
-          return isWithinCurrentMonth(todoDate, today) || todoDate < today;
+          return isWithinRange(todoDate);
         });
         console.log("Filtered D-day todos:", filteredDdayTodos); // 필터링 결과를 콘솔에 출력하여 확인
         setDdayTodos(filteredDdayTodos);
       }
     }
   };
-
 
   useEffect(() => {
     fetchDdayTodos();
@@ -937,9 +936,9 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
       <CalendarInfoContainer themeStyles={themeStyles}>
         <CalendarTite>
           <img src="/calendar.svg" alt="Calendar" />
-          <h1>캘린더 일정</h1>
+          <h1>캘린더 / 디데이</h1>
         </CalendarTite>
-        <p>원하는 날짜를 선택하면 해당 날짜의 일정을 확인하거나 추가할 수 있어요.</p>
+        <p>원하는 날짜를 선택하면 해당 날짜의 일정을 확인하거나 추가, 디데이 설정도 가능해요.</p>
       </CalendarInfoContainer>
       <MainTodoListContainer>
         <CalendarWrapper>
@@ -1054,9 +1053,9 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
           </ModalOverlay>
         )}
         <WantSelectListText themeStyles={themeStyles}>
-          <h2>이번 달의 D-day</h2>
+          <h2>D-day</h2>
           {ddayTodos.length === 0 ? (
-            <NoDdayText themeStyles={themeStyles}>이번 달에는 D-day 일정이 없습니다.</NoDdayText>
+            <NoDdayText themeStyles={themeStyles}>D-day 일정이 없습니다.</NoDdayText>
           ) : (
             <ul>
               {ddayTodos.map((todo) => {

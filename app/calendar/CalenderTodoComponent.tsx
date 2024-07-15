@@ -5,7 +5,7 @@ import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import { supabase } from '@components/lib/supabaseClient';
 import styled from '@emotion/styled';
-import { fetchTodosForDate, deleteTodo } from '@components/util/todoUtil';
+import { fetchTodosForDate } from '@components/util/todoUtil';
 import { Todo } from '@components/types/todo';
 import { useTodoStore } from '@components/Store/useAuthTodoStore';
 import moment from 'moment';
@@ -13,6 +13,7 @@ import { keyframes } from '@emotion/react';
 import { useTheme } from '@components/app/Context/ThemeContext';
 import AddIcon from '@components/Components/icons/Utils/AddIcon';
 import DeleteIcon from '@components/Components/icons/Utils/DeleteIcon';
+import dayjs, { Dayjs } from 'dayjs';
 
 type ValuePiece = Date | null;
 type Value = ValuePiece | [ValuePiece, ValuePiece];
@@ -504,6 +505,7 @@ const WantSelectListText = styled.div<{ themeStyles: any }>`
   flex-direction: column;
   width: 100%;
   height: 50vh;
+  padding: 1rem;
   background-color: ${({ themeStyles }) => themeStyles.colors.containerBackground};
   color: ${({ themeStyles }) => themeStyles.colors.text};
   border-radius: 12px;
@@ -528,9 +530,13 @@ const DdayItem = styled.li<{ themeStyles: any }>`
   align-items: center;
   padding: 12px;
   border-radius: 8px;
+  font-size: 1rem;
 `;
 
 const DdayCount = styled.span<{ themeStyles: any }>`
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #a7a7a7;
 `;
 
 interface ModalProps {
@@ -539,7 +545,7 @@ interface ModalProps {
 
 const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) => {
   const { addInput, inputs, setInputs, resetInputs, removeInput } = useTodoStore();
-  const [value, onChange] = useState<Value>(new Date());
+  const [value, onChange] = useState<Date>(dayjs().toDate());
   const [showInput, setShowInput] = useState<boolean>(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [todos, setTodos] = useState<Todo[]>([]);
@@ -694,11 +700,7 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
       return;
     }
 
-    const koreanDate = new Date(selectedDate.getTime() + (9 * 60 * 60 * 1000));
-    const koreanDateString = koreanDate.toISOString().split('T')[0];
-
-    console.log('nonEmptyInputs:', nonEmptyInputs);
-    console.log('filteredIsDday:', filteredIsDday);
+    const koreanDateString = dayjs(selectedDate).format('YYYY-MM-DD');
 
     try {
       const { data, error } = await supabase
@@ -708,7 +710,7 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
           content: content.trim(),
           is_complete: false,
           is_priority: false,
-          created_at: new Date().toISOString(),
+          created_at: dayjs().toISOString(),
           date: koreanDateString,
           is_dday: filteredIsDday[index], // 각 입력 필드의 D-day 여부 추가
         })));
@@ -716,7 +718,6 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
       if (error) {
         console.error('Error saving todos:', error);
       } else {
-        console.log('Todos saved successfully:', data);
         resetInputs();
         setTimeout(() => {
           setShowAddTodoModal(false); // 할 일 추가 모달 닫기
@@ -735,19 +736,17 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
     }
   };
 
-
-
   const handleDateClick = async (value: Date | Date[]) => {
-    let selected;
+    let selected: Dayjs;
     if (Array.isArray(value)) {
-      selected = new Date(value[0].getTime() + (9 * 60 * 60 * 1000));
+      selected = dayjs(value[0]);
     } else {
-      selected = new Date(value.getTime() + (9 * 60 * 60 * 1000));
+      selected = dayjs(value);
     }
 
-    setSelectedDate(selected);
+    setSelectedDate(selected.toDate());
 
-    const koreanDateString = selected.toISOString().split('T')[0];
+    const koreanDateString = selected.format('YYYY-MM-DD');
     const { data, error } = await supabase
       .from('todos')
       .select('*')
@@ -896,21 +895,22 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
 
   const fetchDdayTodos = async () => {
     if (user) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0); // 오늘 날짜의 시간을 00:00:00으로 설정
-  
       const { data, error } = await supabase
         .from('todos')
         .select('*')
         .eq('user_id', user.id)
         .eq('is_dday', true);
-  
+
       if (error) {
         console.error('Error fetching D-day todos:', error);
       } else {
         const filteredDdayTodos = data.filter((todo: Todo) => {
-          const todoDate = new Date(todo.date);
-          return isWithinRange(todoDate);
+          const todoDate = dayjs(todo.date);
+          return isWithinRange(todoDate.toDate());
+        }).sort((a: Todo, b: Todo) => {
+          const aDate = dayjs(a.date);
+          const bDate = dayjs(b.date);
+          return aDate.diff(dayjs(), 'day') - bDate.diff(dayjs(), 'day');
         });
         setDdayTodos(filteredDdayTodos);
       }
@@ -930,7 +930,6 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
     });
     console.log(`Checkbox at index ${index} changed to ${value}`);
   };
-
 
   return (
     <Container>

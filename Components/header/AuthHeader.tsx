@@ -93,7 +93,7 @@ const LogOutBtn = styled.button<{ themeStyles: any }>`
 const EditProfileBtn = styled.button<{ isEditerOpen: boolean, themeStyles: any }>`
   padding: 1rem 3.2rem 1rem;
   background-color: ${({ isEditerOpen, themeStyles }) => isEditerOpen ? themeStyles.inputBackground : "transparent"};
-  color: ${({ themeStyles }) => themeStyles.text};
+  color: #a7a7a7;
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -319,7 +319,7 @@ const SaveButton = styled.button<{ themeStyles: any }>`
   border-radius: 4px;
   border: none;
   background-color: #0075FF;
-  color: ${({ themeStyles }) => themeStyles.buttonColor};
+  color: #ffffff;
   cursor: pointer;
 
   &:hover {
@@ -334,7 +334,7 @@ const SaveButton = styled.button<{ themeStyles: any }>`
 `;
 
 const WarningText = styled.p<{ themeStyles: any }>`
-  color: ${({ themeStyles }) => themeStyles.buttonBackground};
+  color: #ff4949;
   font-size: 0.8rem;
   text-align: left;
   margin: 0;

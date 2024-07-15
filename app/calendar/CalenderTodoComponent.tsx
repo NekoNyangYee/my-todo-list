@@ -256,7 +256,7 @@ const SaveTodoBtn = styled.button<{ themeStyles: any }>`
 
 const Container = styled.div`
   width: 100%;
-  padding-top: 8rem;
+  padding: 8rem 0;
   max-width: 972px;
   margin: 0 auto;
 
@@ -499,7 +499,7 @@ const DeleteItem = styled(SelectItem) <{ themeStyles: any }>`
 
 const WantSelectListText = styled.div<{ themeStyles: any }>`
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
   flex-direction: column;
   width: 100%;
@@ -510,6 +510,11 @@ const WantSelectListText = styled.div<{ themeStyles: any }>`
   box-shadow: ${({ themeStyles }) => themeStyles.colors.shadow};
   min-height: 515px;
   max-height: 800px;
+  overflow-y: auto;
+
+  & ul {
+    width: 100%;
+  }
 `;
 
 const NoDdayText = styled.p<{ themeStyles: any }>`
@@ -526,7 +531,6 @@ const DdayItem = styled.li<{ themeStyles: any }>`
 `;
 
 const DdayCount = styled.span<{ themeStyles: any }>`
-
 `;
 
 interface ModalProps {
@@ -537,7 +541,6 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
   const { addInput, inputs, setInputs, resetInputs, removeInput } = useTodoStore();
   const [value, onChange] = useState<Value>(new Date());
   const [showInput, setShowInput] = useState<boolean>(false);
-  const [todoInputs, setTodoInputs] = useState<string[]>(['']);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [todos, setTodos] = useState<Todo[]>([]);
   const [showDropdown, setShowDropdown] = useState<string | null>(null);
@@ -905,12 +908,10 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
       if (error) {
         console.error('Error fetching D-day todos:', error);
       } else {
-        console.log("Fetched D-day todos:", data); // 결과를 콘솔에 출력하여 확인
         const filteredDdayTodos = data.filter((todo: Todo) => {
           const todoDate = new Date(todo.date);
           return isWithinRange(todoDate);
         });
-        console.log("Filtered D-day todos:", filteredDdayTodos); // 필터링 결과를 콘솔에 출력하여 확인
         setDdayTodos(filteredDdayTodos);
       }
     }
@@ -1067,7 +1068,7 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
                 return (
                   <DdayItem key={todo.id} themeStyles={themeStyles}>
                     <span>{todo.content}</span>
-                    <DdayCount themeStyles={themeStyles}>{dDayLabel}</DdayCount>
+                    <DdayCount themeStyles={themeStyles}>{dDayLabel === "D+0" ? "D-day" : dDayLabel}</DdayCount>
                   </DdayItem>
                 );
               })}

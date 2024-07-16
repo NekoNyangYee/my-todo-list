@@ -504,6 +504,7 @@ const WantSelectListText = styled.div<{ themeStyles: any }>`
   align-items: center;
   flex-direction: column;
   width: 100%;
+  box-sizing: border-box;
   height: 50vh;
   padding: 1rem;
   background-color: ${({ themeStyles }) => themeStyles.colors.containerBackground};
@@ -604,7 +605,7 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
   useEffect(() => {
     const fetchData = async () => {
       if (user && selectedDate) {
-        const koreanDateString = selectedDate.toISOString().split('T')[0];
+        const koreanDateString = dayjs(selectedDate).format('YYYY-MM-DD');
         const { data, error } = await supabase
           .from('todos')
           .select('*')
@@ -620,7 +621,7 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
     };
 
     fetchData();
-  }, [user, selectedDate]);
+  }, [user, selectedDate]); // selectedDate가 변경될 때마다 fetchData를 호출
 
   useEffect(() => {
     const fetchAllTodos = async () => {
@@ -684,14 +685,12 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
       setShowTodoModal(false);
     }, 100); // 애니메이션 시간에 맞추어 설정
   };
-
   const saveTodosHandler = async () => {
     if (!selectedDate || !user) {
       console.log('selectedDate or user is not defined');
       return;
     }
 
-    // 입력 필드가 빈 값이 아닌 경우에만 필터링합니다.
     const nonEmptyInputs = inputs.filter((input) => input.trim() !== '');
     const filteredIsDday = inputs.map((input, index) => input.trim() !== '' ? isDday[index] : null).filter(item => item !== null);
 
@@ -712,7 +711,7 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
           is_priority: false,
           created_at: dayjs().toISOString(),
           date: koreanDateString,
-          is_dday: filteredIsDday[index], // 각 입력 필드의 D-day 여부 추가
+          is_dday: filteredIsDday[index],
         })));
 
       if (error) {
@@ -720,16 +719,15 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
       } else {
         resetInputs();
         setTimeout(() => {
-          setShowAddTodoModal(false); // 할 일 추가 모달 닫기
+          setShowAddTodoModal(false);
         }, 100);
-        alert('저장되었습니다'); // 저장 알림 표시
+        alert('저장되었습니다');
 
-        // Update datesWithTodos state
         setDatesWithTodos(prev => new Set(prev).add(koreanDateString));
 
         await fetchTodosForDate(user.id, selectedDate, setTodos);
-        setShowTodoModal(true); // 일정 모달 다시 열기
-        await fetchDdayTodos(); // D-day 할 일들을 다시 가져옴
+        setShowTodoModal(true);
+        await fetchDdayTodos();
       }
     } catch (e) {
       console.error('Unexpected error:', e);
@@ -838,9 +836,8 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
   const fetchTodoToToday = async (todoId: string) => {
     if (!user || !selectedDate) return;
 
-    const today = new Date();
-    const koreanToday = new Date(today.getTime() + (9 * 60 * 60 * 1000)); // 한국 시간으로 변경
-    const koreanTodayString = koreanToday.toISOString().split('T')[0];
+    const today = dayjs().startOf('day').add(9, 'hour'); // 한국 시간으로 변경
+    const koreanTodayString = today.format('YYYY-MM-DD');
 
     const { data, error } = await supabase
       .from('todos')
@@ -887,12 +884,6 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
 
   const completedTodos = sortTodos(todos);
 
-  const isWithinRange = (date: Date): boolean => {
-    const today = new Date();
-    const hundredYearsLater = new Date(today.getFullYear() + 100, today.getMonth(), today.getDate());
-    return date <= hundredYearsLater;
-  };
-
   const fetchDdayTodos = async () => {
     if (user) {
       const { data, error } = await supabase
@@ -915,6 +906,11 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
         setDdayTodos(filteredDdayTodos);
       }
     }
+  };
+
+  const isWithinRange = (date: Date): boolean => {
+    const hundredYearsLater = dayjs().add(100, 'year').startOf('day').toDate();
+    return date <= hundredYearsLater;
   };
 
   useEffect(() => {

@@ -9,11 +9,7 @@ import Image from 'next/image';
 import { useTheme } from "@components/app/Context/ThemeContext";
 import ThemeToggle from './ThemeToggle';
 
-interface SidebarProps {
-    isOpen: boolean;
-    toggleSidebar: () => void;
-    session: Session | null;
-}
+
 
 const SidebarContainer = styled.div<{ isOpen: boolean, themeStyles: any }>`
     width: 250px;
@@ -213,7 +209,13 @@ const TabImage = styled(Image)`
     transition: transform 0.2s;
 `;
 
-const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, session }) => {
+interface SidebarProps {
+    isOpen: boolean;
+    toggleSidebar: () => void;
+    session: Session | null;
+}
+
+const Sidebar = <T extends SidebarProps>({ isOpen, toggleSidebar, session }: T) => {
     const { themeStyles } = useTheme();
     const [profile, setProfile] = useState<any>(null);
     const [isEditMode, setIsEditMode] = useState(false);
@@ -290,6 +292,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, session }) => 
         }
     };
 
+    const handleToggleSidebar = () => {
+        setIsEditMode(false);  // EditMode를 false로 변경
+        toggleSidebar();       // props로 전달된 toggleSidebar 호출
+    };
+
     return (
         <>
             <SidebarContainer isOpen={isOpen} themeStyles={themeStyles}>
@@ -361,7 +368,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, session }) => 
                     <LogOutBtn onClick={handleLogout} themeStyles={themeStyles}>로그아웃</LogOutBtn>
                 </ToggleAndLogOutContainer>
             </SidebarContainer>
-            <Overlay isOpen={isOpen} onClick={toggleSidebar} />
+            <Overlay isOpen={isOpen} onClick={handleToggleSidebar} />
         </>
     );
 };

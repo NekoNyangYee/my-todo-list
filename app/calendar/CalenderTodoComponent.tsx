@@ -800,7 +800,7 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
           .delete()
           .eq('id', id);
 
-        const koreanDateString = selectedDate.toISOString().split('T')[0];
+        const koreanDateString = dayjs(selectedDate).format('YYYY-MM-DD');
         const { data: remainingTodos, error } = await supabase
           .from('todos')
           .select('*')

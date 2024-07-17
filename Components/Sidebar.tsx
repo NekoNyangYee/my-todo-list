@@ -58,7 +58,7 @@ const SidebarLink = styled(Link) <{ themeStyles: any }>`
     display: flex;
     align-items: center;
     gap: 12px;
-    color: ${({ themeStyles }) => themeStyles.colors.text};
+    color: #a7a7a7;
     text-decoration: none;
     font-size: 1.2rem;
     border-radius: 8px;
@@ -72,7 +72,6 @@ const SidebarLink = styled(Link) <{ themeStyles: any }>`
 const NavContainer = styled.div`
     display: flex;
     flex-direction: column;
-
 `;
 
 const Overlay = styled.div<{ isOpen: boolean }>`

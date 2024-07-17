@@ -319,9 +319,9 @@ const TodoSaveAndCancelBtnContainer = styled.div<{ themeStyles: any }>`
   background: ${({ themeStyles }) => themeStyles.colors.background};
 `;
 
-const CancelBtn = styled.button`
+const CancelBtn = styled.button<{ themeStyles: any }>`
   padding: 12px 1.6rem;
-  background-color: #e7e7e7;
+  background-color: transparent;
   color: #aeaeae;
   font-size: 0.8rem;
   border: none;
@@ -332,7 +332,7 @@ const CancelBtn = styled.button`
   font-weight: bold;
 
   &:hover {
-    background-color: #d7d7d7;
+    background-color: ${({ themeStyles }) => themeStyles.colors.inputBackground};
   }
 `;
 
@@ -700,11 +700,17 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
   };
 
   const handleCheckboxChange = (id: string) => {
-    setSelectedTodos((prevSelectedTodos) =>
-      prevSelectedTodos.includes(id)
+    setSelectedTodos((prevSelectedTodos) => {
+      const newSelectedTodos = prevSelectedTodos.includes(id)
         ? prevSelectedTodos.filter((todoId) => todoId !== id)
-        : [...prevSelectedTodos, id]
-    );
+        : [...prevSelectedTodos, id];
+
+      // 모든 할일이 선택되었는지 확인
+      const allTodoIds = [...importantTodos, ...nonImportantTodos].map((todo) => todo.id);
+      setIsAllSelected(newSelectedTodos.length === allTodoIds.length);
+
+      return newSelectedTodos;
+    });
   };
 
   const deleteSelectedTodosHandler = async () => {
@@ -728,10 +734,10 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
   };
 
   const selectAllTodos = () => {
+    const allTodoIds = [...importantTodos, ...nonImportantTodos].map((todo) => todo.id);
     if (isAllSelected) {
       setSelectedTodos([]);
     } else {
-      const allTodoIds = [...importantTodos, ...nonImportantTodos].map((todo) => todo.id);
       setSelectedTodos(allTodoIds);
     }
     setIsAllSelected(!isAllSelected);
@@ -1002,7 +1008,7 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
               <p>할 일 항목 추가</p>
             </AddTodoBtn>
             <TodoSaveAndCancelBtnContainer themeStyles={themeStyles}>
-              <CancelBtn onClick={closeModal}>취소</CancelBtn>
+              <CancelBtn themeStyles={themeStyles} onClick={closeModal}>취소</CancelBtn>
               <SaveTodoBtn onClick={saveTodosHandler}>저장</SaveTodoBtn>
             </TodoSaveAndCancelBtnContainer>
           </ModalContent>

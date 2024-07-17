@@ -14,18 +14,8 @@ import { useTheme } from '@components/app/Context/ThemeContext';
 import AddIcon from '@components/Components/icons/Utils/AddIcon';
 import DeleteIcon from '@components/Components/icons/Utils/DeleteIcon';
 import dayjs, { Dayjs } from 'dayjs';
-
-type ValuePiece = Date | null;
-type Value = ValuePiece | [ValuePiece, ValuePiece];
-
-interface User {
-  id: string;
-  email: string;
-}
-
-interface CalenderTodoComponentProps {
-  user: User;
-}
+import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
 
 const fadeInOutModal = keyframes`
   from {
@@ -539,6 +529,18 @@ const DdayCount = styled.span<{ themeStyles: any }>`
   font-weight: bold;
   color: #a7a7a7;
 `;
+dayjs.extend(utc);
+dayjs.extend(timezone);
+dayjs.tz.setDefault('Asia/Seoul');
+
+interface User {
+  id: string;
+  email: string;
+}
+
+interface CalenderTodoComponentProps {
+  user: User;
+}
 
 interface ModalProps {
   isFadingOut: boolean;
@@ -896,11 +898,11 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
         console.error('Error fetching D-day todos:', error);
       } else {
         const filteredDdayTodos = data.filter((todo: Todo) => {
-          const todoDate = dayjs(todo.date);
+          const todoDate = dayjs(todo.date).startOf('day'); // KST로 변환
           return isWithinRange(todoDate.toDate());
         }).sort((a: Todo, b: Todo) => {
-          const aDate = dayjs(a.date);
-          const bDate = dayjs(b.date);
+          const aDate = dayjs(a.date).startOf('day'); // KST로 변환
+          const bDate = dayjs(b.date).startOf('day'); // KST로 변환
           return aDate.diff(dayjs(), 'day') - bDate.diff(dayjs(), 'day');
         });
         setDdayTodos(filteredDdayTodos);
@@ -915,16 +917,22 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
 
   useEffect(() => {
     fetchDdayTodos();
-  }, [user]); // todos 상태가 변경될 때마다 D-day 할 일들을 다시 가져옴
+  }, [user]);
 
   const handleDdayChange = (index: number, value: boolean) => {
     setIsDday(prevIsDday => {
       const newIsDday = [...prevIsDday];
       newIsDday[index] = value;
-      console.log(`newIsDday:`, newIsDday);
       return newIsDday;
     });
-    console.log(`Checkbox at index ${index} changed to ${value}`);
+    if (inputs[index] === '') {
+      alert('할 일을 먼저 입력해주세요.');
+      setIsDday(prevIsDday => {
+        const newIsDday = [...prevIsDday];
+        newIsDday[index] = false;
+        return newIsDday;
+      });
+    }
   };
 
   return (
@@ -1055,9 +1063,9 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
           ) : (
             <ul>
               {ddayTodos.map((todo) => {
-                const todoDate = new Date(todo.date);
-                const today = new Date();
-                const diffDays = Math.ceil((todoDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                const todoDate = dayjs(todo.date).startOf('day'); // KST로 변환
+                const today = dayjs().startOf('day'); // 현재 날짜를 KST로 변환
+                const diffDays = todoDate.diff(today, 'day');
                 const dDayLabel = diffDays > 0 ? `D-${diffDays}` : `D+${Math.abs(diffDays)}`;
 
                 return (

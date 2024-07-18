@@ -705,7 +705,6 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
         ? prevSelectedTodos.filter((todoId) => todoId !== id)
         : [...prevSelectedTodos, id];
 
-      // 모든 할일이 선택되었는지 확인
       const allTodoIds = [...importantTodos, ...nonImportantTodos].map((todo) => todo.id);
       setIsAllSelected(newSelectedTodos.length === allTodoIds.length);
 
@@ -771,6 +770,13 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
   };
 
   const closeModal = () => {
+    if (inputs.some(input => input !== '')) {
+      if (confirm('창을 나가면 입력한 내용이 저장되지 않습니다. 정말 닫으시겠습니까?')) {
+        alert('입력한 내용이 저장되지 않았습니다.');
+      } else {
+        return; // 사용자가 '취소'를 누르면 함수 종료
+      }
+    }
     setAnimateOut(true);
     setTimeout(() => {
       setShowInput(false);

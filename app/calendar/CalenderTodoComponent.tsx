@@ -559,7 +559,6 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
   const [isFadingOut, setIsFadingOut] = useState<boolean>(false);
   const [isDday, setIsDday] = useState<boolean[]>([]);
   const [ddayTodos, setDdayTodos] = useState<Todo[]>([]);
-  const [saveTodos, setSaveTodos] = useState<boolean>(false);
   const modalContentRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -656,7 +655,6 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
     }
   };
 
-
   const handleAddInput = () => {
     if (inputs.length >= 20) {
       alert('한번에 최대 20개까지 추가할 수 있어요.');
@@ -675,7 +673,6 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
       setIsDday(prevIsDday => [...prevIsDday, false]);
     }
   };
-
 
   const closeModal = () => {
     setIsFadingOut(true);
@@ -783,13 +780,20 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
   };
 
   const handleCancelAddTodo = () => {
+    if (inputs.some(input => input !== '')) {
+      if (confirm('창을 나가면 입력한 내용이 저장되지 않습니다. 정말 닫으시겠습니까?')) {
+        alert('입력한 내용이 저장되지 않았습니다.');
+      } else {
+        return;
+      }
+    }
     setIsFadingOut(true);
     setShowAddTodoModal(false);
     setShowTodoModal(true);
     setIsFadingOut(false);
     resetInputs();
+    setIsDday(inputs.map(() => false));
   };
-
 
   const deleteTodoHandler = async (id: string) => {
     if (confirm('정말 삭제하시겠습니까?')) {
@@ -934,6 +938,20 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
       });
     }
   };
+
+  // inputs[index]길이가 0이 아닌 상태에서 체크박스 true였다가 inputs[index]길이가 0이되면 체크박스 자동으로 false로 변경
+  useEffect(() => {
+    inputs.forEach((input, index) => {
+      if (input === '' && isDday[index]) {
+        setIsDday(prevIsDday => {
+          const newIsDday = [...prevIsDday];
+          newIsDday[index] = false;
+          return newIsDday;
+        });
+      }
+    });
+  }, [inputs, isDday]);
+
 
   return (
     <Container>

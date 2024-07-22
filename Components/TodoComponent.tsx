@@ -106,15 +106,26 @@ const TodoContainer = styled.div`
   margin: 0 auto;
 
   & ul {
+    width: 100%;
+    height: 100%;
     padding: 0;
     margin: 0;
     display: flex;
     flex-direction: column;
     gap: 12px;
+    line-height: 1.5;
+    word-break: break-all;
+    white-space: normal;
   }
 
-  & li {
+ & li {
     list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: auto 0;
+    font-size: 1.2rem;
+    padding: 0.5rem 0; /* 각 항목의 상하 여백 설정 */
   }
 
   @media (max-width: 768px) {
@@ -834,15 +845,9 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
         <DasboardContainer>
           <DashBordText>DashBoard</DashBordText>
           <DateContainer themeStyles={themeStyles}>
-            <span>{date.toLocaleString("ko-KR", {
-              year: "numeric",
-            })}
-            </span>
+            <span>{date.toLocaleString("ko-KR", { year: "numeric" })}</span>
             <h2>
-              {date.toLocaleString("ko-KR", {
-                month: "long",
-                day: "numeric",
-              })}
+              {date.toLocaleString("ko-KR", { month: "long", day: "numeric" })}
             </h2>
           </DateContainer>
         </DasboardContainer>
@@ -1025,7 +1030,6 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
       )}
     </>
   );
-
 };
 
 export default TodoComponent;

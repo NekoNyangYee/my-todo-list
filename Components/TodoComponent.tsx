@@ -403,6 +403,8 @@ const TodoListContentContainer = styled.div`
   gap: 1rem;
   justify-content: space-between;
   position: relative;
+  word-break: break-all;
+  white-space: normal;
 `;
 
 const TodoList = styled.li`
@@ -787,16 +789,17 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
 
   const toggleEdit = () => {
     setIsEditing(!isEditing);
+
     if (isEditing) {
       setSelectedTodos([]);
       setIsAllSelected(false);
     }
-    if (todos.length === 0) {
+
+    if (importantTodos.length === 0 && nonImportantTodos.length === 0) {
       alert("편집할 일정이 없어요.");
       setIsEditing(false);
     }
   };
-
 
   const handleAddInput = () => {
     if (inputs.length >= 20) {

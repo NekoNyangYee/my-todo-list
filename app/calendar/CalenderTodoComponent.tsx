@@ -711,6 +711,7 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
           created_at: dayjs().toISOString(),
           date: koreanDateString,
           is_dday: filteredIsDday[index],
+          original_order: index,
         })));
 
       if (error) {
@@ -951,7 +952,6 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
       }
     });
   }, [inputs, isDday]);
-
 
   return (
     <Container>

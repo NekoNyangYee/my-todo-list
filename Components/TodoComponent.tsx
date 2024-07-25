@@ -161,6 +161,7 @@ const commonContainerStyles = (themeStyles: any = {}) => css`
     display: flex;
     flex-direction: column;
     gap: 12px;
+    justify-content: center;
   }
 
   & li {

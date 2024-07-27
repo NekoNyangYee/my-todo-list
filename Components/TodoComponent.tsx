@@ -464,7 +464,6 @@ const DotMenuBtnWrapper = styled.div`
   display: inline-block;
 
   & button {
-    background: none;
     border: none;
     cursor: pointer;
     padding: 0;
@@ -479,26 +478,25 @@ const DotMenuBtnWrapper = styled.div`
   }
 `;
 
-const DotMenuBtn = styled.button<{ isDropDownOpen: boolean }>`
+const DotMenuBtn = styled.button<{ isDropDownOpen: boolean, themeStyles: any }>`
   width: 40px;
   height: 40px;
-  padding: 8px;
   border: none;
   cursor: pointer;
-  background-color: ${({ isDropDownOpen }) => (isDropDownOpen ? '#f7f7f7' : 'transparent')};
+  background-color: ${({ isDropDownOpen, themeStyles }) => isDropDownOpen ? themeStyles.colors.inputBorder : 'transparent'};
   border-radius: 50%;
-  position: relative;
 `;
 
-const DropdownMenu = styled.div<{ isDropDownOpen: boolean, themeStyles: any }>`
+const DropdownMenu = styled.div<{ isDropDownOpen: boolean, themeStyles: any, index: number }>`
   position: absolute;
-  top: 100%;
+  top: ${({ index }) => (index >= 4 ? 'auto' : '100%')};
+  bottom: ${({ index }) => (index > 4 ? '110%' : 'auto')};
   right: 0;
   background: ${({ themeStyles }) => themeStyles.colors.containerBackground};
   border: 1px solid ${({ themeStyles }) => themeStyles.colors.inputBorder};
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  z-index: 10;
+  z-index: 9999;  // z-index 값을 높게 설정
   width: 150px;
   overflow: hidden;
   animation: ${({ isDropDownOpen }) => (isDropDownOpen ? fadeInDropDownModal : fadeOutDropDownModal)} 0.2s ease forwards;
@@ -632,6 +630,7 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [isAllSelected, setIsAllSelected] = useState<boolean>(false);
   const [selectedTodos, setSelectedTodos] = useState<string[]>([]);
+  const [dropdownItemCount, setDropdownItemCount] = useState<number>(0);
   const modalContentRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -689,7 +688,9 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
   };
 
   const handleDotMenuClick = (todoId: string) => {
+    const clickedTodoIndex = todos.findIndex(todo => todo.id === todoId);
     setShowDropdown(prev => (prev === todoId ? null : todoId));
+    setDropdownItemCount(clickedTodoIndex);
   };
 
   const deleteTodoHandler = async (id: string) => {
@@ -898,12 +899,12 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
                         </TodoList>
                         <DotMenuBtnWrapper>
                           {!isEditing && (
-                            <DotMenuBtn onClick={() => handleDotMenuClick(todo.id)} isDropDownOpen={showDropdown === todo.id}>
+                            <DotMenuBtn onClick={() => handleDotMenuClick(todo.id)} isDropDownOpen={showDropdown === todo.id} themeStyles={themeStyles}>
                               <img src="/dot-menu.svg" alt="Dot Menu" />
                             </DotMenuBtn>
                           )}
                           {showDropdown === todo.id && (
-                            <DropdownMenu ref={dropdownRef} isDropDownOpen={!!showDropdown} themeStyles={themeStyles}>
+                            <DropdownMenu ref={dropdownRef} isDropDownOpen={!!showDropdown} themeStyles={themeStyles} index={dropdownItemCount}>
                               <CompleteItem onClick={() => toggleTodoHandler(todo.id, todo.is_complete)}>
                                 <CheckIcon />
                                 일정 완료
@@ -940,12 +941,12 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
                     </TodoList>
                     <DotMenuBtnWrapper>
                       {!isEditing && (
-                        <DotMenuBtn onClick={() => handleDotMenuClick(todo.id)} isDropDownOpen={showDropdown === todo.id}>
+                        <DotMenuBtn onClick={() => handleDotMenuClick(todo.id)} isDropDownOpen={showDropdown === todo.id} themeStyles={themeStyles}>
                           <img src="/dot-menu.svg" alt="Dot Menu" />
                         </DotMenuBtn>
                       )}
                       {showDropdown === todo.id && (
-                        <DropdownMenu ref={dropdownRef} isDropDownOpen={!!showDropdown} themeStyles={themeStyles}>
+                        <DropdownMenu ref={dropdownRef} isDropDownOpen={!!showDropdown} themeStyles={themeStyles} index={dropdownItemCount}>
                           <CompleteItem onClick={() => toggleTodoHandler(todo.id, todo.is_complete)}>
                             <CheckIcon />
                             일정 완료

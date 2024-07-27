@@ -31,7 +31,6 @@ const MainHome = () => {
         };
     }, []);
 
-    // 로딩 중일 때 아무 것도 렌더링하지 않음
     if (loading) {
         return null;
     }

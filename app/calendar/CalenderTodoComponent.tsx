@@ -16,6 +16,7 @@ import DeleteIcon from '@components/Components/icons/Utils/DeleteIcon';
 import dayjs, { Dayjs } from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
+import CheckDdayIcon from '@components/Components/icons/Utils/CheckDdayIcon';
 
 const fadeInOutModal = keyframes`
   from {
@@ -136,10 +137,12 @@ const ModalContent = styled.div<{ isOpen: boolean, isFadingOut: boolean, themeSt
   }
 `;
 
-const ModalTitleContainer = styled.div`
-  h2 {
+const ModalTitleContainer = styled.div<{ themeStyles: any }>`
+  & h2 {
     margin: 0;
   }
+  & p, span {
+    color: ${({ themeStyles }) => themeStyles.colors.inputPlaceholderColor};
 `;
 
 const ToDoInputContainer = styled.div`
@@ -351,6 +354,13 @@ const CalendarStyled = styled(Calendar) <{ themeStyles: any }>`
     
   & .react-calendar__tile--hasActive {
     background: ${({ themeStyles }) => themeStyles.colors.buttonBackground};
+    color: #FFFFFF;
+    font-size: 1.2rem;
+
+    &:hover {
+      background: ${({ themeStyles }) => themeStyles.colors.buttonHoverBackground};
+      color: ${({ themeStyles }) => themeStyles.colors.buttonColor};
+    }
   }
 
   & .react-calendar__tile--active:hover {
@@ -417,7 +427,7 @@ const CalendarStyled = styled(Calendar) <{ themeStyles: any }>`
 
 const NoTodoListText = styled.p<{ themeStyles: any }>`
   text-align: center;
-  color: ${({ themeStyles }) => themeStyles.colors.text};
+  color: #7a7a7a;
 `;
 
 const TodoListContentContainer = styled.div`
@@ -534,6 +544,46 @@ const DdayCount = styled.span<{ themeStyles: any }>`
   font-weight: bold;
   color: #a7a7a7;
 `;
+
+const SelectColorBtn = styled.button<{ themeStyles: any }>`
+  padding: 8px 1rem;
+  background-color: ${({ themeStyles }) => themeStyles.colors.buttonBackground};
+  color: ${({ themeStyles }) => themeStyles.colors.buttonColor};
+  border: none;
+  cursor: pointer;
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  &:disabled {
+    background-color: ${({ themeStyles }) => themeStyles.colors.inputBorder};
+    color: #aeaeae;
+    cursor: not-allowed;
+  }
+`;
+
+const InputOptionContainer = styled.div`
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin: 8px 0;
+`;
+
+const DDayBtn = styled.button<{ isDday: boolean, themeStyles: any }>`
+  padding: 8px 1rem;
+  background-color: ${({ themeStyles, isDday }) => isDday ? themeStyles.colors.buttonBackground : "#DDE9F6"};
+  color: ${({ themeStyles, isDday }) => isDday ? themeStyles.colors.buttonColor : themeStyles.colors.buttonBackground};
+  border: ${({ themeStyles }) => `1px solid ${themeStyles.colors.buttonBackground}`};
+  cursor: pointer;
+  border-radius: 8px;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  font-size: 1rem;
+`;
+
 dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.tz.setDefault('Asia/Seoul');
@@ -771,7 +821,6 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
     const clickedTodoIndex = todos.findIndex(todo => todo.id === todoId);
     setShowDropdown(prev => (prev === todoId ? null : todoId));
     setDropdownItemCount(clickedTodoIndex);
-    console.log('clickedTodoIndex:', clickedTodoIndex);
   };
 
   const handleAddTodoClick = () => {
@@ -995,7 +1044,7 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
             >
               {showTodoModal ? (
                 <>
-                  <ModalTitleContainer>
+                  <ModalTitleContainer themeStyles={themeStyles}>
                     <h2>
                       {selectedDate.toLocaleString("ko-KR", {
                         year: "numeric",
@@ -1041,7 +1090,7 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
                 </>
               ) : (
                 <>
-                  <ModalTitleContainer>
+                  <ModalTitleContainer themeStyles={themeStyles}>
                     <h2>할 일 추가</h2>
                     <p>오늘 해야 할 일을 추가해 보세요.<br />한번에 최대 20개까지 추가 가능해요.</p>
                   </ModalTitleContainer>
@@ -1059,14 +1108,13 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
                           onKeyDown={(e) => handleKeyPress(index, e)}
                           themeStyles={themeStyles}
                         />
-                        <label>
-                          D-day
-                          <input
-                            type="checkbox"
-                            checked={isDday[index] || false} // 상태가 null/undefined일 경우 대비
-                            onChange={(e) => handleDdayChange(index, e.target.checked)}
-                          />
-                        </label>
+                        <InputOptionContainer>
+                          <DDayBtn onClick={() => handleDdayChange(index, !isDday[index])} themeStyles={themeStyles} isDday={isDday[index]}>
+                            {isDday[index] ? <CheckDdayIcon /> : null}
+                            디데이
+                          </DDayBtn>
+                          <SelectColorBtn disabled themeStyles={themeStyles}>색상 설정</SelectColorBtn>
+                        </InputOptionContainer>
                       </div>
                     ))}
                   </ToDoInputContainer>

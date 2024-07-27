@@ -109,7 +109,7 @@ const ModalContent = styled.div<{ isOpen: boolean, isFadingOut: boolean, themeSt
   border-radius: 12px;
   max-width: 572px;
   width: 100%;
-  min-height: 30vh;
+  min-height: 50vh;
   max-height: 80vh;
   overflow-y: auto;
   display: flex;
@@ -437,15 +437,20 @@ const DotMenuBtnWrapper = styled.div`
   position: relative;
 `;
 
-const DotMenuBtn = styled.button<{ isDropDownOpen: boolean }>`
+const DotMenuBtn = styled.button<{ isDropDownOpen: boolean, themeStyles: any }>`
+  width: 40px;
+  height: 40px;
   background-color: transparent;
   border: none;
   cursor: pointer;
+  background-color: ${({ isDropDownOpen, themeStyles }) => isDropDownOpen ? themeStyles.colors.inputBorder : 'transparent'};
+  border-radius: 50%;
 `;
 
-const DropdownMenu = styled.div<{ isDropDownOpen: boolean, themeStyles: any }>`
+const DropdownMenu = styled.div<{ isDropDownOpen: boolean, themeStyles: any, index: number }>`
   position: absolute;
-  top: 100%;
+  top: ${({ index }) => (index >= 4 ? 'auto' : '100%')};
+  bottom: ${({ index }) => (index > 4 ? '110%' : 'auto')};
   right: 0;
   background: ${({ themeStyles }) => themeStyles.colors.containerBackground};
   border: 1px solid ${({ themeStyles }) => themeStyles.colors.inputBorder};
@@ -472,7 +477,7 @@ const SelectItem = styled.button<{ themeStyles: any }>`
   box-sizing: border-box;
   width: 150px;
   background-color: transparent;
-  padding: 10px;
+  padding: 1rem;
   cursor: pointer;
   border: none;
   z-index: 10;
@@ -559,6 +564,7 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
   const [isFadingOut, setIsFadingOut] = useState<boolean>(false);
   const [isDday, setIsDday] = useState<boolean[]>([]);
   const [ddayTodos, setDdayTodos] = useState<Todo[]>([]);
+  const [dropdownItemCount, setDropdownItemCount] = useState<number>(0);
   const modalContentRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -762,7 +768,10 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
   };
 
   const handleDotMenuClick = (todoId: string) => {
+    const clickedTodoIndex = todos.findIndex(todo => todo.id === todoId);
     setShowDropdown(prev => (prev === todoId ? null : todoId));
+    setDropdownItemCount(clickedTodoIndex);
+    console.log('clickedTodoIndex:', clickedTodoIndex);
   };
 
   const handleAddTodoClick = () => {
@@ -1003,11 +1012,11 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
                         <TodoListContentContainer key={todo.id}>
                           <li>{todo.content}</li>
                           <DotMenuBtnWrapper>
-                            <DotMenuBtn onClick={() => handleDotMenuClick(todo.id)} isDropDownOpen={showDropdown === todo.id}>
+                            <DotMenuBtn onClick={() => handleDotMenuClick(todo.id)} isDropDownOpen={showDropdown === todo.id} themeStyles={themeStyles}>
                               <img src="/dot-menu.svg" alt="Dot Menu" />
                             </DotMenuBtn>
                             {showDropdown === todo.id && (
-                              <DropdownMenu ref={dropdownRef} isDropDownOpen={!!showDropdown} themeStyles={themeStyles}>
+                              <DropdownMenu ref={dropdownRef} isDropDownOpen={!!showDropdown} themeStyles={themeStyles} index={dropdownItemCount}>
                                 {!isToday(todo.date) && (
                                   <FetchItem onClick={() => fetchTodoToToday(todo.id)} themeStyles={themeStyles}>
                                     끌어오기

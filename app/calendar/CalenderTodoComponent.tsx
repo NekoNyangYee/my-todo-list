@@ -5,7 +5,7 @@ import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import { supabase } from '@components/lib/supabaseClient';
 import styled from '@emotion/styled';
-import { fetchTodosForDate } from '@components/util/todoUtil';
+import { fetchDdayTodos, fetchTodosForDate } from '@components/util/todoUtil';
 import { Todo } from '@components/types/todo';
 import { useTodoStore } from '@components/Store/useAuthTodoStore';
 import moment from 'moment';
@@ -783,7 +783,7 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
 
         await fetchTodosForDate(user.id, selectedDate, setTodos);
         setShowTodoModal(true);
-        await fetchDdayTodos();
+        await fetchDdayTodos(user.id, setDdayTodos);
       }
     } catch (e) {
       console.error('Unexpected error:', e);
@@ -949,45 +949,20 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
 
   const completedTodos = sortTodos(todos);
 
-  const fetchDdayTodos = async () => {
-    if (user) {
-      const { data, error } = await supabase
-        .from('todos')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('is_dday', true);
-
-      if (error) {
-        console.error('Error fetching D-day todos:', error);
-      } else {
-        const filteredDdayTodos = data.filter((todo: Todo) => {
-          const todoDate = dayjs(todo.date).startOf('day'); // KST로 변환
-          return isWithinRange(todoDate.toDate());
-        }).sort((a: Todo, b: Todo) => {
-          const aDate = dayjs(a.date).startOf('day'); // KST로 변환
-          const bDate = dayjs(b.date).startOf('day'); // KST로 변환
-          return aDate.diff(dayjs(), 'day') - bDate.diff(dayjs(), 'day');
-        });
-        setDdayTodos(filteredDdayTodos);
-      }
-    }
-  };
-
-  const isWithinRange = (date: Date): boolean => {
-    const hundredYearsLater = dayjs().add(100, 'year').startOf('day').toDate();
-    return date <= hundredYearsLater;
-  };
-
   useEffect(() => {
-    fetchDdayTodos();
+    if (user) {
+      fetchDdayTodos(user.id, setDdayTodos);
+    }
   }, [user]);
 
-  const handleDdayChange = (index: number, value: boolean) => {
+  const handleDdayChange = (index: number) => {
     setIsDday(prevIsDday => {
       const newIsDday = [...prevIsDday];
-      newIsDday[index] = value;
+      newIsDday[index] = !newIsDday[index];
+      console.log(newIsDday);  // 상태 변화 확인용 로그
       return newIsDday;
     });
+
     if (inputs[index] === '') {
       alert('할 일을 먼저 입력해주세요.');
       setIsDday(prevIsDday => {
@@ -1109,7 +1084,7 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
                           themeStyles={themeStyles}
                         />
                         <InputOptionContainer>
-                          <DDayBtn onClick={() => handleDdayChange(index, !isDday[index])} themeStyles={themeStyles} isDday={isDday[index]}>
+                          <DDayBtn onClick={() => handleDdayChange(index)} themeStyles={themeStyles} isDday={isDday[index]}>
                             {isDday[index] ? <CheckDdayIcon /> : null}
                             디데이
                           </DDayBtn>

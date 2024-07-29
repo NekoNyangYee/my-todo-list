@@ -9,7 +9,7 @@ interface Todo {
     created_at: string;
     original_order: number;
 };
-
+// const [isDday, setIsDday] = useState<boolean[]>([]);옮기기
 interface TodoState {
     todos: Todo[];
     inputs: string[];
@@ -19,6 +19,7 @@ interface TodoState {
     uncompletedTodos: Todo[];
     uncompletedShowDropdown: string | null;
     isLoading: boolean;
+    isDay: boolean[];
     addInput: () => void;
     removeInput: (index: number) => void;
     setInputs: (index: number, value: string) => void;
@@ -30,6 +31,7 @@ interface TodoState {
     setUncompletedTodos: (todos: Todo[]) => void;
     setUncompletedShowDropdown: (dropdown: string | null) => void;
     setIsLoading: (loading: boolean) => void;
+    setIsDday: (isDday: boolean[]) => void;
 };
 
 export const useTodoStore = create<TodoState>((set) => ({
@@ -41,6 +43,7 @@ export const useTodoStore = create<TodoState>((set) => ({
     uncompletedTodos: [],
     uncompletedShowDropdown: null,
     isLoading: true,
+    isDay: [],
     addInput: () => set((state) => ({ inputs: [...state.inputs, ''] })),
     removeInput: (index: number) => set((state) => {
         const newInputs = [...state.inputs];
@@ -63,4 +66,5 @@ export const useTodoStore = create<TodoState>((set) => ({
     setUncompletedTodos: (todos) => set({ uncompletedTodos: todos }),
     setUncompletedShowDropdown: (dropdown) => set({ uncompletedShowDropdown: dropdown }),
     setIsLoading: (loading) => set({ isLoading: loading }),
+    setIsDday: (isDday) => set({ isDay: isDday })
 }));

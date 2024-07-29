@@ -4,12 +4,18 @@ import { css, keyframes } from "@emotion/react";
 import styled from "@emotion/styled";
 import { useEffect, useRef, useState } from "react";
 import { useTodoStore } from "../Store/useAuthTodoStore";
-import { fetchTodosForDate, deleteTodo, toggleTodo, togglePriority, saveTodos } from "@components/util/todoUtil";
+import { fetchTodosForDate, deleteTodo, toggleTodo, togglePriority, saveTodos, fetchDdayTodos } from "@components/util/todoUtil";
 import { useTheme } from "@components/app/Context/ThemeContext";
 import PriorityIcon from "./icons/Priority/PriorityIcon";
 import DeleteIcon from "./icons/Utils/DeleteIcon";
 import AddIcon from "./icons/Utils/AddIcon";
 import CheckIcon from "./icons/Utils/CheckIcon";
+import CheckDdayIcon from "./icons/Utils/CheckDdayIcon";
+import dayjs, { Dayjs } from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+import { Todo } from "@components/types/todo";
+import { supabase } from "@components/lib/supabaseClient";
 
 const fadeInDropDownModal = keyframes`
   from {
@@ -617,6 +623,49 @@ const SelectBtn = styled.button`
   font-size: 1rem;
 `;
 
+const SelectColorBtn = styled.button<{ themeStyles: any }>`
+  padding: 8px 1rem;
+  background-color: ${({ themeStyles }) => themeStyles.colors.buttonBackground};
+  color: ${({ themeStyles }) => themeStyles.colors.buttonColor};
+  border: none;
+  cursor: pointer;
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  &:disabled {
+    background-color: ${({ themeStyles }) => themeStyles.colors.inputBorder};
+    color: #aeaeae;
+    cursor: not-allowed;
+  }
+`;
+
+const InputOptionContainer = styled.div`
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin: 8px 0;
+`;
+
+const DDayBtn = styled.button<{ isDday: boolean, themeStyles: any }>`
+  padding: 8px 1rem;
+  background-color: ${({ themeStyles, isDday }) => isDday ? themeStyles.colors.buttonBackground : "#DDE9F6"};
+  color: ${({ themeStyles, isDday }) => isDday ? themeStyles.colors.buttonColor : themeStyles.colors.buttonBackground};
+  border: ${({ themeStyles }) => `1px solid ${themeStyles.colors.buttonBackground}`};
+  cursor: pointer;
+  border-radius: 8px;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  font-size: 1rem;
+`;
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+dayjs.tz.setDefault('Asia/Seoul');
+
 interface TodoComponentProps {
   user: { id: string; email: string } | null;
   selectedDate: Date;
@@ -631,6 +680,8 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
   const [isAllSelected, setIsAllSelected] = useState<boolean>(false);
   const [selectedTodos, setSelectedTodos] = useState<string[]>([]);
   const [dropdownItemCount, setDropdownItemCount] = useState<number>(0);
+  const [isDday, setIsDday] = useState<boolean[]>([]);
+  const [ddayTodos, setDdayTodos] = useState<Todo[]>([]);
   const modalContentRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -641,7 +692,10 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
       const additionalInputs = Array(3 - inputs.length).fill('');
       additionalInputs.forEach(() => addInput());
     }
+    // isDday 배열을 inputs 길이에 맞춰 초기화
+    setIsDday(inputs.map(() => false));
   }, [inputs, addInput]);
+
 
   useEffect(() => {
     if (modalContentRef.current) {
@@ -759,10 +813,15 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
 
   const saveTodosHandler = async () => {
     if (user) {
-      await saveTodos(user.id, inputs, setTodos, resetInputs, setAnimateOut, setShowInput, selectedDate);
+      // dday 상태가 true인 항목만 전달
+      const filteredIsDday = isDday.filter((_, index) => inputs[index].trim() !== '');
+
+      await saveTodos(user.id, inputs, filteredIsDday, setTodos, resetInputs, setAnimateOut, setShowInput, selectedDate);
       await fetchTodosForDate(user.id, selectedDate, setTodos);
+      await fetchDdayTodos(user.id, setDdayTodos); // 디데이 일정 패칭 추가
     }
   };
+
 
   const handleKeyPress = (index: number, event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
@@ -840,6 +899,42 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
   const importantTodos = sortTodos(todos.filter(todo => todo.is_priority && !todo.is_complete));
   const nonImportantTodos = sortTodos(todos.filter(todo => !todo.is_priority && !todo.is_complete));
   const completedTodos = sortTodos(todos.filter(todo => todo.is_complete));
+
+  useEffect(() => {
+    if (user) {
+      fetchDdayTodos(user.id, setDdayTodos);
+    }
+  }, [user]);
+
+  const handleDdayChange = (index: number) => {
+    setIsDday(prevIsDday => {
+      const newIsDday = [...prevIsDday];
+      newIsDday[index] = !newIsDday[index];
+      return newIsDday;
+    });
+
+    if (inputs[index] === '') {
+      alert('할 일을 먼저 입력해주세요.');
+      setIsDday(prevIsDday => {
+        const newIsDday = [...prevIsDday];
+        newIsDday[index] = false;
+        return newIsDday;
+      });
+    }
+  };
+
+  // inputs[index]길이가 0이 아닌 상태에서 체크박스 true였다가 inputs[index]길이가 0이되면 체크박스 자동으로 false로 변경
+  useEffect(() => {
+    inputs.forEach((input, index) => {
+      if (input === '' && isDday[index]) {
+        setIsDday(prevIsDday => {
+          const newIsDday = [...prevIsDday];
+          newIsDday[index] = false;
+          return newIsDday;
+        });
+      }
+    });
+  }, [inputs, isDday]);
 
   return (
     <>
@@ -1016,6 +1111,13 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
                     onChange={(e) => handleInputChange(index, e.target.value)}
                     onKeyDown={(e) => handleKeyPress(index, e)}
                   />
+                  <InputOptionContainer>
+                    <DDayBtn onClick={() => handleDdayChange(index)} themeStyles={themeStyles} isDday={isDday[index]}>
+                      {isDday[index] ? <CheckDdayIcon /> : null}
+                      디데이
+                    </DDayBtn>
+                    <SelectColorBtn disabled themeStyles={themeStyles}>색상 설정</SelectColorBtn>
+                  </InputOptionContainer>
                 </div>
               ))}
             </ToDoInputContainer>

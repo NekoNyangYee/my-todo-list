@@ -1,6 +1,7 @@
 import { supabase } from '@components/lib/supabaseClient';
 import { v4 as uuidv4 } from 'uuid';
 import { Todo } from '@components/types/todo';
+import dayjs from 'dayjs';
 
 export const deleteCompletedTodos = async (userId: string, setTodos: (todos: Todo[]) => void): Promise<void> => {
     const { data, error } = await supabase
@@ -139,6 +140,7 @@ export const togglePriority = async (userId: string, id: string, isPriority: boo
 export const saveTodos = async (
     userId: string,
     inputs: string[],
+    isDday: boolean[], // isDday 추가
     setTodos: (todos: Todo[]) => void,
     resetInputs: () => void,
     setAnimateOut: (animate: boolean) => void,
@@ -146,6 +148,8 @@ export const saveTodos = async (
     selectedDate: Date
 ) => {
     const nonEmptyInputs = inputs.filter(input => input.trim() !== '');
+    const filteredIsDday = isDday.filter((_, index) => inputs[index].trim() !== '');
+
     if (nonEmptyInputs.length === 0) {
         alert('할 일을 입력해주세요.');
         return;
@@ -171,6 +175,7 @@ export const saveTodos = async (
             content,
             is_complete: false,
             is_priority: false,
+            is_dday: filteredIsDday[index], // isDday 값 사용
             created_at: new Date().toISOString(),
             date: dateString,
             original_order: currentOrder + index,
@@ -267,25 +272,29 @@ export const removeDuplicates = <T extends Record<string, any>>(array: T[], key:
     );
 };
 
-export const checkSpecificTime = async (userId: string, setTodos: (todos: Todo[]) => void, setUncompletedTodos: (todos: Todo[]) => void): Promise<void> => {
-    const now = new Date();
-    const currentHour = now.getHours();
-    const currentMinute = now.getMinutes();
+export const fetchDdayTodos = async (userId: string, setDdayTodos: (todos: Todo[]) => void) => {
+    const { data, error } = await supabase
+        .from('todos')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('is_dday', true);
 
-    const targetHour = 0;
-    const targetMinute = 0;
-    if (currentHour === targetHour && currentMinute === targetMinute) {
-        await deleteCompletedTodos(userId, setTodos);
-        await archiveTodos(userId, setTodos, setUncompletedTodos);
+    if (error) {
+        console.error('Error fetching D-day todos:', error);
+    } else {
+        const filteredDdayTodos = data.filter((todo: Todo) => {
+            const todoDate = dayjs(todo.date).startOf('day'); // KST로 변환
+            return isWithinRange(todoDate.toDate());
+        }).sort((a: Todo, b: Todo) => {
+            const aDate = dayjs(a.date).startOf('day'); // KST로 변환
+            const bDate = dayjs(b.date).startOf('day'); // KST로 변환
+            return aDate.diff(dayjs(), 'day') - bDate.diff(dayjs(), 'day');
+        });
+        setDdayTodos(filteredDdayTodos);
     }
 };
 
-export const setupMidnightCheck = (userId: string, setTodos: (todos: Todo[]) => void, setUncompletedTodos: (todos: Todo[]) => void): () => void => {
-    const checkAndUpdate = async () => {
-        await checkSpecificTime(userId, setTodos, setUncompletedTodos);
-    };
-
-    checkAndUpdate();
-    const interval = setInterval(checkAndUpdate, 60 * 1000);
-    return () => clearInterval(interval);
+const isWithinRange = (date: Date): boolean => {
+    const hundredYearsLater = dayjs().add(100, 'year').startOf('day').toDate();
+    return date <= hundredYearsLater;
 };

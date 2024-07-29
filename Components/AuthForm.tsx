@@ -6,10 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "../Store/authStore";
 import { supabase } from "../lib/supabaseClient";
 import { updateProfile } from "../lib/updateProfile";
-import {
-  setupMidnightCheck,
-  fetchTodosForDate,
-} from "@components/util/todoUtil";
+import { fetchTodosForDate } from "@components/util/todoUtil";
 import { useTodoStore } from "@components/Store/useAuthTodoStore";
 import { useTheme } from "@components/app/Context/ThemeContext";
 import { useEffect, useState } from "react";
@@ -84,7 +81,7 @@ const AuthInputContainer = styled.div<{ themeStyles: any }>`
     border-radius: 8px;
     border: none;
     background-color: ${({ themeStyles }) =>
-      themeStyles.colors.inputBackground};
+    themeStyles.colors.inputBackground};
     background-repeat: no-repeat;
     background-size: 1.6rem;
     background-position: 1rem center;
@@ -181,7 +178,7 @@ const SignUpInputContainer = styled.div<SignUpInputContainerProps>`
 
   & input {
     background-color: ${({ themeStyles }) =>
-      themeStyles.colors.inputBackground};
+    themeStyles.colors.inputBackground};
     border: 1px solid ${({ themeStyles }) => themeStyles.colors.inputBorder};
 
     &:nth-of-type(1) {
@@ -266,7 +263,7 @@ const LoginAndSignUpBtn = styled.button<{ themeStyles: any }>`
 
   &:hover {
     background-color: ${({ themeStyles }) =>
-      themeStyles.colors.buttonHoverBackground};
+    themeStyles.colors.buttonHoverBackground};
   }
 
   &:disabled {
@@ -298,7 +295,7 @@ const SocialLoginText = styled.p<{ themeStyles: any }>`
 
 const AuthTitle = styled.h2<{ authType: "signin" | "signup" }>`
   animation: ${({ authType }) =>
-        authType === "signin" ? fadeInLogin : fadeInSignUp}
+    authType === "signin" ? fadeInLogin : fadeInSignUp}
       0.3s forwards,
     ${({ authType }) => (authType === "signin" ? fadeOutSignUp : fadeOutLogin)}
       0.3s forwards;
@@ -397,7 +394,6 @@ const AuthForm = () => {
         await updateProfile(data.session.user, "email");
         await fetchTodosForDate(data.session.user.id, currentDate, setTodos);
         router.push("/");
-        setupMidnightCheck(data.session.user.id, setTodos, setUncompletedTodos);
       }
     } else {
       if (!emailRegex.test(email)) {
@@ -449,7 +445,6 @@ const AuthForm = () => {
       const user = await supabase.auth.getUser();
       if (user.data.user) {
         updateProfile(user.data.user, provider);
-        setupMidnightCheck(user.data.user.id, setTodos, setUncompletedTodos);
         fetchTodosForDate(user.data.user.id, new Date(), setTodos);
         router.push("/");
       }
@@ -550,20 +545,20 @@ const AuthForm = () => {
           </AuthTitle>
           <AuthInputContainer themeStyles={themeStyles}>
             <MailContainer>
-            <input
-              type="email"
-              value={email}
-              onChange={handleEmailValidation}
-              placeholder="이메일"
-              style={{ backgroundImage: "url(/email.svg)" }}
-              autoComplete="new-password"
-            />
-            {authType === "signup" && (
+              <input
+                type="email"
+                value={email}
+                onChange={handleEmailValidation}
+                placeholder="이메일"
+                style={{ backgroundImage: "url(/email.svg)" }}
+                autoComplete="new-password"
+              />
+              {authType === "signup" && (
                 <InvaildEmailButton onClick={handleEmailCheck} disabled={!emailRegex.test(email)}>중복 확인</InvaildEmailButton>
-            )}
+              )}
             </MailContainer>
             {authType === "signup" && (
-                <MessageText>{emailMessage}</MessageText>
+              <MessageText>{emailMessage}</MessageText>
             )}
             <input
               type="password"

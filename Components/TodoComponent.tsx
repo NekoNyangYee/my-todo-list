@@ -593,23 +593,20 @@ const EditDeleteBtn = styled.button`
   align-items: center;
   gap: 0.2rem;
   padding: 8px 12px;
-  background-color: #FF4F4F;
-  color: #fff;
+  background-color: transparent;
+  color: #FF4F4F;
   border: none;
   cursor: pointer;
   border-radius: 8px;
   font-size: 1rem;
 
-  & svg {
-    width: 24px;
-    height: 24px;
-    fill: #fff;
-  }
-
   &:disabled {
-    background-color: #e7e7e7;
     color: #afafaf;
     cursor: not-allowed;
+  }
+
+  &:hover {
+    background-color: #f3f4ff;
   }
 `;
 
@@ -660,6 +657,32 @@ const DDayBtn = styled.button<{ isDday: boolean, themeStyles: any }>`
   justify-content: center;
   align-items: center;
   font-size: 1rem;
+`;
+
+const EditUtiltyBtn = styled.div`
+  display: flex;
+`;
+
+const CompletedBtn = styled.button<{ themeStyles: any }>`
+  padding: 8px 12px;
+  background-color: transparent;
+  color: #0075ff;
+  border: none;
+  cursor: pointer;
+  border-radius: 8px;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+
+  &:disabled {
+    color: #afafaf;
+    cursor: not-allowed;
+  }
+
+  &:hover {
+    background-color: #f3f4ff;
+  }
 `;
 
 dayjs.extend(utc);
@@ -936,6 +959,28 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
     });
   }, [inputs, isDday]);
 
+  const completeSelectedTodos = async () => {
+    if (selectedTodos.length === 0) {
+      alert('완료할 항목을 선택해주세요.');
+      return;
+    }
+    if (user) {
+      await Promise.all(selectedTodos.map(todoId => toggleTodo(user.id, todoId, false, setTodos, selectedDate)));
+      setSelectedTodos([]);
+
+      const updatedTodos = await new Promise<Todo[]>((resolve) => {
+        fetchTodosForDate(user.id, selectedDate, resolve);
+      });
+
+      setTodos(updatedTodos);
+
+      const remainingTodos = updatedTodos.filter(todo => !todo.is_complete);
+      if (remainingTodos.length === 0) {
+        setIsEditing(false);
+      }
+    }
+  };
+
   return (
     <>
       <MainTodoListContainer>
@@ -957,13 +1002,15 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
               </HeaderTitleSection>
               <CheckAndDeleteContainer>
                 {isEditing && (
-                  <SelectBtn onClick={selectAllTodos}>{isAllSelected ? '전체 해제' : '전체 선택'}</SelectBtn>
-                )}
-                {isEditing && (
-                  <EditDeleteBtn onClick={deleteSelectedTodosHandler} disabled={selectedTodos.length === 0}>
-                    <DeleteIcon />
-                    삭제
-                  </EditDeleteBtn>
+                  <>
+                    <SelectBtn onClick={selectAllTodos}>{isAllSelected ? '전체 해제' : '전체 선택'}</SelectBtn>
+                    <EditUtiltyBtn>
+                      <CompletedBtn onClick={completeSelectedTodos} disabled={selectedTodos.length === 0} themeStyles={themeStyles}><CheckDdayIcon /></CompletedBtn>
+                      <EditDeleteBtn onClick={deleteSelectedTodosHandler} disabled={selectedTodos.length === 0}>
+                        <DeleteIcon />
+                      </EditDeleteBtn>
+                    </EditUtiltyBtn>
+                  </>
                 )}
               </CheckAndDeleteContainer>
             </HeaderEditSection>

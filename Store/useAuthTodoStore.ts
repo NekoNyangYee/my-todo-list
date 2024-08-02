@@ -1,7 +1,7 @@
 import { Todo } from '@components/types/todo';
 import { create } from 'zustand';
 
-// const [isDday, setIsDday] = useState<boolean[]>([]);옮기기
+// const [isDday, setIsDday] = useState<boolean[]>([]); 옮기기
 interface TodoState {
     todos: Todo[];
     inputs: string[];
@@ -16,7 +16,7 @@ interface TodoState {
     removeInput: (index: number) => void;
     setInputs: (index: number, value: string) => void;
     setTodos: (todos: Todo[]) => void;
-    resetInputs: () => void;
+    resetInputs: (count?: number) => void;
     setShowInput: (show: boolean) => void;
     setAnimateOut: (animate: boolean) => void;
     setShowDropdown: (dropdown: string | null) => void;
@@ -40,9 +40,6 @@ export const useTodoStore = create<TodoState>((set) => ({
     removeInput: (index: number) => set((state) => {
         const newInputs = [...state.inputs];
         newInputs.splice(index, 1);
-        if (newInputs.length < 3) {
-            newInputs.push('');
-        }
         return { inputs: newInputs };
     }),
     setInputs: (index, value) => set((state) => {
@@ -51,7 +48,7 @@ export const useTodoStore = create<TodoState>((set) => ({
         return { inputs: newInputs };
     }),
     setTodos: (todos) => set({ todos }),
-    resetInputs: () => set({ inputs: [''] }),
+    resetInputs: (count = 3) => set({ inputs: Array(count).fill('') }),  // 기본 3개의 입력 필드 추가
     setShowInput: (show) => set({ showInput: show }),
     setAnimateOut: (animate) => set({ animateOut: animate }),
     setShowDropdown: (dropdown) => set({ showDropdown: dropdown }),

@@ -103,6 +103,26 @@ const MainTodoListContainer = styled.div`
   }
 `;
 
+const ListContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  height: 100%;
+
+   &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: #a9a9a9;
+    border-radius: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+`;
+
 const TodoContainer = styled.div`
   display: flex;
   flex-direction: row;
@@ -167,7 +187,6 @@ const commonContainerStyles = (themeStyles: any = {}) => css`
     display: flex;
     flex-direction: column;
     gap: 12px;
-    justify-content: center;
   }
 
   & li {
@@ -712,13 +731,13 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
   const { themeStyles } = useTheme();
 
   useEffect(() => {
-    if (inputs.length < 3) {
+    if (inputs.length < 3 && !isEditMode) {
       const additionalInputs = Array(3 - inputs.length).fill('');
       additionalInputs.forEach(() => addInput());
     }
     // isDday 배열을 inputs 길이에 맞춰 초기화
     setIsDday(inputs.map(() => false));
-  }, [inputs, addInput]);
+  }, [inputs, addInput, isEditMode]);
 
 
   useEffect(() => {
@@ -895,6 +914,7 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
       }
     }
     setAnimateOut(true);
+    setSelectedTodos([]);
     setTimeout(() => {
       setShowInput(false);
       setAnimateOut(false);
@@ -1005,7 +1025,7 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
 
     if (todoId) {
       selectedTodo = todos.filter(todo => todo.id === todoId && !todo.is_complete);
-      setSelectedTodos([todoId]);  // 선택된 todoId를 selectedTodos 배열에 설정
+      setSelectedTodos([todoId]);
     } else {
       selectedTodo = todos.filter(todo => selectedTodos.includes(todo.id) && !todo.is_complete);
     }
@@ -1015,9 +1035,16 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
       return;
     }
 
+    // 일정의 순서를 유지하여 가져오기 위해 original_order로 정렬
+    selectedTodo.sort((a, b) => a.original_order - b.original_order);
+
     const selectedTodoContents = selectedTodo.map(todo => todo.content);
     const selectedTodoDdays = selectedTodo.map(todo => todo.is_dday);
+
+    // 선택된 일정의 개수에 맞게 inputs 배열 설정
+    resetInputs(selectedTodoContents.length);
     selectedTodoContents.forEach((content, index) => setInputs(index, content));
+
     setIsDday(selectedTodoDdays);
     setIsEditMode(true);
     setShowInput(true);
@@ -1026,12 +1053,18 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
 
   useEffect(() => {
     if (isEditMode && showInput) {
-      const selectedTodoDdays = todos
+      const selectedTodosSorted = todos
         .filter(todo => selectedTodos.includes(todo.id) && !todo.is_complete)
-        .map(todo => todo.is_dday);
+        .sort((a, b) => a.original_order - b.original_order);
+
+      const selectedTodoContents = selectedTodosSorted.map(todo => todo.content);
+      const selectedTodoDdays = selectedTodosSorted.map(todo => todo.is_dday);
+
+      resetInputs(selectedTodoContents.length); // 필요한 입력 필드만 생성
+      selectedTodoContents.forEach((content, index) => setInputs(index, content));
       setIsDday(selectedTodoDdays);
     }
-  }, [isEditMode, showInput, todos, selectedTodos]);
+  }, [isEditMode, showInput, selectedTodos, todos, setInputs, resetInputs]);
 
   return (
     <>
@@ -1074,100 +1107,102 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
             {nonImportantTodos.length === 0 && importantTodos.length === 0 ? (
               <NoTodoListText>현재 진행 중인 일정이 없어요.</NoTodoListText>
             ) : (
-              <ul>
-                {importantTodos.length > 0 && (
-                  <ImportantTodoContainer>
-                    {importantTodos.map((todo) => (
-                      <TodoListContentContainer key={todo.id}>
-                        <TodoList>
-                          {isEditing ? (
-                            <input
-                              type="checkbox"
-                              checked={selectedTodos.includes(todo.id)}
-                              onChange={() => handleCheckboxChange(todo.id)}
-                            />
-                          ) : (
-                            <PriorityButton
-                              isPriority={todo.is_priority}
-                              onClick={() => togglePriorityHandler(todo.id, todo.is_priority)}
-                            >
-                              <PriorityIcon isPriority={todo.is_priority} />
-                            </PriorityButton>
-                          )}
-                          {todo.content}
-                        </TodoList>
-                        <DotMenuBtnWrapper>
-                          {!isEditing && (
-                            <DotMenuBtn onClick={() => handleDotMenuClick(todo.id)} isDropDownOpen={showDropdown === todo.id} themeStyles={themeStyles}>
-                              <img src="/dot-menu.svg" alt="Dot Menu" />
-                            </DotMenuBtn>
-                          )}
-                          {showDropdown === todo.id && (
-                            <DropdownMenu ref={dropdownRef} isDropDownOpen={!!showDropdown} themeStyles={themeStyles} index={dropdownItemCount}>
-                              <CompleteItem onClick={() => toggleTodoHandler(todo.id, todo.is_complete)}>
-                                <CheckIcon />
-                                일정 완료
-                              </CompleteItem>
-                              <CompleteItem onClick={() => handleEditTodo(todo.id)}>
-                                <CheckIcon />
-                                수정
-                              </CompleteItem>
-                              <DeleteItem onClick={() => deleteTodoHandler(todo.id)} themeStyles={themeStyles}>
-                                <DeleteIcon />
-                                삭제
-                              </DeleteItem>
-                            </DropdownMenu>
-                          )}
-                        </DotMenuBtnWrapper>
-                      </TodoListContentContainer>
-                    ))}
-                  </ImportantTodoContainer>
-                )}
-                {nonImportantTodos.map((todo) => (
-                  <TodoListContentContainer key={todo.id}>
-                    <TodoList>
-                      {isEditing ? (
-                        <input
-                          type="checkbox"
-                          checked={selectedTodos.includes(todo.id)}
-                          onChange={() => handleCheckboxChange(todo.id)}
-                        />
-                      ) : (
-                        <PriorityButton
-                          isPriority={todo.is_priority}
-                          onClick={() => togglePriorityHandler(todo.id, todo.is_priority)}
-                        >
-                          <PriorityIcon isPriority={todo.is_priority} />
-                        </PriorityButton>
-                      )}
-                      {todo.content}
-                    </TodoList>
-                    <DotMenuBtnWrapper>
-                      {!isEditing && (
-                        <DotMenuBtn onClick={() => handleDotMenuClick(todo.id)} isDropDownOpen={showDropdown === todo.id} themeStyles={themeStyles}>
-                          <img src="/dot-menu.svg" alt="Dot Menu" />
-                        </DotMenuBtn>
-                      )}
-                      {showDropdown === todo.id && (
-                        <DropdownMenu ref={dropdownRef} isDropDownOpen={!!showDropdown} themeStyles={themeStyles} index={dropdownItemCount}>
-                          <CompleteItem onClick={() => toggleTodoHandler(todo.id, todo.is_complete)}>
-                            <CheckIcon />
-                            일정 완료
-                          </CompleteItem>
-                          <CompleteItem onClick={() => handleEditTodo(todo.id)}>
-                            <EditIcon />
-                            수정
-                          </CompleteItem>
-                          <DeleteItem onClick={() => deleteTodoHandler(todo.id)} themeStyles={themeStyles}>
-                            <DeleteIcon />
-                            삭제
-                          </DeleteItem>
-                        </DropdownMenu>
-                      )}
-                    </DotMenuBtnWrapper>
-                  </TodoListContentContainer>
-                ))}
-              </ul>
+              <ListContainer>
+                <ul>
+                  {importantTodos.length > 0 && (
+                    <ImportantTodoContainer>
+                      {importantTodos.map((todo) => (
+                        <TodoListContentContainer key={todo.id}>
+                          <TodoList>
+                            {isEditing ? (
+                              <input
+                                type="checkbox"
+                                checked={selectedTodos.includes(todo.id)}
+                                onChange={() => handleCheckboxChange(todo.id)}
+                              />
+                            ) : (
+                              <PriorityButton
+                                isPriority={todo.is_priority}
+                                onClick={() => togglePriorityHandler(todo.id, todo.is_priority)}
+                              >
+                                <PriorityIcon isPriority={todo.is_priority} />
+                              </PriorityButton>
+                            )}
+                            {todo.content}
+                          </TodoList>
+                          <DotMenuBtnWrapper>
+                            {!isEditing && (
+                              <DotMenuBtn onClick={() => handleDotMenuClick(todo.id)} isDropDownOpen={showDropdown === todo.id} themeStyles={themeStyles}>
+                                <img src="/dot-menu.svg" alt="Dot Menu" />
+                              </DotMenuBtn>
+                            )}
+                            {showDropdown === todo.id && (
+                              <DropdownMenu ref={dropdownRef} isDropDownOpen={!!showDropdown} themeStyles={themeStyles} index={dropdownItemCount}>
+                                <CompleteItem onClick={() => toggleTodoHandler(todo.id, todo.is_complete)}>
+                                  <CheckIcon />
+                                  일정 완료
+                                </CompleteItem>
+                                <CompleteItem onClick={() => handleEditTodo(todo.id)}>
+                                  <EditIcon />
+                                  수정
+                                </CompleteItem>
+                                <DeleteItem onClick={() => deleteTodoHandler(todo.id)} themeStyles={themeStyles}>
+                                  <DeleteIcon />
+                                  삭제
+                                </DeleteItem>
+                              </DropdownMenu>
+                            )}
+                          </DotMenuBtnWrapper>
+                        </TodoListContentContainer>
+                      ))}
+                    </ImportantTodoContainer>
+                  )}
+                  {nonImportantTodos.map((todo) => (
+                    <TodoListContentContainer key={todo.id}>
+                      <TodoList>
+                        {isEditing ? (
+                          <input
+                            type="checkbox"
+                            checked={selectedTodos.includes(todo.id)}
+                            onChange={() => handleCheckboxChange(todo.id)}
+                          />
+                        ) : (
+                          <PriorityButton
+                            isPriority={todo.is_priority}
+                            onClick={() => togglePriorityHandler(todo.id, todo.is_priority)}
+                          >
+                            <PriorityIcon isPriority={todo.is_priority} />
+                          </PriorityButton>
+                        )}
+                        {todo.content}
+                      </TodoList>
+                      <DotMenuBtnWrapper>
+                        {!isEditing && (
+                          <DotMenuBtn onClick={() => handleDotMenuClick(todo.id)} isDropDownOpen={showDropdown === todo.id} themeStyles={themeStyles}>
+                            <img src="/dot-menu.svg" alt="Dot Menu" />
+                          </DotMenuBtn>
+                        )}
+                        {showDropdown === todo.id && (
+                          <DropdownMenu ref={dropdownRef} isDropDownOpen={!!showDropdown} themeStyles={themeStyles} index={dropdownItemCount}>
+                            <CompleteItem onClick={() => toggleTodoHandler(todo.id, todo.is_complete)}>
+                              <CheckIcon />
+                              일정 완료
+                            </CompleteItem>
+                            <CompleteItem onClick={() => handleEditTodo(todo.id)}>
+                              <EditIcon />
+                              수정
+                            </CompleteItem>
+                            <DeleteItem onClick={() => deleteTodoHandler(todo.id)} themeStyles={themeStyles}>
+                              <DeleteIcon />
+                              삭제
+                            </DeleteItem>
+                          </DropdownMenu>
+                        )}
+                      </DotMenuBtnWrapper>
+                    </TodoListContentContainer>
+                  ))}
+                </ul>
+              </ListContainer>
             )}
             <AddToDoBtnContainer>
               <AddToDoBtn onClick={() => setShowInput(!showInput)} isOpen={showInput}>
@@ -1181,20 +1216,22 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
             {completedTodos.length === 0 ? (
               <NoTodoListText>완료된 할 일이 없어요.</NoTodoListText>
             ) : (
-              <ul>
-                {completedTodos.map((todo) => (
-                  <TodoListContentContainer key={todo.id}>
-                    <li>
-                      <input
-                        type="checkbox"
-                        checked={todo.is_complete}
-                        onChange={() => toggleTodoHandler(todo.id, todo.is_complete)}
-                      />
-                      {todo.content}
-                    </li>
-                  </TodoListContentContainer>
-                ))}
-              </ul>
+              <ListContainer>
+                <ul>
+                  {completedTodos.map((todo) => (
+                    <TodoListContentContainer key={todo.id}>
+                      <li>
+                        <input
+                          type="checkbox"
+                          checked={todo.is_complete}
+                          onChange={() => toggleTodoHandler(todo.id, todo.is_complete)}
+                        />
+                        {todo.content}
+                      </li>
+                    </TodoListContentContainer>
+                  ))}
+                </ul>
+              </ListContainer>
             )}
             <CompleteInfoContainer>
               <img src="/info.svg" alt="Info" />

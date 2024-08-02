@@ -79,17 +79,6 @@ const rotateCancel = keyframes`
   }
 `;
 
-const deleteTodoAnimation = keyframes`
-  from {
-    opacity: 1;
-    transform: scale(1);
-  }
-  to {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-`;
-
 const MainTodoListContainer = styled.div`
   display: flex;
   flex-direction: column;
@@ -107,7 +96,7 @@ const ListContainer = styled.div`
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  height: 100%;
+  height: 100vh;
 
    &::-webkit-scrollbar {
     width: 8px;

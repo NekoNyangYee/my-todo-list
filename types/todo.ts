@@ -7,4 +7,5 @@ export interface Todo {
     created_at: string;
     original_order: number;
     date: string;
+    is_dday: boolean;
 }

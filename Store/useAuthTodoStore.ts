@@ -1,14 +1,6 @@
+import { Todo } from '@components/types/todo';
 import { create } from 'zustand';
 
-interface Todo {
-    id: string;
-    user_id: string;
-    content: string;
-    is_complete: boolean;
-    is_priority: boolean;
-    created_at: string;
-    original_order: number;
-};
 // const [isDday, setIsDday] = useState<boolean[]>([]);옮기기
 interface TodoState {
     todos: Todo[];

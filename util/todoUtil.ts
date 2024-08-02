@@ -109,6 +109,38 @@ export const deleteTodo = async (userId: string, id: string, setTodos: (todos: T
     await fetchTodosForDate(userId, selectedDate, setTodos);
 };
 
+export const updateTodo = async (userId: string, todoId: string, content: string, isDday: boolean, setTodos: any, selectedDate: Date) => {
+    // 현재 todo의 original_order 값을 가져옵니다.
+    const { data: currentTodo, error: fetchError } = await supabase
+        .from('todos')
+        .select('original_order')
+        .eq('id', todoId)
+        .eq('user_id', userId)
+        .single();
+
+    if (fetchError) {
+        console.error('Error fetching todo original order:', fetchError);
+        return;
+    }
+
+    const { original_order } = currentTodo;
+
+    // original_order 값을 유지하면서 content와 is_dday 값을 업데이트합니다.
+    const { data, error } = await supabase
+        .from('todos')
+        .update({ content, is_dday: isDday, original_order })
+        .eq('id', todoId)
+        .eq('user_id', userId);
+
+    if (error) {
+        console.error('Error updating todo:', error);
+        return;
+    }
+
+    await fetchTodosForDate(userId, selectedDate, setTodos);
+};
+
+
 export const toggleTodo = async (userId: string, id: string, isComplete: boolean, setTodos: (todos: Todo[]) => void, selectedDate: Date): Promise<void> => {
     const { error } = await supabase
         .from('todos')
@@ -193,59 +225,6 @@ export const saveTodos = async (
         }, 100);
         await fetchTodosForDate(userId, selectedDate, setTodos);
     }
-};
-
-export const restoreTodo = async (userId: string, id: string, setTodos: (todos: Todo[]) => void): Promise<void> => {
-    const { data: archivedTodos, error } = await supabase
-        .from('archived_todos')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('id', id);
-
-    if (error) {
-        console.error('Error fetching archived todo:', error);
-        return;
-    }
-
-    if (!archivedTodos || archivedTodos.length === 0) {
-        console.log('No archived todo to restore');
-        return;
-    }
-
-    const archivedTodo = archivedTodos[0];
-
-    const todoToInsert: Todo = {
-        user_id: archivedTodo.user_id,
-        content: archivedTodo.content,
-        is_complete: archivedTodo.is_complete,
-        is_priority: archivedTodo.is_priority,
-        created_at: archivedTodo.created_at,
-        original_order: archivedTodo.original_order,
-        date: archivedTodo.date, // date 속성 추가
-        id: uuidv4() // 클라이언트 측에서 새로운 UUID 생성
-    };
-
-
-    const { data: restoredTodo, error: restoreError } = await supabase
-        .from('todos')
-        .insert(todoToInsert);
-
-    if (restoreError) {
-        console.error('Error restoring todo:', restoreError);
-        return;
-    }
-
-    const { data: deleteData, error: deleteError } = await supabase
-        .from('archived_todos')
-        .delete()
-        .eq('id', archivedTodo.id);
-
-    if (deleteError) {
-        console.error('Error deleting archived todo:', deleteError);
-        return;
-    }
-
-    await fetchTodos(userId, setTodos);
 };
 
 export const fetchAndMoveUncompletedTodos = async (userId: string, setUncompletedTodos: (todos: Todo[]) => void): Promise<void> => {

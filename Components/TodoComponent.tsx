@@ -4,18 +4,18 @@ import { css, keyframes } from "@emotion/react";
 import styled from "@emotion/styled";
 import { useEffect, useRef, useState } from "react";
 import { useTodoStore } from "../Store/useAuthTodoStore";
-import { fetchTodosForDate, deleteTodo, toggleTodo, togglePriority, saveTodos, fetchDdayTodos } from "@components/util/todoUtil";
-import { useTheme } from "@components/app/Context/ThemeContext";
+import { fetchTodosForDate, deleteTodo, toggleTodo, togglePriority, saveTodos, fetchDdayTodos, updateTodo } from "@components/util/todoUtil";
+import { ThemeProvider, useTheme } from "@components/app/Context/ThemeContext";
 import PriorityIcon from "./icons/Priority/PriorityIcon";
 import DeleteIcon from "./icons/Utils/DeleteIcon";
 import AddIcon from "./icons/Utils/AddIcon";
 import CheckIcon from "./icons/Utils/CheckIcon";
 import CheckDdayIcon from "./icons/Utils/CheckDdayIcon";
-import dayjs, { Dayjs } from 'dayjs';
+import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import { Todo } from "@components/types/todo";
-import { supabase } from "@components/lib/supabaseClient";
+import EditIcon from "./icons/Utils/EditIcon";
 
 const fadeInDropDownModal = keyframes`
   from {
@@ -495,8 +495,8 @@ const DotMenuBtn = styled.button<{ isDropDownOpen: boolean, themeStyles: any }>`
 
 const DropdownMenu = styled.div<{ isDropDownOpen: boolean, themeStyles: any, index: number }>`
   position: absolute;
-  top: ${({ index }) => (index >= 4 ? 'auto' : '100%')};
-  bottom: ${({ index }) => (index > 4 ? '110%' : 'auto')};
+  top: ${({ index }) => (index >= 2 ? 'auto' : '100%')};
+  bottom: ${({ index }) => (index > 2 ? '110%' : 'auto')};
   right: 0;
   background: ${({ themeStyles }) => themeStyles.colors.containerBackground};
   border: 1px solid ${({ themeStyles }) => themeStyles.colors.inputBorder};
@@ -700,6 +700,7 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
   const [animateOut, setAnimateOut] = useState<boolean>(false);
   const [showDropdown, setShowDropdown] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [isEditMode, setIsEditMode] = useState<boolean>(false);
   const [isAllSelected, setIsAllSelected] = useState<boolean>(false);
   const [selectedTodos, setSelectedTodos] = useState<string[]>([]);
   const [dropdownItemCount, setDropdownItemCount] = useState<number>(0);
@@ -832,19 +833,35 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
       setSelectedTodos(allTodoIds);
     }
     setIsAllSelected(!isAllSelected);
+    setIsEditMode(false);
   };
 
   const saveTodosHandler = async () => {
     if (user) {
-      // dday 상태가 true인 항목만 전달
       const filteredIsDday = isDday.filter((_, index) => inputs[index].trim() !== '');
-
-      await saveTodos(user.id, inputs, filteredIsDday, setTodos, resetInputs, setAnimateOut, setShowInput, selectedDate);
+      if (isEditMode) {
+        await Promise.all(
+          selectedTodos.map((todoId, index) =>
+            updateTodo(user.id, todoId, inputs[index], filteredIsDday[index], setTodos, selectedDate)
+          )
+        );
+        alert('수정되었습니다.');
+        setAnimateOut(true);
+        setTimeout(() => {
+          setIsEditing(false);
+          setAnimateOut(false);
+          setShowInput(false);
+          resetInputs();
+          setSelectedTodos([]);
+          setIsEditMode(false);  // 수정 모드 해제
+        }, 100);
+      } else {
+        await saveTodos(user.id, inputs, filteredIsDday, setTodos, resetInputs, setAnimateOut, setShowInput, selectedDate);
+      }
       await fetchTodosForDate(user.id, selectedDate, setTodos);
       await fetchDdayTodos(user.id, setDdayTodos); // 디데이 일정 패칭 추가
     }
   };
-
 
   const handleKeyPress = (index: number, event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
@@ -870,8 +887,11 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
     if (inputs.some(input => input !== '')) {
       if (confirm('창을 나가면 입력한 내용이 저장되지 않습니다. 정말 닫으시겠습니까?')) {
         alert('입력한 내용이 저장되지 않았습니다.');
+        setTimeout(() => {
+          setIsEditMode(false);
+        }, 100);
       } else {
-        return; // 사용자가 '취소'를 누르면 함수 종료
+        return;
       }
     }
     setAnimateOut(true);
@@ -946,7 +966,6 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
     }
   };
 
-  // inputs[index]길이가 0이 아닌 상태에서 체크박스 true였다가 inputs[index]길이가 0이되면 체크박스 자동으로 false로 변경
   useEffect(() => {
     inputs.forEach((input, index) => {
       if (input === '' && isDday[index]) {
@@ -981,6 +1000,39 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
     }
   };
 
+  const handleEditTodo = (todoId?: string) => {
+    let selectedTodo;
+
+    if (todoId) {
+      selectedTodo = todos.filter(todo => todo.id === todoId && !todo.is_complete);
+      setSelectedTodos([todoId]);  // 선택된 todoId를 selectedTodos 배열에 설정
+    } else {
+      selectedTodo = todos.filter(todo => selectedTodos.includes(todo.id) && !todo.is_complete);
+    }
+
+    if (selectedTodo.length === 0) {
+      alert('수정할 일정을 선택해주세요.');
+      return;
+    }
+
+    const selectedTodoContents = selectedTodo.map(todo => todo.content);
+    const selectedTodoDdays = selectedTodo.map(todo => todo.is_dday);
+    selectedTodoContents.forEach((content, index) => setInputs(index, content));
+    setIsDday(selectedTodoDdays);
+    setIsEditMode(true);
+    setShowInput(true);
+    setShowDropdown(null);
+  };
+
+  useEffect(() => {
+    if (isEditMode && showInput) {
+      const selectedTodoDdays = todos
+        .filter(todo => selectedTodos.includes(todo.id) && !todo.is_complete)
+        .map(todo => todo.is_dday);
+      setIsDday(selectedTodoDdays);
+    }
+  }, [isEditMode, showInput, todos, selectedTodos]);
+
   return (
     <>
       <MainTodoListContainer>
@@ -1005,7 +1057,12 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
                   <>
                     <SelectBtn onClick={selectAllTodos}>{isAllSelected ? '전체 해제' : '전체 선택'}</SelectBtn>
                     <EditUtiltyBtn>
-                      <CompletedBtn onClick={completeSelectedTodos} disabled={selectedTodos.length === 0} themeStyles={themeStyles}><CheckDdayIcon /></CompletedBtn>
+                      <CompletedBtn onClick={completeSelectedTodos} disabled={selectedTodos.length === 0} themeStyles={themeStyles}>
+                        <CheckDdayIcon />
+                      </CompletedBtn>
+                      <EditDeleteBtn onClick={() => handleEditTodo()} disabled={selectedTodos.length === 0}>
+                        <EditIcon />
+                      </EditDeleteBtn>
                       <EditDeleteBtn onClick={deleteSelectedTodosHandler} disabled={selectedTodos.length === 0}>
                         <DeleteIcon />
                       </EditDeleteBtn>
@@ -1051,6 +1108,10 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
                                 <CheckIcon />
                                 일정 완료
                               </CompleteItem>
+                              <CompleteItem onClick={() => handleEditTodo(todo.id)}>
+                                <CheckIcon />
+                                수정
+                              </CompleteItem>
                               <DeleteItem onClick={() => deleteTodoHandler(todo.id)} themeStyles={themeStyles}>
                                 <DeleteIcon />
                                 삭제
@@ -1092,6 +1153,10 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
                           <CompleteItem onClick={() => toggleTodoHandler(todo.id, todo.is_complete)}>
                             <CheckIcon />
                             일정 완료
+                          </CompleteItem>
+                          <CompleteItem onClick={() => handleEditTodo(todo.id)}>
+                            <EditIcon />
+                            수정
                           </CompleteItem>
                           <DeleteItem onClick={() => deleteTodoHandler(todo.id)} themeStyles={themeStyles}>
                             <DeleteIcon />
@@ -1138,12 +1203,21 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
           </ComplecatedTodoContainer>
         </TodoContainer>
       </MainTodoListContainer>
+
       {(showInput || animateOut) && (
         <ModalOverlay>
           <ModalContent isOpen={showInput && !animateOut} ref={modalContentRef} themeStyles={themeStyles}>
             <ModalTitleContainer>
-              <h2>할 일 추가</h2>
-              <p>오늘 해야 할 일을 추가해 보세요.<br />한번에 최대 20개까지 추가 가능해요.</p>
+              <h2>할 일 {isEditMode ? "수정" : "추가"}</h2>
+              <p>
+                {!isEditMode && (
+                  <>
+                    오늘 해야 할 일을 추가해 보세요.
+                    <br />
+                    한번에 최대 20개까지 추가 가능해요.
+                  </>
+                )}
+              </p>
             </ModalTitleContainer>
             <ToDoInputContainer themeStyles={themeStyles}>
               {inputs.map((input, index) => (
@@ -1168,13 +1242,15 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
                 </div>
               ))}
             </ToDoInputContainer>
-            <AddTodoBtn onClick={handleAddInput}>
-              <AddIcon />
-              <p>할 일 항목 추가</p>
-            </AddTodoBtn>
+            {!isEditMode && (
+              <AddTodoBtn onClick={handleAddInput}>
+                <AddIcon />
+                <p>할 일 항목 추가</p>
+              </AddTodoBtn>
+            )}
             <TodoSaveAndCancelBtnContainer themeStyles={themeStyles}>
               <CancelBtn themeStyles={themeStyles} onClick={closeModal}>취소</CancelBtn>
-              <SaveTodoBtn onClick={saveTodosHandler}>저장</SaveTodoBtn>
+              <SaveTodoBtn onClick={saveTodosHandler}>{isEditMode ? '수정' : '저장'}</SaveTodoBtn>
             </TodoSaveAndCancelBtnContainer>
           </ModalContent>
         </ModalOverlay>

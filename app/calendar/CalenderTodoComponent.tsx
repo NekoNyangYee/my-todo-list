@@ -459,8 +459,8 @@ const DotMenuBtn = styled.button<{ isDropDownOpen: boolean, themeStyles: any }>`
 
 const DropdownMenu = styled.div<{ isDropDownOpen: boolean, themeStyles: any, index: number }>`
   position: absolute;
-  top: ${({ index }) => (index >= 4 ? 'auto' : '100%')};
-  bottom: ${({ index }) => (index > 4 ? '110%' : 'auto')};
+  top: ${({ index }) => (index >= 2 ? 'auto' : '100%')};
+  bottom: ${({ index }) => (index > 2 ? '110%' : 'auto')};
   right: 0;
   background: ${({ themeStyles }) => themeStyles.colors.containerBackground};
   border: 1px solid ${({ themeStyles }) => themeStyles.colors.inputBorder};

@@ -596,7 +596,7 @@ const HeaderEditSection = styled.div`
   gap: 1rem;
 `;
 
-const EditDeleteBtn = styled.button`
+const EditDeleteBtn = styled.button<{ themeStyles: any }>`
   display: flex;
   align-items: center;
   gap: 0.2rem;
@@ -614,7 +614,29 @@ const EditDeleteBtn = styled.button`
   }
 
   &:hover {
-    background-color: #f3f4ff;
+    background-color: ${({ themeStyles }) => themeStyles.colors.background};
+  }
+`;
+
+const EditUpdateBtn = styled.button<{ themeStyles: any }>`
+  background-color: transparent;
+  padding: 8px 12px;
+  border: none;
+  color: #007BFF;
+  cursor: pointer;
+  border-radius: 8px;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+
+  &:disabled {
+    color: #afafaf;
+    cursor: not-allowed;
+  }
+
+  &:hover {
+    background-color: ${({ themeStyles }) => themeStyles.colors.background};
   }
 `;
 
@@ -669,12 +691,14 @@ const DDayBtn = styled.button<{ isDday: boolean, themeStyles: any }>`
 
 const EditUtiltyBtn = styled.div`
   display: flex;
+  border: 1px solid #e7e7e7;
+  border-radius: 8px;
 `;
 
 const CompletedBtn = styled.button<{ themeStyles: any }>`
   padding: 8px 12px;
   background-color: transparent;
-  color: #0075ff;
+  color: #28A745;
   border: none;
   cursor: pointer;
   border-radius: 8px;
@@ -689,7 +713,7 @@ const CompletedBtn = styled.button<{ themeStyles: any }>`
   }
 
   &:hover {
-    background-color: #f3f4ff;
+    background-color: ${({ themeStyles }) => themeStyles.colors.background};
   }
 `;
 
@@ -846,11 +870,10 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
 
   const saveTodosHandler = async () => {
     if (user) {
-      const filteredIsDday = isDday.filter((_, index) => inputs[index].trim() !== '');
       if (isEditMode) {
         await Promise.all(
           selectedTodos.map((todoId, index) =>
-            updateTodo(user.id, todoId, inputs[index], filteredIsDday[index], setTodos, selectedDate)
+            updateTodo(user.id, todoId, inputs[index], isDday[index], setTodos, selectedDate)
           )
         );
         alert('수정되었습니다.');
@@ -864,7 +887,7 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
           setIsEditMode(false);  // 수정 모드 해제
         }, 100);
       } else {
-        await saveTodos(user.id, inputs, filteredIsDday, setTodos, resetInputs, setAnimateOut, setShowInput, selectedDate);
+        await saveTodos(user.id, inputs, isDday, setTodos, resetInputs, setAnimateOut, setShowInput, selectedDate);
       }
       await fetchTodosForDate(user.id, selectedDate, setTodos);
       await fetchDdayTodos(user.id, setDdayTodos); // 디데이 일정 패칭 추가
@@ -904,6 +927,7 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
     }
     setAnimateOut(true);
     setSelectedTodos([]);
+    setIsAllSelected(false);
     setTimeout(() => {
       setShowInput(false);
       setAnimateOut(false);
@@ -1024,7 +1048,6 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
       return;
     }
 
-    // 일정의 순서를 유지하여 가져오기 위해 original_order로 정렬
     selectedTodo.sort((a, b) => a.original_order - b.original_order);
 
     const selectedTodoContents = selectedTodo.map(todo => todo.content);
@@ -1034,10 +1057,14 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
     resetInputs(selectedTodoContents.length);
     selectedTodoContents.forEach((content, index) => setInputs(index, content));
 
-    setIsDday(selectedTodoDdays);
     setIsEditMode(true);
     setShowInput(true);
     setShowDropdown(null);
+
+    // setIsDday를 inputs와 함께 설정
+    setTimeout(() => {
+      setIsDday(selectedTodoDdays);
+    }, 0);
   };
 
   useEffect(() => {
@@ -1051,7 +1078,11 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
 
       resetInputs(selectedTodoContents.length); // 필요한 입력 필드만 생성
       selectedTodoContents.forEach((content, index) => setInputs(index, content));
-      setIsDday(selectedTodoDdays);
+
+      // setIsDday를 inputs와 함께 설정
+      setTimeout(() => {
+        setIsDday(selectedTodoDdays);
+      }, 0);
     }
   }, [isEditMode, showInput, selectedTodos, todos, setInputs, resetInputs]);
 
@@ -1082,10 +1113,10 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
                       <CompletedBtn onClick={completeSelectedTodos} disabled={selectedTodos.length === 0} themeStyles={themeStyles}>
                         <CheckDdayIcon />
                       </CompletedBtn>
-                      <EditDeleteBtn onClick={() => handleEditTodo()} disabled={selectedTodos.length === 0}>
+                      <EditUpdateBtn onClick={() => handleEditTodo()} disabled={selectedTodos.length === 0} themeStyles={themeStyles}>
                         <EditIcon />
-                      </EditDeleteBtn>
-                      <EditDeleteBtn onClick={deleteSelectedTodosHandler} disabled={selectedTodos.length === 0}>
+                      </EditUpdateBtn>
+                      <EditDeleteBtn onClick={deleteSelectedTodosHandler} disabled={selectedTodos.length === 0} themeStyles={themeStyles}>
                         <DeleteIcon />
                       </EditDeleteBtn>
                     </EditUtiltyBtn>

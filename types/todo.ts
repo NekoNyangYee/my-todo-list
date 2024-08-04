@@ -8,4 +8,5 @@ export interface Todo {
     original_order: number;
     date: string;
     is_dday: boolean;
+    text_color: string;
 }

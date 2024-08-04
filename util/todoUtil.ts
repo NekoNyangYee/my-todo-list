@@ -14,7 +14,7 @@ export const deleteCompletedTodos = async (userId: string, setTodos: (todos: Tod
         console.error('Error deleting completed todos:', error);
     } else {
         console.log('Completed todos deleted successfully:', data);
-        await fetchTodos(userId, setTodos); // 최신 데이터 다시 가져오기
+        await fetchTodos(userId, setTodos);
     }
 };
 
@@ -109,7 +109,7 @@ export const deleteTodo = async (userId: string, id: string, setTodos: (todos: T
     await fetchTodosForDate(userId, selectedDate, setTodos);
 };
 
-export const updateTodo = async (userId: string, todoId: string, content: string, isDday: boolean, setTodos: any, selectedDate: Date) => {
+export const updateTodo = async (userId: string, todoId: string, content: string, isDday: boolean, color: string, setTodos: any, selectedDate: Date) => {
     // 현재 todo의 original_order 값을 가져옵니다.
     const { data: currentTodo, error: fetchError } = await supabase
         .from('todos')
@@ -125,10 +125,10 @@ export const updateTodo = async (userId: string, todoId: string, content: string
 
     const { original_order } = currentTodo;
 
-    // original_order 값을 유지하면서 content와 is_dday 값을 업데이트합니다.
+    // original_order 값을 유지하면서 content, is_dday, color 값을 업데이트합니다.
     const { data, error } = await supabase
         .from('todos')
-        .update({ content, is_dday: isDday, original_order })
+        .update({ content, is_dday: isDday, text_color: color, original_order })
         .eq('id', todoId)
         .eq('user_id', userId);
 
@@ -139,7 +139,6 @@ export const updateTodo = async (userId: string, todoId: string, content: string
 
     await fetchTodosForDate(userId, selectedDate, setTodos);
 };
-
 
 export const toggleTodo = async (userId: string, id: string, isComplete: boolean, setTodos: (todos: Todo[]) => void, selectedDate: Date): Promise<void> => {
     const { error } = await supabase
@@ -172,7 +171,8 @@ export const togglePriority = async (userId: string, id: string, isPriority: boo
 export const saveTodos = async (
     userId: string,
     inputs: string[],
-    isDday: boolean[], // isDday 추가
+    isDday: boolean[],
+    colors: string[],
     setTodos: (todos: Todo[]) => void,
     resetInputs: () => void,
     setAnimateOut: (animate: boolean) => void,
@@ -181,6 +181,7 @@ export const saveTodos = async (
 ) => {
     const nonEmptyInputs = inputs.filter(input => input.trim() !== '');
     const filteredIsDday = isDday.filter((_, index) => inputs[index].trim() !== '');
+    const filteredColors = colors.filter((_, index) => inputs[index].trim() !== '');
 
     if (nonEmptyInputs.length === 0) {
         alert('할 일을 입력해주세요.');
@@ -207,7 +208,8 @@ export const saveTodos = async (
             content,
             is_complete: false,
             is_priority: false,
-            is_dday: filteredIsDday[index], // isDday 값 사용
+            is_dday: filteredIsDday[index],
+            text_color: filteredColors[index],
             created_at: new Date().toISOString(),
             date: dateString,
             original_order: currentOrder + index,
@@ -276,4 +278,25 @@ export const fetchDdayTodos = async (userId: string, setDdayTodos: (todos: Todo[
 const isWithinRange = (date: Date): boolean => {
     const hundredYearsLater = dayjs().add(100, 'year').startOf('day').toDate();
     return date <= hundredYearsLater;
+};
+
+export const updateTodoColor = async (userId: string, todoId: string, color: string, setTodos: (todos: Todo[]) => void, selectedDate: Date) => {
+    try {
+        const { data, error } = await supabase
+            .from('todos')
+            .update({ text_color: color })
+            .eq('id', todoId)
+            .eq('user_id', userId);
+
+        if (error) {
+            console.error('Error updating todo color:', error);
+            return;
+        }
+
+        console.log('Todo color updated successfully:', data);
+
+        await fetchTodosForDate(userId, selectedDate, setTodos);
+    } catch (error) {
+        console.error('Unexpected error updating todo color:', error);
+    }
 };

@@ -4,7 +4,7 @@ import { css, keyframes } from "@emotion/react";
 import styled from "@emotion/styled";
 import { useEffect, useRef, useState } from "react";
 import { useTodoStore } from "../Store/useAuthTodoStore";
-import { fetchTodosForDate, deleteTodo, toggleTodo, togglePriority, saveTodos, fetchDdayTodos, updateTodo } from "@components/util/todoUtil";
+import { fetchTodosForDate, deleteTodo, toggleTodo, togglePriority, saveTodos, fetchDdayTodos, updateTodo, updateTodoColor } from "@components/util/todoUtil";
 import { ThemeProvider, useTheme } from "@components/app/Context/ThemeContext";
 import PriorityIcon from "./icons/Priority/PriorityIcon";
 import DeleteIcon from "./icons/Utils/DeleteIcon";
@@ -16,6 +16,7 @@ import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import { Todo } from "@components/types/todo";
 import EditIcon from "./icons/Utils/EditIcon";
+import ColorModal from "./ColorModal";
 
 const fadeInDropDownModal = keyframes`
   from {
@@ -433,13 +434,14 @@ const TodoListContentContainer = styled.div`
   white-space: normal;
 `;
 
-const TodoList = styled.li`
+const TodoList = styled.li<{ textColor?: string }>`
   display: flex;
   align-items: center;
   height: 40px;
   gap: 8px;
   margin: auto 0;
   font-size: 1.2rem;
+  color: ${({ textColor }) => textColor || 'inherit'};
 `;
 
 const NoTodoListText = styled.p`
@@ -738,10 +740,20 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
   const [dropdownItemCount, setDropdownItemCount] = useState<number>(0);
   const [isDday, setIsDday] = useState<boolean[]>([]);
   const [ddayTodos, setDdayTodos] = useState<Todo[]>([]);
+  const [showColorModal, setShowColorModal] = useState<boolean>(false);
+  const [selectedInputIndex, setSelectedInputIndex] = useState<number | null>(null);
+  const [colors, setColors] = useState<string[]>([]);
   const modalContentRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const { themeStyles } = useTheme();
+
+  useEffect(() => {
+    const storedColors = JSON.parse(localStorage.getItem('todoColors') || '[]');
+    if (storedColors.length > 0) {
+      setColors(storedColors);
+    }
+  }, []);
 
   useEffect(() => {
     if (inputs.length < 3 && !isEditMode) {
@@ -873,7 +885,7 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
       if (isEditMode) {
         await Promise.all(
           selectedTodos.map((todoId, index) =>
-            updateTodo(user.id, todoId, inputs[index], isDday[index], setTodos, selectedDate)
+            updateTodo(user.id, todoId, inputs[index], isDday[index], colors[index], setTodos, selectedDate)
           )
         );
         alert('수정되었습니다.');
@@ -887,13 +899,13 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
           setIsEditMode(false);  // 수정 모드 해제
         }, 100);
       } else {
-        await saveTodos(user.id, inputs, isDday, setTodos, resetInputs, setAnimateOut, setShowInput, selectedDate);
+        await saveTodos(user.id, inputs, isDday, colors, setTodos, resetInputs, setAnimateOut, setShowInput, selectedDate);
+        localStorage.setItem('todoColors', JSON.stringify(colors));
       }
       await fetchTodosForDate(user.id, selectedDate, setTodos);
       await fetchDdayTodos(user.id, setDdayTodos); // 디데이 일정 패칭 추가
     }
   };
-
   const handleKeyPress = (index: number, event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
       if (index < inputs.length - 1) {
@@ -990,7 +1002,7 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
     });
 
     if (inputs[index] === '') {
-      alert('할 일을 먼저 입력해주세요.');
+      alert('할 일을 먼저 입력해야 디데이 설정이 가능해요.');
       setIsDday(prevIsDday => {
         const newIsDday = [...prevIsDday];
         newIsDday[index] = false;
@@ -1052,6 +1064,7 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
 
     const selectedTodoContents = selectedTodo.map(todo => todo.content);
     const selectedTodoDdays = selectedTodo.map(todo => todo.is_dday);
+    const selectedTodoColors = selectedTodo.map(todo => todo.text_color); // 수정할 때 선택된 투두의 색상 가져오기
 
     // 선택된 일정의 개수에 맞게 inputs 배열 설정
     resetInputs(selectedTodoContents.length);
@@ -1061,9 +1074,10 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
     setShowInput(true);
     setShowDropdown(null);
 
-    // setIsDday를 inputs와 함께 설정
+    // setIsDday와 colors를 inputs와 함께 설정
     setTimeout(() => {
       setIsDday(selectedTodoDdays);
+      setColors(selectedTodoColors); // 선택된 투두의 색상 설정
     }, 0);
   };
 
@@ -1075,16 +1089,38 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
 
       const selectedTodoContents = selectedTodosSorted.map(todo => todo.content);
       const selectedTodoDdays = selectedTodosSorted.map(todo => todo.is_dday);
+      const selectedTodoColors = selectedTodosSorted.map(todo => todo.text_color); // 선택된 투두의 색상 가져오기
 
       resetInputs(selectedTodoContents.length); // 필요한 입력 필드만 생성
       selectedTodoContents.forEach((content, index) => setInputs(index, content));
 
-      // setIsDday를 inputs와 함께 설정
+      // setIsDday와 colors를 inputs와 함께 설정
       setTimeout(() => {
         setIsDday(selectedTodoDdays);
+        setColors(selectedTodoColors); // 선택된 투두의 색상 설정
       }, 0);
     }
   }, [isEditMode, showInput, selectedTodos, todos, setInputs, resetInputs]);
+  const openColorModal = (index: number) => {
+    if (inputs[index] === '') {
+      alert('할 일을 먼저 입력해야 색상 설정이 가능해요.');
+      return;
+    }
+    setSelectedInputIndex(index);
+    setShowColorModal(true);
+  };
+
+  const handleColorSelect = (color: string) => {
+    if (selectedInputIndex !== null) {
+      setColors(prevColors => {
+        const newColors = [...prevColors];
+        newColors[selectedInputIndex] = color;
+        return newColors;
+      });
+      setShowColorModal(false);
+      setSelectedInputIndex(null);
+    }
+  };
 
   return (
     <>
@@ -1133,7 +1169,7 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
                     <ImportantTodoContainer>
                       {importantTodos.map((todo) => (
                         <TodoListContentContainer key={todo.id}>
-                          <TodoList>
+                          <TodoList textColor={todo.text_color}>
                             {isEditing ? (
                               <input
                                 type="checkbox"
@@ -1177,9 +1213,9 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
                       ))}
                     </ImportantTodoContainer>
                   )}
-                  {nonImportantTodos.map((todo) => (
+                  {nonImportantTodos.map((todo, index) => (
                     <TodoListContentContainer key={todo.id}>
-                      <TodoList>
+                      <TodoList textColor={todo.text_color}>
                         {isEditing ? (
                           <input
                             type="checkbox"
@@ -1240,14 +1276,14 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
                 <ul>
                   {completedTodos.map((todo) => (
                     <TodoListContentContainer key={todo.id}>
-                      <li>
+                      <TodoList textColor={todo.text_color}>
                         <input
                           type="checkbox"
                           checked={todo.is_complete}
                           onChange={() => toggleTodoHandler(todo.id, todo.is_complete)}
                         />
                         {todo.content}
-                      </li>
+                      </TodoList>
                     </TodoListContentContainer>
                   ))}
                 </ul>
@@ -1288,13 +1324,22 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
                     placeholder='할 일을 입력해주세요.'
                     onChange={(e) => handleInputChange(index, e.target.value)}
                     onKeyDown={(e) => handleKeyPress(index, e)}
+                    style={{ color: colors[index] || themeStyles.colors.text }}
                   />
                   <InputOptionContainer>
                     <DDayBtn onClick={() => handleDdayChange(index)} themeStyles={themeStyles} isDday={isDday[index]}>
                       {isDday[index] ? <CheckDdayIcon /> : null}
                       디데이
                     </DDayBtn>
-                    <SelectColorBtn disabled themeStyles={themeStyles}>색상 설정</SelectColorBtn>
+                    <SelectColorBtn onClick={() => openColorModal(index)} themeStyles={themeStyles}>
+                      색상 설정
+                    </SelectColorBtn>
+                    <ColorModal
+                      isOpen={showColorModal}
+                      onClose={() => setShowColorModal(false)}
+                      onColorSelect={handleColorSelect}
+                      currentColor={selectedInputIndex !== null ? colors[selectedInputIndex] : null}
+                    />
                   </InputOptionContainer>
                 </div>
               ))}

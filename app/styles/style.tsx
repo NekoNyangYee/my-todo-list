@@ -12,7 +12,7 @@ export const lightTheme: Theme = {
         buttonHoverBackground: '#0059ff',
         inputBackground: '#FFFFFF',
         inputBorder: '#e7e7e7',
-        inputPlaceholderColor: '#6a6a6a',  // 여기 추가
+        inputPlaceholderColor: '#6a6a6a',
         shadow: '0px 0px 20px #E0E0E0',
         toggleThemeButtonHoverBackground: '#D4D4D4',
     }

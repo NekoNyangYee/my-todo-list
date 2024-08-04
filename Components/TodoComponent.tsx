@@ -653,9 +653,12 @@ const SelectBtn = styled.button`
 `;
 
 const SelectColorBtn = styled.button<{ themeStyles: any }>`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   padding: 8px 1rem;
-  background-color: ${({ themeStyles }) => themeStyles.colors.buttonBackground};
-  color: ${({ themeStyles }) => themeStyles.colors.buttonColor};
+  background-color: ${({ themeStyles }) => themeStyles.colors.inputBackground};
+  color: ${({ themeStyles }) => themeStyles.colors.inputPlaceholder};
   border: none;
   cursor: pointer;
   border-radius: 8px;
@@ -717,6 +720,14 @@ const CompletedBtn = styled.button<{ themeStyles: any }>`
   &:hover {
     background-color: ${({ themeStyles }) => themeStyles.colors.background};
   }
+`;
+
+const ColorOptionIcon = styled.div<{ color: string, themeStyles: any }>`
+  width: 20px;
+  height: 20px;
+  background-color: ${({ color, themeStyles }) => color || themeStyles.colors.text};
+  border-radius: 50%;
+  cursor: pointer;
 `;
 
 dayjs.extend(utc);
@@ -1101,6 +1112,7 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
       }, 0);
     }
   }, [isEditMode, showInput, selectedTodos, todos, setInputs, resetInputs]);
+
   const openColorModal = (index: number) => {
     if (inputs[index] === '') {
       alert('할 일을 먼저 입력해야 색상 설정이 가능해요.');
@@ -1110,15 +1122,14 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
     setShowColorModal(true);
   };
 
-  const handleColorSelect = (color: string) => {
+  const handleColorSelect = (color: string | null) => {
     if (selectedInputIndex !== null) {
       setColors(prevColors => {
         const newColors = [...prevColors];
-        newColors[selectedInputIndex] = color;
+        newColors[selectedInputIndex] = color || '';
         return newColors;
       });
       setShowColorModal(false);
-      setSelectedInputIndex(null);
     }
   };
 
@@ -1332,14 +1343,9 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
                       디데이
                     </DDayBtn>
                     <SelectColorBtn onClick={() => openColorModal(index)} themeStyles={themeStyles}>
+                      <ColorOptionIcon color={colors[index]} themeStyles={themeStyles} />
                       색상 설정
                     </SelectColorBtn>
-                    <ColorModal
-                      isOpen={showColorModal}
-                      onClose={() => setShowColorModal(false)}
-                      onColorSelect={handleColorSelect}
-                      currentColor={selectedInputIndex !== null ? colors[selectedInputIndex] : null}
-                    />
                   </InputOptionContainer>
                 </div>
               ))}
@@ -1357,6 +1363,13 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
           </ModalContent>
         </ModalOverlay>
       )}
+      <ColorModal
+        isOpen={showColorModal}
+        onClose={() => setShowColorModal(false)}
+        onColorSelect={handleColorSelect}
+        currentColor={selectedInputIndex !== null ? colors[selectedInputIndex] : null}
+      />
+
     </>
   );
 };

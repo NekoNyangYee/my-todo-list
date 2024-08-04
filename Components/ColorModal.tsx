@@ -5,27 +5,34 @@ import styled from '@emotion/styled';
 import { useTheme } from '@components/app/Context/ThemeContext';
 
 const ModalOverlay = styled.div`
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
 `;
 
 const ModalContent = styled.div<{ themeStyles: any }>`
-    background: ${({ themeStyles }) => themeStyles.colors.containerBackground};
+    background: ${({ themeStyles }) => themeStyles.colors.background};
     padding: 20px;
-    border-radius: 8px;
-    width: 400px;
-    max-width: 90%;
+    border-radius: 12px;
+    max-width: 472px;
+    width: 100%;
+    min-height: 30vh;
+    max-height: 80vh;
     display: flex;
+    gap: 20px;
     flex-direction: column;
-    align-items: center;
+
+    @media (max-width: 768px) {
+        max-width: 80%;
+    }
 `;
 
 const ColorOption = styled.div<{ color: string; selected: boolean, themeStyles: any }>`
@@ -58,17 +65,41 @@ const ApplyButton = styled.button`
     background-color: #007bff;
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: 8px;
     cursor: pointer;
-    margin-top: 10px;
+    font-size: 1rem;
 
     &:hover {
         background-color: #0056b3;
     }
 `;
 
-const SampleColorText = styled.p<{ color: string }>`
+const SelectColorTitle = styled.h2`
+    margin: 0;
+`;
+
+const SampleColorText = styled.p<{ color: string, themeStyles: any }>`
+    width: 100%;
+    padding: 1rem;
+    background-color: ${props => props.themeStyles.colors.containerBackground};
     color: ${props => props.color};
+    border-radius: 8px;
+    box-shadow: ${props => props.themeStyles.colors.shadow};
+    box-sizing: border-box;
+    margin: 0;
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: bold;
+`;
+
+const SampleContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    & h3  {
+        margin: 0;
+    }
 `;
 
 interface ColorModalProps {
@@ -102,9 +133,11 @@ const ColorModal: React.FC<ColorModalProps> = ({ isOpen, onClose, onColorSelect,
     return (
         <ModalOverlay onClick={handleClose}>
             <ModalContent onClick={e => e.stopPropagation()} themeStyles={themeStyles}>
-                <h2>색상 선택(beta)</h2>
-                <h3>색상 적용 예시</h3>
-                <SampleColorText color={selectedColor || themeStyles.colors.text}>색상이 적용됩니다.</SampleColorText>
+                <SelectColorTitle>색상 선택(beta)</SelectColorTitle>
+                <SampleContainer>
+                    <h3>색상 적용 예시</h3>
+                    <SampleColorText color={selectedColor || themeStyles.colors.text} themeStyles={themeStyles}>색상이 적용됩니다.</SampleColorText>
+                </SampleContainer>
                 <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center' }}>
                     <NoColorOption
                         selected={selectedColor === ''}

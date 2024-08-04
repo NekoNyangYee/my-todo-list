@@ -17,6 +17,8 @@ import dayjs, { Dayjs } from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import CheckDdayIcon from '@components/Components/icons/Utils/CheckDdayIcon';
+import ColorModal from '@components/Components/ColorModal';
+import EditIcon from '@components/Components/icons/Utils/EditIcon';
 
 const fadeInOutModal = keyframes`
   from {
@@ -430,7 +432,7 @@ const NoTodoListText = styled.p<{ themeStyles: any }>`
   color: #7a7a7a;
 `;
 
-const TodoListContentContainer = styled.div`
+const TodoListContentContainer = styled.div<{ textColor?: string }>`
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -441,6 +443,16 @@ const TodoListContentContainer = styled.div`
     width: 24px;
     height: 24px;
   }
+`;
+
+const TodoList = styled.li<{ textColor?: string }>`
+  display: flex;
+  align-items: center;
+  height: 40px;
+  gap: 8px;
+  margin: auto 0;
+  font-size: 1.2rem;
+  color: ${({ textColor }) => textColor || 'inherit'};
 `;
 
 const DotMenuBtnWrapper = styled.div`
@@ -547,8 +559,8 @@ const DdayCount = styled.span<{ themeStyles: any }>`
 
 const SelectColorBtn = styled.button<{ themeStyles: any }>`
   padding: 8px 1rem;
-  background-color: ${({ themeStyles }) => themeStyles.colors.buttonBackground};
-  color: ${({ themeStyles }) => themeStyles.colors.buttonColor};
+  background-color: ${({ themeStyles }) => themeStyles.colors.inputBackground};
+  color: ${({ themeStyles }) => themeStyles.colors.inputPlaceholderColor};
   border: none;
   cursor: pointer;
   border-radius: 8px;
@@ -584,6 +596,21 @@ const DDayBtn = styled.button<{ isDday: boolean, themeStyles: any }>`
   font-size: 1rem;
 `;
 
+const ColorOptionIcon = styled.div<{ color: string, themeStyles: any }>`
+  width: 20px;
+  height: 20px;
+  background-color: ${({ color, themeStyles }) => color || themeStyles.colors.text};
+  border-radius: 50%;
+  cursor: pointer;
+`;
+
+const CompleteItem = styled.div`
+  color: #28A745;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+`;
+
 dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.tz.setDefault('Asia/Seoul');
@@ -615,6 +642,14 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
   const [isDday, setIsDday] = useState<boolean[]>([]);
   const [ddayTodos, setDdayTodos] = useState<Todo[]>([]);
   const [dropdownItemCount, setDropdownItemCount] = useState<number>(0);
+  const [showEditTodoModal, setShowEditTodoModal] = useState<boolean>(false);
+  const [editTodoId, setEditTodoId] = useState<string | null>(null);
+  const [editInput, setEditInput] = useState<string>('');
+  const [editIsDday, setEditIsDday] = useState<boolean>(false);
+  const [editColor, setEditColor] = useState<string>('');
+  const [showColorModal, setShowColorModal] = useState<boolean>(false);
+  const [selectedInputIndex, setSelectedInputIndex] = useState<number | null>(null);
+  const [colors, setColors] = useState<string[]>([]);
   const modalContentRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -622,11 +657,18 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
   const { themeStyles } = useTheme();
 
   useEffect(() => {
+    const storedColors = JSON.parse(localStorage.getItem('todoColors') || '[]');
+    if (storedColors.length > 0) {
+      setColors(storedColors);
+    }
+  }, []);
+
+  useEffect(() => {
     if (inputs.length < 3) {
       const additionalInputs = Array(3 - inputs.length).fill('');
       additionalInputs.forEach(() => addInput());
     }
-    setIsDday(inputs.map((_, index) => isDday[index] || false)); // Reset D-day state based on input length
+    setIsDday(inputs.map((_, index) => isDday[index] || false));
   }, [inputs, addInput]);
 
   useEffect(() => {
@@ -678,7 +720,7 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
     };
 
     fetchData();
-  }, [user, selectedDate]); // selectedDate가 변경될 때마다 fetchData를 호출
+  }, [user, selectedDate]);
 
   useEffect(() => {
     const fetchAllTodos = async () => {
@@ -705,7 +747,7 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
     if (isDday.length < inputs.length) {
       setIsDday(prevIsDday => {
         const newIsDday = [...prevIsDday];
-        newIsDday[index] = newIsDday[index] || false; // 기존 값 유지
+        newIsDday[index] = newIsDday[index] || false;
         return newIsDday;
       });
     }
@@ -727,19 +769,27 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
 
       setInputs(inputs.length, '');
       setIsDday(prevIsDday => [...prevIsDday, false]);
+      setColors(prevColors => [...prevColors, themeStyles.colors.text]); // 기본 폰트 색으로 초기화
     }
   };
 
-  const closeModal = () => {
+  const closeModal = async () => {
     setIsFadingOut(true);
-    setTimeout(() => {
+    setTimeout(async () => {
       setShowInput(false);
       setIsFadingOut(false);
       resetInputs();
       setShowAddTodoModal(false);
       setShowTodoModal(false);
+      setShowEditTodoModal(false); // 수정 모달 닫기 추가
+
+      if (user && selectedDate) {
+        await fetchTodosForDate(user.id, selectedDate, setTodos);
+      }
     }, 100); // 애니메이션 시간에 맞추어 설정
   };
+
+
   const saveTodosHandler = async () => {
     if (!selectedDate || !user) {
       console.log('selectedDate or user is not defined');
@@ -768,12 +818,14 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
           date: koreanDateString,
           is_dday: filteredIsDday[index],
           original_order: index,
+          text_color: colors[index] || '',
         })));
 
       if (error) {
         console.error('Error saving todos:', error);
       } else {
         resetInputs();
+        setColors([themeStyles.colors.text]); // colors 배열 초기화 및 기본 색상 설정
         setTimeout(() => {
           setShowAddTodoModal(false);
         }, 100);
@@ -784,6 +836,7 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
         await fetchTodosForDate(user.id, selectedDate, setTodos);
         setShowTodoModal(true);
         await fetchDdayTodos(user.id, setDdayTodos);
+        localStorage.setItem('todoColors', JSON.stringify([themeStyles.colors.text])); // 기본 색상 저장
       }
     } catch (e) {
       console.error('Unexpected error:', e);
@@ -901,7 +954,7 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
   const fetchTodoToToday = async (todoId: string) => {
     if (!user || !selectedDate) return;
 
-    const today = dayjs().startOf('day').add(9, 'hour'); // 한국 시간으로 변경
+    const today = dayjs().startOf('day').add(9, 'hour');
     const koreanTodayString = today.format('YYYY-MM-DD');
 
     const { data, error } = await supabase
@@ -959,7 +1012,6 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
     setIsDday(prevIsDday => {
       const newIsDday = [...prevIsDday];
       newIsDday[index] = !newIsDday[index];
-      console.log(newIsDday);  // 상태 변화 확인용 로그
       return newIsDday;
     });
 
@@ -973,7 +1025,6 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
     }
   };
 
-  // inputs[index]길이가 0이 아닌 상태에서 체크박스 true였다가 inputs[index]길이가 0이되면 체크박스 자동으로 false로 변경
   useEffect(() => {
     inputs.forEach((input, index) => {
       if (input === '' && isDday[index]) {
@@ -985,6 +1036,77 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
       }
     });
   }, [inputs, isDday]);
+
+  const openColorModal = (index: number) => {
+    if (inputs[index] === '') {
+      alert('할 일을 먼저 입력해야 색상 설정이 가능해요.');
+      return;
+    }
+    setSelectedInputIndex(index);
+    setShowColorModal(true);
+  };
+
+  const handleColorSelect = (color: string | null) => {
+    if (selectedInputIndex !== null) {
+      setColors(prevColors => {
+        const newColors = [...prevColors];
+        newColors[selectedInputIndex] = color || themeStyles.colors.text;
+        return newColors;
+      });
+    } else {
+      setEditColor(color || themeStyles.colors.text); // 수정 모달에서 색상 적용
+    }
+    setShowColorModal(false);
+  };
+
+
+  const handleEditTodo = (todoId: string) => {
+    const todo = todos.find(todo => todo.id === todoId);
+    if (todo) {
+      setEditTodoId(todoId);
+      setEditInput(todo.content);
+      setEditIsDday(todo.is_dday);
+      setEditColor(todo.text_color || '');
+      setShowTodoModal(false);
+      setShowEditTodoModal(true);  // 수정 모달 열기
+    }
+  };
+
+  const saveEditTodo = async () => {
+    if (!editTodoId || !user || !selectedDate) {
+      console.log('editTodoId, user, or selectedDate is not defined');
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('todos')
+        .update({
+          content: editInput.trim(),
+          is_dday: editIsDday,
+          text_color: editColor, // 수정된 부분
+        })
+        .eq('id', editTodoId);
+
+      if (error) {
+        console.error('Error updating todo:', error);
+      } else {
+        setShowEditTodoModal(false);
+        setEditTodoId(null);
+        setEditInput('');
+        setEditIsDday(false);
+        setEditColor(''); // 색상 초기화
+        alert('수정되었습니다');
+
+        if (selectedDate) {
+          await fetchTodosForDate(user.id, selectedDate, setTodos);
+        }
+        setShowTodoModal(true);
+      }
+    } catch (e) {
+      console.error('Unexpected error:', e);
+    }
+  };
 
   return (
     <Container>
@@ -1005,13 +1127,13 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
             themeStyles={themeStyles}
           />
         </CalendarWrapper>
-        {selectedDate && (showTodoModal || showAddTodoModal) && (
+        {selectedDate && (showTodoModal || showAddTodoModal || showEditTodoModal) && (
           <ModalOverlay
             onClick={handleOverlayClick}
             isFadingOut={isFadingOut}
           >
             <ModalContent
-              isOpen={showTodoModal || showAddTodoModal}
+              isOpen={showTodoModal || showAddTodoModal || showEditTodoModal}
               isFadingOut={isFadingOut}
               ref={modalContentRef}
               onClick={(e) => e.stopPropagation()}
@@ -1034,7 +1156,7 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
                     <ul>
                       {completedTodos.map((todo) => (
                         <TodoListContentContainer key={todo.id}>
-                          <li>{todo.content}</li>
+                          <TodoList textColor={todo.text_color}>{todo.content}</TodoList>
                           <DotMenuBtnWrapper>
                             <DotMenuBtn onClick={() => handleDotMenuClick(todo.id)} isDropDownOpen={showDropdown === todo.id} themeStyles={themeStyles}>
                               <img src="/dot-menu.svg" alt="Dot Menu" />
@@ -1046,6 +1168,10 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
                                     끌어오기
                                   </FetchItem>
                                 )}
+                                <CompleteItem onClick={() => handleEditTodo(todo.id)}>
+                                  <EditIcon />
+                                  수정
+                                </CompleteItem>
                                 <DeleteItem onClick={() => deleteTodoHandler(todo.id)} themeStyles={themeStyles}>
                                   <DeleteIcon />
                                   삭제
@@ -1062,6 +1188,36 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
                       <AddIcon />
                     </AddToDoBtn>
                   </AddToDoBtnContainer>
+                </>
+              ) : showEditTodoModal ? (
+                <>
+                  <ModalTitleContainer themeStyles={themeStyles}>
+                    <h2>할 일 수정</h2>
+                  </ModalTitleContainer>
+                  <ToDoInputContainer>
+                    <InputField
+                      type="text"
+                      value={editInput}
+                      placeholder='할 일을 입력해주세요.'
+                      onChange={(e) => setEditInput(e.target.value)}
+                      themeStyles={themeStyles}
+                      style={{ color: editColor || themeStyles.colors.text }} // 수정된 부분
+                    />
+                    <InputOptionContainer>
+                      <DDayBtn onClick={() => setEditIsDday(!editIsDday)} themeStyles={themeStyles} isDday={editIsDday}>
+                        {editIsDday ? <CheckDdayIcon /> : null}
+                        디데이
+                      </DDayBtn>
+                      <SelectColorBtn onClick={() => setShowColorModal(true)} themeStyles={themeStyles}>
+                        <ColorOptionIcon color={editColor} themeStyles={themeStyles} /> {/* 수정된 부분 */}
+                        색상 설정
+                      </SelectColorBtn>
+                    </InputOptionContainer>
+                  </ToDoInputContainer>
+                  <TodoSaveAndCancelBtnContainer themeStyles={themeStyles}>
+                    <CancelBtn onClick={closeModal}>돌아가기</CancelBtn>
+                    <SaveTodoBtn onClick={saveEditTodo} themeStyles={themeStyles}>저장</SaveTodoBtn>
+                  </TodoSaveAndCancelBtnContainer>
                 </>
               ) : (
                 <>
@@ -1082,13 +1238,17 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
                           onChange={(e) => handleInputChange(index, e.target.value)}
                           onKeyDown={(e) => handleKeyPress(index, e)}
                           themeStyles={themeStyles}
+                          style={{ color: colors[index] || themeStyles.colors.text }}
                         />
                         <InputOptionContainer>
                           <DDayBtn onClick={() => handleDdayChange(index)} themeStyles={themeStyles} isDday={isDday[index]}>
                             {isDday[index] ? <CheckDdayIcon /> : null}
                             디데이
                           </DDayBtn>
-                          <SelectColorBtn disabled themeStyles={themeStyles}>색상 설정</SelectColorBtn>
+                          <SelectColorBtn onClick={() => openColorModal(index)} themeStyles={themeStyles}>
+                            <ColorOptionIcon color={colors[index]} themeStyles={themeStyles} />
+                            색상 설정
+                          </SelectColorBtn>
                         </InputOptionContainer>
                       </div>
                     ))}
@@ -1113,8 +1273,8 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
           ) : (
             <ul>
               {ddayTodos.map((todo) => {
-                const todoDate = dayjs(todo.date).startOf('day'); // KST로 변환
-                const today = dayjs().startOf('day'); // 현재 날짜를 KST로 변환
+                const todoDate = dayjs(todo.date).startOf('day');
+                const today = dayjs().startOf('day');
                 const diffDays = todoDate.diff(today, 'day');
                 const dDayLabel = diffDays > 0 ? `D-${diffDays}` : `D+${Math.abs(diffDays)}`;
 
@@ -1129,6 +1289,12 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
           )}
         </WantSelectListText>
       </MainTodoListContainer>
+      <ColorModal
+        isOpen={showColorModal}
+        onClose={() => setShowColorModal(false)}
+        onColorSelect={handleColorSelect}
+        currentColor={selectedInputIndex !== null ? colors[selectedInputIndex] : null}
+      />
     </Container>
   );
 };

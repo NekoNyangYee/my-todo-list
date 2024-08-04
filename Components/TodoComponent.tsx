@@ -658,13 +658,14 @@ const SelectColorBtn = styled.button<{ themeStyles: any }>`
   gap: 0.5rem;
   padding: 8px 1rem;
   background-color: ${({ themeStyles }) => themeStyles.colors.inputBackground};
-  color: ${({ themeStyles }) => themeStyles.colors.inputPlaceholder};
+  color: ${({ themeStyles }) => themeStyles.colors.inputPlaceholderColor};
   border: none;
   cursor: pointer;
   border-radius: 8px;
   display: flex;
   justify-content: center;
   align-items: center;
+  font-size: 1rem;
 
   &:disabled {
     background-color: ${({ themeStyles }) => themeStyles.colors.inputBorder};
@@ -917,6 +918,7 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
       await fetchDdayTodos(user.id, setDdayTodos); // 디데이 일정 패칭 추가
     }
   };
+
   const handleKeyPress = (index: number, event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
       if (index < inputs.length - 1) {
@@ -1369,7 +1371,6 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
         onColorSelect={handleColorSelect}
         currentColor={selectedInputIndex !== null ? colors[selectedInputIndex] : null}
       />
-
     </>
   );
 };

@@ -565,6 +565,7 @@ const SelectColorBtn = styled.button<{ themeStyles: any }>`
   cursor: pointer;
   border-radius: 8px;
   display: flex;
+  gap: 8px;
   justify-content: center;
   align-items: center;
 
@@ -775,6 +776,7 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
 
   const closeModal = async () => {
     setIsFadingOut(true);
+    setColors([]);
     setTimeout(async () => {
       setShowInput(false);
       setIsFadingOut(false);
@@ -832,6 +834,7 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
         alert('저장되었습니다');
 
         setDatesWithTodos(prev => new Set(prev).add(koreanDateString));
+        setColors([]);
 
         await fetchTodosForDate(user.id, selectedDate, setTodos);
         setShowTodoModal(true);
@@ -900,6 +903,7 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
       }
     }
     setIsFadingOut(true);
+    setColors([]);
     setShowAddTodoModal(false);
     setShowTodoModal(true);
     setIsFadingOut(false);

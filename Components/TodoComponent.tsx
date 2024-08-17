@@ -908,12 +908,14 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
           setShowInput(false);
           resetInputs();
           setSelectedTodos([]);
-          setIsEditMode(false);  // 수정 모드 해제
+          setIsEditMode(false);
         }, 100);
       } else {
         await saveTodos(user.id, inputs, isDday, colors, setTodos, resetInputs, setAnimateOut, setShowInput, selectedDate);
         localStorage.setItem('todoColors', JSON.stringify(colors));
       }
+
+      setColors([]);
       await fetchTodosForDate(user.id, selectedDate, setTodos);
       await fetchDdayTodos(user.id, setDdayTodos); // 디데이 일정 패칭 추가
     }
@@ -943,13 +945,12 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
     if (inputs.some(input => input !== '')) {
       if (confirm('창을 나가면 입력한 내용이 저장되지 않습니다. 정말 닫으시겠습니까?')) {
         alert('입력한 내용이 저장되지 않았습니다.');
-        setTimeout(() => {
-          setIsEditMode(false);
-        }, 100);
       } else {
         return;
       }
     }
+
+    setColors([]); // 선택한 색상을 초기화
     setAnimateOut(true);
     setSelectedTodos([]);
     setIsAllSelected(false);
@@ -959,6 +960,7 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
       resetInputs();
     }, 100);
   };
+
 
   const toggleEdit = () => {
     setIsEditing(!isEditing);

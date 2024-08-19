@@ -1276,7 +1276,12 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
               </ListContainer>
             )}
             <AddToDoBtnContainer>
-              <AddToDoBtn onClick={() => setShowInput(!showInput)} isOpen={showInput}>
+              <AddToDoBtn onClick={() => {
+                setShowInput(!showInput)
+                setColors([]);
+              }}
+                isOpen={showInput}
+              >
                 <AddIcon />
               </AddToDoBtn>
             </AddToDoBtnContainer>

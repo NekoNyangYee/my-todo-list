@@ -22,7 +22,6 @@ const Page = () => {
 
         const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
             setSession(session);
-            setLoading(false);
         });
 
         return () => {

@@ -1,9 +1,9 @@
 import { supabase } from '@components/lib/supabaseClient';
 import { v4 as uuidv4 } from 'uuid';
 import { Todo } from '@components/types/todo';
-import dayjs from 'dayjs';
+import dayjs, { extend } from 'dayjs';
 
-export const deleteCompletedTodos = async (userId: string, setTodos: (todos: Todo[]) => void): Promise<void> => {
+export const deleteCompletedTodos = async <T extends Todo>(userId: string, setTodos: (todos: Array<T>) => void): Promise<void> => {
     const { data, error } = await supabase
         .from('todos')
         .delete()
@@ -18,7 +18,7 @@ export const deleteCompletedTodos = async (userId: string, setTodos: (todos: Tod
     }
 };
 
-export const fetchTodos = async (userId: string, setTodos: (todos: Todo[]) => void): Promise<void> => {
+export const fetchTodos = async <T extends Todo>(userId: string, setTodos: (todos: Array<T>) => void): Promise<void> => {
     const { data, error } = await supabase
         .from('todos')
         .select('*')
@@ -33,7 +33,7 @@ export const fetchTodos = async (userId: string, setTodos: (todos: Todo[]) => vo
     setTodos(data);
 };
 
-export const fetchTodosForDate = async (userId: string, date: Date, setTodos: (todos: Todo[]) => void): Promise<void> => {
+export const fetchTodosForDate = async <T extends Todo>(userId: string, date: Date, setTodos: (todos: Array<T>) => void): Promise<void> => {
     const koreanDateString = new Date(date.getTime() + (9 * 60 * 60 * 1000)).toISOString().split('T')[0];
     const { data, error } = await supabase
         .from('todos')
@@ -44,11 +44,11 @@ export const fetchTodosForDate = async (userId: string, date: Date, setTodos: (t
     if (error) {
         console.error('Error fetching todos:', error);
     } else {
-        setTodos(data as Todo[]); // 여기 수정됨
+        setTodos(data as Array<T>); // 여기 수정됨
     }
 };
 
-export const archiveTodos = async (userId: string, setTodos: (todos: Todo[]) => void, setUncompletedTodos: (todos: Todo[]) => void): Promise<void> => {
+export const archiveTodos = async <T extends Todo>(userId: string, setTodos: (todos: Array<T>) => void, setUncompletedTodos: (todos: Array<T>) => void): Promise<void> => {
     const { data: todos, error: fetchError } = await supabase
         .from('todos')
         .select('*')
@@ -95,7 +95,7 @@ export const archiveTodos = async (userId: string, setTodos: (todos: Todo[]) => 
     await fetchAndMoveUncompletedTodos(userId, setUncompletedTodos);
 };
 
-export const deleteTodo = async (userId: string, id: string, setTodos: (todos: Todo[]) => void, selectedDate: Date): Promise<void> => {
+export const deleteTodo = async <T extends Todo>(userId: string, id: string, setTodos: (todos: Array<T>) => void, selectedDate: Date): Promise<void> => {
     const { error } = await supabase
         .from('todos')
         .delete()
@@ -140,7 +140,7 @@ export const updateTodo = async (userId: string, todoId: string, content: string
     await fetchTodosForDate(userId, selectedDate, setTodos);
 };
 
-export const toggleTodo = async (userId: string, id: string, isComplete: boolean, setTodos: (todos: Todo[]) => void, selectedDate: Date): Promise<void> => {
+export const toggleTodo = async <T extends Todo>(userId: string, id: string, isComplete: boolean, setTodos: (todos: Array<T>) => void, selectedDate: Date): Promise<void> => {
     const { error } = await supabase
         .from('todos')
         .update({ is_complete: !isComplete })
@@ -154,7 +154,7 @@ export const toggleTodo = async (userId: string, id: string, isComplete: boolean
     await fetchTodosForDate(userId, selectedDate, setTodos);
 };
 
-export const togglePriority = async (userId: string, id: string, isPriority: boolean, setTodos: (todos: Todo[]) => void, selectedDate: Date): Promise<void> => {
+export const togglePriority = async <T extends Todo>(userId: string, id: string, isPriority: boolean, setTodos: (todos: Array<T>) => void, selectedDate: Date): Promise<void> => {
     const { error } = await supabase
         .from('todos')
         .update({ is_priority: !isPriority })
@@ -168,12 +168,12 @@ export const togglePriority = async (userId: string, id: string, isPriority: boo
     await fetchTodosForDate(userId, selectedDate, setTodos);
 };
 
-export const saveTodos = async (
+export const saveTodos = async <T extends Todo>(
     userId: string,
     inputs: string[],
     isDday: boolean[],
     colors: string[],
-    setTodos: (todos: Todo[]) => void,
+    setTodos: (todos: Array<T>) => void,
     resetInputs: () => void,
     setAnimateOut: (animate: boolean) => void,
     setShowInput: (show: boolean) => void,
@@ -229,7 +229,7 @@ export const saveTodos = async (
     }
 };
 
-export const fetchAndMoveUncompletedTodos = async (userId: string, setUncompletedTodos: (todos: Todo[]) => void): Promise<void> => {
+export const fetchAndMoveUncompletedTodos = async <T extends Todo>(userId: string, setUncompletedTodos: (todos: Array<T>) => void): Promise<void> => {
     const { data: uncompletedTodos, error } = await supabase
         .from('archived_todos')
         .select('*')
@@ -245,7 +245,7 @@ export const fetchAndMoveUncompletedTodos = async (userId: string, setUncomplete
     setUncompletedTodos(uniqueUncompletedTodos);
 };
 
-export const removeDuplicates = <T extends Record<string, any>>(array: T[], key: keyof T): T[] => {
+export const removeDuplicates = <T extends Record<string, any>>(array: Array<T>, key: keyof T): Array<T> => {
     return array.filter((obj, index, self) =>
         index === self.findIndex((el) => (
             el[key] === obj[key]
@@ -253,7 +253,7 @@ export const removeDuplicates = <T extends Record<string, any>>(array: T[], key:
     );
 };
 
-export const fetchDdayTodos = async (userId: string, setDdayTodos: (todos: Todo[]) => void) => {
+export const fetchDdayTodos = async <T extends Todo>(userId: string, setDdayTodos: (todos: Array<T>) => void) => {
     const { data, error } = await supabase
         .from('todos')
         .select('*')
@@ -280,7 +280,7 @@ const isWithinRange = (date: Date): boolean => {
     return date <= hundredYearsLater;
 };
 
-export const updateTodoColor = async (userId: string, todoId: string, color: string, setTodos: (todos: Todo[]) => void, selectedDate: Date) => {
+export const updateTodoColor = async <T extends Todo>(userId: string, todoId: string, color: string, setTodos: (todos: Array<T>) => void, selectedDate: Date) => {
     try {
         const { data, error } = await supabase
             .from('todos')

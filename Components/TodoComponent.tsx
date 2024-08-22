@@ -945,6 +945,9 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
     if (inputs.some(input => input !== '')) {
       if (confirm('창을 나가면 입력한 내용이 저장되지 않습니다. 정말 닫으시겠습니까?')) {
         alert('입력한 내용이 저장되지 않았습니다.');
+        setTimeout(() => {
+          setIsEditMode(false);
+        }, 100);
       } else {
         return;
       }

@@ -83,8 +83,6 @@ const AddToDoBtn = styled.button<{ isOpen: boolean, themeStyles: any }>`
 `;
 
 const AddToDoBtnContainer = styled.div`
-  position: sticky;
-  bottom: 10px;
   justify-content: flex-end;
   display: flex;
   flex-direction: column;
@@ -108,7 +106,7 @@ const ModalOverlay = styled.div<ModalProps>`
 const ModalContent = styled.div<{ isOpen: boolean, isFadingOut: boolean, themeStyles: any }>`
   position: relative;
   background: ${({ themeStyles }) => themeStyles.colors.background};
-  padding: 1rem 1rem 0;
+  padding: 1rem;
   border-radius: 12px;
   max-width: 572px;
   width: 100%;
@@ -225,8 +223,6 @@ const TodoSaveAndCancelBtnContainer = styled.div<{ themeStyles: any }>`
   padding: 1rem 0;
   box-sizing: border-box;
   width: 100%;
-  position: sticky;
-  bottom: 0;
   background: ${({ themeStyles }) => themeStyles.colors.background};
 `;
 
@@ -619,7 +615,7 @@ const ColorOptionIcon = styled.div<{ color: string, themeStyles: any }>`
   cursor: pointer;
 `;
 
-const CompleteItem = styled.div`
+const CompleteItem = styled(SelectItem) <{ themeStyles: any }>`
   color: #28A745;
   display: flex;
   align-items: center;
@@ -1186,7 +1182,7 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
                                     끌어오기
                                   </FetchItem>
                                 )}
-                                <CompleteItem onClick={() => handleEditTodo(todo.id)}>
+                                <CompleteItem onClick={() => handleEditTodo(todo.id)} themeStyles={themeStyles}>
                                   <EditIcon />
                                   수정
                                 </CompleteItem>

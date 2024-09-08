@@ -254,8 +254,6 @@ const AddToDoBtn = styled.button<{ isOpen: boolean }>`
 `;
 
 const AddToDoBtnContainer = styled.div`
-  position: sticky;
-  bottom: 0;
   justify-content: flex-end;
   display: flex;
   flex-direction: column;
@@ -355,8 +353,6 @@ const TodoSaveAndCancelBtnContainer = styled.div<{ themeStyles: any }>`
   padding: 1rem 0;
   box-sizing: border-box;
   width: 100%;
-  position: sticky;
-  bottom: 0;
   background: ${({ themeStyles }) => themeStyles.colors.background};
 `;
 

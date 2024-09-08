@@ -151,6 +151,20 @@ const ToDoInputContainer = styled.div`
   display: flex;
   flex-direction: column;
   gap: 12px;
+  overflow-y: auto;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: #a9a9a9;
+    border-radius: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
 `;
 
 const InputField = styled.input<{ themeStyles: any }>`

@@ -314,6 +314,20 @@ const ToDoInputContainer = styled.div<{ themeStyles: any }>`
   display: flex;
   flex-direction: column;
   gap: 12px;
+  overflow-y: auto;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: #a9a9a9;
+    border-radius: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
 
   & input {
     width: 100%;

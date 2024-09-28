@@ -4,7 +4,7 @@ import { css, keyframes } from "@emotion/react";
 import styled from "@emotion/styled";
 import { useEffect, useRef, useState } from "react";
 import { useTodoStore } from "../Store/useAuthTodoStore";
-import { fetchTodosForDate, deleteTodo, toggleTodo, togglePriority, saveTodos, fetchDdayTodos, updateTodo, saveDday, getLastInsertedTodoId, calculateDday, handleDdayCalculation, fetchDdayDate, updateTodoDate } from "@components/util/todoUtil";
+import { fetchTodosForDate, deleteTodo, toggleTodo, togglePriority, saveTodos, fetchDdayTodos, updateTodo, saveDday, getLastInsertedTodoId, calculateDday, fetchDdayDate, updateTodoDate } from "@components/util/todoUtil";
 import { ThemeProvider, useTheme } from "@components/app/Context/ThemeContext";
 import PriorityIcon from "./icons/Priority/PriorityIcon";
 import DeleteIcon from "./icons/Utils/DeleteIcon";
@@ -1470,7 +1470,6 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
                       themeStyles={themeStyles}
                       isDday={isDday[index]}
                     >
-                      {/* selectedDdayDate가 있으면 포맷된 날짜를 출력하고, 없으면 todos[index]?.dday_date를 Date 객체로 변환 */}
                       {selectedDdayDate
                         ? formatSelectedDate(new Date(selectedDdayDate))  // 명확하게 Date로 변환
                         : (todos[index]?.dday_date

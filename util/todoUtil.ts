@@ -381,7 +381,7 @@ export const handleDdayCalculation = async (todoId: string) => {
 
     if (ddayString) {
         const ddayResult = calculateDday(ddayString); // D-Day 계산
-        console.log('계산된 D-Day:', ddayResult); // 계산 결과 출력
+        console.log('계산된 D-Day123:', ddayResult); // 계산 결과 출력
     } else {
         console.log('D-Day 정보가 없습니다.');
     }

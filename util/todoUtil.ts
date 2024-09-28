@@ -87,7 +87,7 @@ export const archiveTodos = async <T extends Todo>(userId: string, setTodos: (to
         .in('id', uniqueTodos.map(todo => todo.id));
 
     if (deleteError) {
-        console.error('Error deleting todos:', deleteError);
+        console.error('투두 일정 삭제하는데 오류 발생했어요.:', deleteError);
         return;
     }
 
@@ -102,7 +102,7 @@ export const deleteTodo = async <T extends Todo>(userId: string, id: string, set
         .eq('id', id);
 
     if (error) {
-        console.error('Error deleting todo:', error);
+        console.error('투두 일정 삭제하는데 오류 발생했어요.:', error);
         return;
     }
 

@@ -17,6 +17,7 @@ import timezone from 'dayjs/plugin/timezone';
 import { Todo } from "@components/types/todo";
 import EditIcon from "./icons/Utils/EditIcon";
 import ColorModal from "./ColorModal";
+import { set } from "mongoose";
 
 const fadeInDropDownModal = keyframes`
   from {
@@ -487,7 +488,8 @@ const ImportantTodoContainer = styled.div`
 
 const DotMenuBtnWrapper = styled.div`
   position: relative;
-  display: inline-block;
+  display: flex;
+  gap: 8px;
 
   & button {
     border: none;
@@ -541,6 +543,7 @@ const CompleteItem = styled.div`
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  cursor: pointer;
 `;
 
 const DeleteItem = styled.div<{ themeStyles: any }>`
@@ -952,6 +955,19 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
   };
 
   const closeModal = () => {
+    if (inputs.every((input, index) => input === todos[index]?.content)) {
+      setColors([]); // 선택한 색상을 초기화
+      setAnimateOut(true);
+      setSelectedTodos([]);
+      setIsAllSelected(false);
+      setTimeout(() => {
+        setShowInput(false);
+        setAnimateOut(false);
+        resetInputs();
+        setIsEditMode(false);
+      }, 100);
+      return;
+    }
     if (inputs.some(input => input !== '')) {
       if (confirm('창을 나가면 입력한 내용이 저장되지 않습니다. 정말 닫으시겠습니까?')) {
         alert('입력한 내용이 저장되지 않았습니다.');
@@ -1216,16 +1232,18 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
                           </TodoList>
                           <DotMenuBtnWrapper>
                             {!isEditing && (
-                              <DotMenuBtn onClick={() => handleDotMenuClick(todo.id)} isDropDownOpen={showDropdown === todo.id} themeStyles={themeStyles}>
-                                <img src="/dot-menu.svg" alt="Dot Menu" />
-                              </DotMenuBtn>
+                              <>
+                                <CompleteItem onClick={() => toggleTodoHandler(todo.id, todo.is_complete)}>
+                                  <CheckIcon />
+                                </CompleteItem>
+                                <DotMenuBtn onClick={() => handleDotMenuClick(todo.id)} isDropDownOpen={showDropdown === todo.id} themeStyles={themeStyles}>
+                                  <img src="/dot-menu.svg" alt="Dot Menu" />
+                                </DotMenuBtn>
+                              </>
                             )}
                             {showDropdown === todo.id && (
                               <DropdownMenu ref={dropdownRef} isDropDownOpen={!!showDropdown} themeStyles={themeStyles} index={dropdownItemCount}>
-                                <CompleteItem onClick={() => toggleTodoHandler(todo.id, todo.is_complete)}>
-                                  <CheckIcon />
-                                  일정 완료
-                                </CompleteItem>
+
                                 <CompleteItem onClick={() => handleEditTodo(todo.id)}>
                                   <EditIcon />
                                   수정
@@ -1262,16 +1280,17 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
                       </TodoList>
                       <DotMenuBtnWrapper>
                         {!isEditing && (
-                          <DotMenuBtn onClick={() => handleDotMenuClick(todo.id)} isDropDownOpen={showDropdown === todo.id} themeStyles={themeStyles}>
-                            <img src="/dot-menu.svg" alt="Dot Menu" />
-                          </DotMenuBtn>
+                          <>
+                            <CompleteItem onClick={() => toggleTodoHandler(todo.id, todo.is_complete)}>
+                              <CheckIcon />
+                            </CompleteItem>
+                            <DotMenuBtn onClick={() => handleDotMenuClick(todo.id)} isDropDownOpen={showDropdown === todo.id} themeStyles={themeStyles}>
+                              <img src="/dot-menu.svg" alt="Dot Menu" />
+                            </DotMenuBtn>
+                          </>
                         )}
                         {showDropdown === todo.id && (
                           <DropdownMenu ref={dropdownRef} isDropDownOpen={!!showDropdown} themeStyles={themeStyles} index={dropdownItemCount}>
-                            <CompleteItem onClick={() => toggleTodoHandler(todo.id, todo.is_complete)}>
-                              <CheckIcon />
-                              일정 완료
-                            </CompleteItem>
                             <CompleteItem onClick={() => handleEditTodo(todo.id)}>
                               <EditIcon />
                               수정

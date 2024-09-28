@@ -1455,9 +1455,12 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
                       themeStyles={themeStyles}
                       isDday={isDday[index]}
                     >
-                      {selectedDdayDate ? formatSelectedDate(selectedDdayDate) : (
-                        todos[index]?.dday_date ? formatSelectedDate(new Date(todos[index]?.dday_date)) : '날짜 선택'
-                      )}
+                      {/* selectedDdayDate가 있으면 포맷된 날짜를 출력하고, 없으면 todos[index]?.dday_date를 Date 객체로 변환 */}
+                      {selectedDdayDate
+                        ? formatSelectedDate(new Date(selectedDdayDate))  // 명확하게 Date로 변환
+                        : (todos[index]?.dday_date
+                          ? formatSelectedDate(new Date(todos[index]?.dday_date as string)) // 문자열을 Date로 변환
+                          : '날짜 선택')}
                     </DDayBtn>
 
                     <SelectColorBtn onClick={() => openColorModal(index)} themeStyles={themeStyles}>

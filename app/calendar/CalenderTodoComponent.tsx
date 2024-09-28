@@ -791,15 +791,19 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
 
   const renderDdayTodos = () => {
     return ddayTodos.map(todo => {
-      const ddayLabel = ddayResult || 'D-Day 정보 없음';  // ddayResult 사용
+      const ddayLabel = ddayResult ? ddayResult : 'D-Day 정보 없음';  // ddayResult가 없을 경우 기본값
+      console.log('D-Day 레이블:', ddayLabel);  // D-Day 레이블 로그 확인
       return (
         <DdayItem key={todo.id} themeStyles={themeStyles}>
           <span>{todo.content}</span>
-          <DdayCount themeStyles={themeStyles}>{ddayLabel}</DdayCount>  {/* D-Day 결과 출력 */}
+          <DdayCount themeStyles={themeStyles}>
+            {ddayResult ? ddayLabel : '로딩 중...'}  {/* 로딩 중일 때 처리 */}
+          </DdayCount>
         </DdayItem>
       );
     });
   };
+
 
   const handleInputChange = (index: number, value: string) => {
     setInputs(index, value);

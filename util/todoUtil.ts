@@ -262,25 +262,22 @@ export const removeDuplicates = <T extends Record<string, any>>(array: Array<T>,
     );
 };
 
-export const fetchDdayTodos = async <T extends Todo>(userId: string, setDdayTodos: (todos: Array<T>) => void) => {
-    const { data, error } = await supabase
-        .from('todos')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('is_dday', true);
+export const fetchDdayTodos = async (userId: string, setDdayTodos: (todos: Todo[]) => void) => {
+    try {
+        const { data, error } = await supabase
+            .from('todos')
+            .select('*')
+            .eq('user_id', userId)
+            .eq('is_dday', true);
 
-    if (error) {
-        console.error('Error fetching D-day todos:', error);
-    } else {
-        const filteredDdayTodos = data.filter((todo: Todo) => {
-            const todoDate = dayjs(todo.date).startOf('day'); // KST로 변환
-            return isWithinRange(todoDate.toDate());
-        }).sort((a: Todo, b: Todo) => {
-            const aDate = dayjs(a.date).startOf('day'); // KST로 변환
-            const bDate = dayjs(b.date).startOf('day'); // KST로 변환
-            return aDate.diff(dayjs(), 'day') - bDate.diff(dayjs(), 'day');
-        });
-        setDdayTodos(filteredDdayTodos);
+        if (error) {
+            console.error('Error fetching D-Day todos:', error);
+        } else {
+            console.log('Fetched D-Day todos:', data);  // 데이터 로그로 확인
+            setDdayTodos(data);  // 데이터를 상태로 설정
+        }
+    } catch (error) {
+        console.error('Error fetching D-Day todos:', error);
     }
 };
 

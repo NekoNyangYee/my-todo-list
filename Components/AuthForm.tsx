@@ -340,7 +340,7 @@ const AuthForm = () => {
     setFullName,
     setUser,
   } = useAuthStore();
-  const { setTodos, setUncompletedTodos } = useTodoStore();
+  const { setTodos } = useTodoStore();
   const [emailMessage, setEmailMessage] = useState<string>(
     "실제로 쓰이는 이메일로 등록해주세요. 나중에 아이디 찾기에 쓰입니다. 이메일 끝부분에는 .net, .com만 올 수 있습니다."
   );

@@ -4,7 +4,7 @@ import { css, keyframes } from "@emotion/react";
 import styled from "@emotion/styled";
 import { useEffect, useRef, useState } from "react";
 import { useTodoStore } from "../Store/useAuthTodoStore";
-import { fetchTodosForDate, deleteTodo, toggleTodo, togglePriority, saveTodos, fetchDdayTodos, updateTodo, saveDday, getLastInsertedTodoId, calculateDday, handleDdayCalculation, fetchDdayDate } from "@components/util/todoUtil";
+import { fetchTodosForDate, deleteTodo, toggleTodo, togglePriority, saveTodos, fetchDdayTodos, updateTodo, saveDday, getLastInsertedTodoId, calculateDday, handleDdayCalculation, fetchDdayDate, updateTodoDate } from "@components/util/todoUtil";
 import { ThemeProvider, useTheme } from "@components/app/Context/ThemeContext";
 import PriorityIcon from "./icons/Priority/PriorityIcon";
 import DeleteIcon from "./icons/Utils/DeleteIcon";
@@ -928,6 +928,17 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
               setTodos,
               selectedDate
             );
+
+            if (ddayDate) {
+              // D-Day 계산 및 상태 업데이트
+              const ddayString = ddayDate.toISOString().split('T')[0];
+              const result = calculateDday(ddayString);
+              setDdayResult(result);
+
+              // 수정된 todo의 날짜를 새로운 D-Day 날짜로 이동
+              await updateTodoDate(user.id, todoId, ddayDate);  // 날짜 업데이트 함수 호출
+              await fetchTodosForDate(user.id, ddayDate, setTodos);  // 새로운 날짜로 할 일 목록 갱신
+            }
           })
         );
         alert('수정되었습니다.');
@@ -962,16 +973,20 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
 
             const ddayString = selectedDdayDate.toISOString().split('T')[0];
             setDdayResult(await calculateDday(ddayString));
+
+            // 새로 추가된 todo도 선택된 디데이 날짜로 이동
+            await updateTodoDate(user.id, lastTodoId, selectedDdayDate);  // 날짜 업데이트 함수 호출
           }
         }
         localStorage.setItem('todoColors', JSON.stringify(colors));
       }
 
       setColors([]);
-      await fetchTodosForDate(user.id, selectedDate, setTodos);
-      await fetchDdayTodos(user.id, setDdayTodos);
+      await fetchTodosForDate(user.id, selectedDate, setTodos);  // 현재 날짜에 맞는 할 일 목록 갱신
+      await fetchDdayTodos(user.id, setDdayTodos);  // D-Day 목록 갱신
     }
   };
+
 
   const handleKeyPress = (index: number, event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {

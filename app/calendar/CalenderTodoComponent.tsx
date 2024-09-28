@@ -660,6 +660,7 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
   const [selectedInputIndex, setSelectedInputIndex] = useState<number | null>(null);
   const [colors, setColors] = useState<string[]>([]);
   const [ddayResult, setDdayResult] = useState<string | null>(null);
+  const [ddayResults, setDdayResults] = useState<{ [key: string]: string }>({});
   const modalContentRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -753,20 +754,26 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
   }, [user]);
 
   const handleDdayCalculation = async (todoId: string) => {
-    const ddayString = await fetchDdayDate(todoId); // D-Day 날짜 조회
-    console.log('Fetched D-Day date:', ddayString); // 불러온 D-Day 날짜 로그 확인
+    const ddayString = await fetchDdayDate(todoId);
+    console.log('Fetched D-Day date:', ddayString);
 
     if (ddayString) {
-      const result = calculateDday(ddayString); // D-Day 계산
-      console.log('계산된 D-Day:', result); // 계산된 D-Day 결과 출력
-      setDdayResult(result);  // 계산된 결과를 상태로 설정
+      const result = calculateDday(ddayString);
+      console.log('계산된 D-Day:', result);
+
+      // 각 todoId별로 D-Day 결과를 저장
+      setDdayResults(prevResults => ({
+        ...prevResults,
+        [todoId]: result,
+      }));
     } else {
       console.log('D-Day 정보가 없습니다.');
-      setDdayResult('D-Day 정보 없음'); // 정보가 없을 경우
+      setDdayResults(prevResults => ({
+        ...prevResults,
+        [todoId]: 'D-Day 정보 없음',
+      }));
     }
   };
-
-
 
   const calculateDday = (dday: Todo | string): string => {
     let ddayDate;
@@ -790,15 +797,14 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
   };
 
   const renderDdayTodos = () => {
+    console.log('Rendering ddayTodos:', ddayTodos);  // 렌더링 시 ddayTodos 로그
     return ddayTodos.map(todo => {
-      const ddayLabel = ddayResult ? ddayResult : 'D-Day 정보 없음';  // ddayResult가 없을 경우 기본값
-      console.log('D-Day 레이블:', ddayLabel);  // D-Day 레이블 로그 확인
+      const ddayLabel = ddayResult || '로딩 중...';
+      console.log('D-Day 레이블:', ddayLabel);
       return (
         <DdayItem key={todo.id} themeStyles={themeStyles}>
           <span>{todo.content}</span>
-          <DdayCount themeStyles={themeStyles}>
-            {ddayResult ? ddayLabel : '로딩 중...'}  {/* 로딩 중일 때 처리 */}
-          </DdayCount>
+          <DdayCount themeStyles={themeStyles}>{ddayLabel}</DdayCount>
         </DdayItem>
       );
     });
@@ -890,12 +896,12 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
         return;
       }
 
-      // 마지막에 삽입된 todo의 ID를 가져옴
-      const lastTodoId = data ? data[0].id : null;
-
-      if (lastTodoId) {
-        await handleDdayCalculation(lastTodoId);  // D-Day 계산 수행
-      }
+      // 새롭게 추가된 todos를 가져와 D-Day 계산 수행
+      const newTodos = data || [];
+      console.log('New todos:', newTodos);
+      newTodos.forEach(async (todo) => {
+        await handleDdayCalculation(todo.id);  // 각 todo의 D-Day 계산 수행
+      });
 
       alert('저장되었습니다');
 
@@ -911,7 +917,6 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
       console.error('Unexpected error:', e);
     }
   };
-
 
   const handleDateClick = async (value: Date | Date[]) => {
     let selected: Dayjs;

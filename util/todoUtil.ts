@@ -281,11 +281,6 @@ export const fetchDdayTodos = async (userId: string, setDdayTodos: (todos: Todo[
     }
 };
 
-const isWithinRange = (date: Date): boolean => {
-    const hundredYearsLater = dayjs().add(100, 'year').startOf('day').toDate();
-    return date <= hundredYearsLater;
-};
-
 export const updateTodoColor = async <T extends Todo>(userId: string, todoId: string, color: string, setTodos: (todos: Array<T>) => void, selectedDate: Date) => {
     try {
         const { data, error } = await supabase
@@ -391,4 +386,23 @@ export const handleDdayCalculation = async (todoId: string) => {
         console.log('D-Day 정보가 없습니다.');
     }
 };
+
+export const updateTodoDate = async (userId: string, todoId: string, newDate: Date) => {
+    try {
+        const { error } = await supabase
+            .from('todos')  // 'todos' 테이블에서
+            .update({ date: newDate.toISOString().split('T')[0] })  // 새로운 날짜로 업데이트
+            .eq('user_id', userId)  // 해당 사용자의
+            .eq('id', todoId);  // 해당 할 일 ID에 맞는 항목을 찾아 업데이트
+
+        if (error) {
+            console.error('Error updating todo date:', error);
+        } else {
+            console.log('Todo date updated successfully.');
+        }
+    } catch (error) {
+        console.error('Unexpected error updating todo date:', error);
+    }
+};
+
 

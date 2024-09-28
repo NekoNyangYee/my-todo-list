@@ -17,7 +17,6 @@ import timezone from 'dayjs/plugin/timezone';
 import { Todo } from "@components/types/todo";
 import EditIcon from "./icons/Utils/EditIcon";
 import ColorModal from "./ColorModal";
-import { set } from "mongoose";
 
 const fadeInDropDownModal = keyframes`
   from {

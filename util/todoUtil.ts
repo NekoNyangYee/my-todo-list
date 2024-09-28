@@ -187,14 +187,14 @@ export const saveTodos = async <T extends Todo>(
     setAnimateOut: (animate: boolean) => void,
     setShowInput: (show: boolean) => void,
     selectedDate: Date
-) => {
+): Promise<string | null> => {  // ID 반환을 위해 반환 타입을 string으로 설정
     const nonEmptyInputs = inputs.filter(input => input.trim() !== '');
     const filteredIsDday = isDday.filter((_, index) => inputs[index].trim() !== '');
     const filteredColors = colors.filter((_, index) => inputs[index].trim() !== '');
 
     if (nonEmptyInputs.length === 0) {
         alert('할 일을 입력해주세요.');
-        return;
+        return null;  // 할 일이 없으면 null 반환
     } else {
         alert('저장되었습니다.');
     }
@@ -205,7 +205,7 @@ export const saveTodos = async <T extends Todo>(
 
     const { data: existingTodos } = await supabase
         .from('todos')
-        .select('id')
+        .select('id')  // 반환 타입을 명시적으로 설정
         .eq('user_id', userId);
 
     const currentOrder = existingTodos ? existingTodos.length : 0;
@@ -222,21 +222,19 @@ export const saveTodos = async <T extends Todo>(
             created_at: new Date().toISOString(),
             date: dateString,
             original_order: currentOrder + index,
-        })));
+        })))
+        .select('id');  // 'id' 필드만 선택
 
     if (error) {
         console.error('Error saving todos:', error);
-    } else {
-        console.log('Todos saved successfully:', data);
-        resetInputs();
-        setAnimateOut(true);
-        setTimeout(() => {
-            setShowInput(false);
-            setAnimateOut(false);
-        }, 100);
-        await fetchTodosForDate(userId, selectedDate, setTodos);
+        return null;
     }
+
+    // 마지막으로 추가된 할 일의 ID만 반환 (객체에서 id 값 추출)
+    const lastTodoId = data?.[0]?.id || null;  // ID 반환 또는 null 반환
+    return lastTodoId;
 };
+
 
 export const fetchAndMoveUncompletedTodos = async <T extends Todo>(userId: string, setUncompletedTodos: (todos: Array<T>) => void): Promise<void> => {
     const { data: uncompletedTodos, error } = await supabase
@@ -374,17 +372,6 @@ export const getLastInsertedTodoId = async (userId: string) => {
     }
 
     return data[0].id;
-};
-
-export const handleDdayCalculation = async (todoId: string) => {
-    const ddayString = await fetchDdayDate(todoId); // Supabase에서 D-Day 날짜를 조회
-
-    if (ddayString) {
-        const ddayResult = calculateDday(ddayString); // D-Day 계산
-        console.log('계산된 D-Day123:', ddayResult); // 계산 결과 출력
-    } else {
-        console.log('D-Day 정보가 없습니다.');
-    }
 };
 
 export const updateTodoDate = async (userId: string, todoId: string, newDate: Date) => {

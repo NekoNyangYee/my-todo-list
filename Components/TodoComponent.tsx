@@ -4,7 +4,7 @@ import { css, keyframes } from "@emotion/react";
 import styled from "@emotion/styled";
 import { useEffect, useRef, useState } from "react";
 import { useTodoStore } from "../Store/useAuthTodoStore";
-import { fetchTodosForDate, deleteTodo, toggleTodo, togglePriority, saveTodos, fetchDdayTodos, updateTodo, updateTodoColor } from "@components/util/todoUtil";
+import { fetchTodosForDate, deleteTodo, toggleTodo, togglePriority, saveTodos, fetchDdayTodos, updateTodo, saveDday, getLastInsertedTodoId, calculateDday, handleDdayCalculation, fetchDdayDate } from "@components/util/todoUtil";
 import { ThemeProvider, useTheme } from "@components/app/Context/ThemeContext";
 import PriorityIcon from "./icons/Priority/PriorityIcon";
 import DeleteIcon from "./icons/Utils/DeleteIcon";
@@ -17,6 +17,7 @@ import timezone from 'dayjs/plugin/timezone';
 import { Todo } from "@components/types/todo";
 import EditIcon from "./icons/Utils/EditIcon";
 import ColorModal from "./ColorModal";
+import SelectDdayModal from "./layout/SelectDdayModal";
 
 const fadeInDropDownModal = keyframes`
   from {
@@ -765,6 +766,9 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
   const [isDday, setIsDday] = useState<boolean[]>([]);
   const [ddayTodos, setDdayTodos] = useState<Todo[]>([]);
   const [showColorModal, setShowColorModal] = useState<boolean>(false);
+  const [selectDday, setSelectDday] = useState<boolean>(false);
+  const [ddayResult, setDdayResult] = useState<string | null>(null); // D-Day 계산 결과를 저장하는 상태
+  const [selectedDdayDate, setSelectedDdayDate] = useState<Date | null>(null);
   const [selectedInputIndex, setSelectedInputIndex] = useState<number | null>(null);
   const [colors, setColors] = useState<string[]>([]);
   const modalContentRef = useRef<HTMLDivElement>(null);
@@ -828,6 +832,7 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
 
     fetchData();
   }, [user, selectedDate, setTodos]);
+
 
   const handleInputChange = (index: number, value: string) => {
     setInputs(index, value);
@@ -907,10 +912,23 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
   const saveTodosHandler = async () => {
     if (user) {
       if (isEditMode) {
+        // 수정 모드일 때
         await Promise.all(
-          selectedTodos.map((todoId, index) =>
-            updateTodo(user.id, todoId, inputs[index], isDday[index], colors[index], setTodos, selectedDate)
-          )
+          selectedTodos.map(async (todoId, index) => {
+            const ddayDate = selectedDdayDate ? selectedDdayDate : null;
+            const isDday = ddayDate ? true : false;
+
+            await updateTodo(
+              user.id,
+              todoId,
+              inputs[index],
+              isDday,
+              colors[index],
+              ddayDate,
+              setTodos,
+              selectedDate
+            );
+          })
         );
         alert('수정되었습니다.');
         setAnimateOut(true);
@@ -923,13 +941,35 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
           setIsEditMode(false);
         }, 100);
       } else {
-        await saveTodos(user.id, inputs, isDday, colors, setTodos, resetInputs, setAnimateOut, setShowInput, selectedDate);
+        // 새로운 할 일을 저장할 때
+        await saveTodos(
+          user.id,
+          inputs,
+          isDday,
+          colors,
+          setTodos,
+          resetInputs,
+          setAnimateOut,
+          setShowInput,
+          selectedDate
+        );
+
+        if (selectedDdayDate) {
+          const lastTodoId = await getLastInsertedTodoId(user.id);
+          if (lastTodoId) {
+            await saveDday(lastTodoId, selectedDdayDate);
+            await handleDdayCalculation(lastTodoId);
+
+            const ddayString = selectedDdayDate.toISOString().split('T')[0];
+            setDdayResult(await calculateDday(ddayString));
+          }
+        }
         localStorage.setItem('todoColors', JSON.stringify(colors));
       }
 
       setColors([]);
       await fetchTodosForDate(user.id, selectedDate, setTodos);
-      await fetchDdayTodos(user.id, setDdayTodos); // 디데이 일정 패칭 추가
+      await fetchDdayTodos(user.id, setDdayTodos);
     }
   };
 
@@ -1165,6 +1205,33 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
     }
   };
 
+  const openDdayModal = () => setSelectDday(true);
+  const todoId = user ? user.id : 'defaultTodoId';
+
+  const handleDdaySelect = (date: Date | null) => {
+    setSelectedDdayDate(date);  // SelectDdayModal에서 선택된 날짜를 저장
+  };
+
+  const formatSelectedDate = (date: Date | null) => {
+    if (!date) return '디데이';  // 날짜가 선택되지 않았을 때 기본 텍스트 반환
+    return date.toLocaleDateString('ko-KR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
+
+  const handleDdayCalculation = async (todoId: string) => {
+    const ddayString = await fetchDdayDate(todoId); // D-Day 날짜 조회
+
+    if (ddayString) {
+      const ddayResult = calculateDday(ddayString); // D-Day 계산
+      console.log('계산된 D-Day:', ddayResult); // 계산된 D-Day 결과 출력
+    } else {
+      console.log('D-Day 정보가 없습니다.');
+    }
+  };
+
   return (
     <>
       <MainTodoListContainer>
@@ -1228,6 +1295,12 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
                               </PriorityButton>
                             )}
                             {todo.content}
+                            {/* 디데이 날짜가 있으면 D-Day를 표시 */}
+                            {todo.dday_date && (
+                              <div>
+                                {calculateDday(todo.dday_date)}
+                              </div>
+                            )}
                           </TodoList>
                           <DotMenuBtnWrapper>
                             {!isEditing && (
@@ -1242,7 +1315,6 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
                             )}
                             {showDropdown === todo.id && (
                               <DropdownMenu ref={dropdownRef} isDropDownOpen={!!showDropdown} themeStyles={themeStyles} index={dropdownItemCount}>
-
                                 <CompleteItem onClick={() => handleEditTodo(todo.id)}>
                                   <EditIcon />
                                   수정
@@ -1378,10 +1450,10 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
                     style={{ color: colors[index] || themeStyles.colors.text }}
                   />
                   <InputOptionContainer>
-                    <DDayBtn onClick={() => handleDdayChange(index)} themeStyles={themeStyles} isDday={isDday[index]}>
-                      {isDday[index] ? <CheckDdayIcon /> : null}
-                      디데이
+                    <DDayBtn onClick={openDdayModal} themeStyles={themeStyles} isDday={isDday[index]}>
+                      디데이 {selectedDdayDate ? formatSelectedDate(selectedDdayDate) : (todos[index]?.dday_date ? formatSelectedDate(new Date(todos[index].dday_date)) : '날짜 선택')}
                     </DDayBtn>
+
                     <SelectColorBtn onClick={() => openColorModal(index)} themeStyles={themeStyles}>
                       <ColorOptionIcon color={colors[index]} themeStyles={themeStyles} />
                       색상 설정
@@ -1408,6 +1480,14 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
         onClose={() => setShowColorModal(false)}
         onColorSelect={handleColorSelect}
         currentColor={selectedInputIndex !== null ? colors[selectedInputIndex] : null}
+      />
+      <SelectDdayModal
+        isOpen={selectDday}  // 모달을 열고 닫는 상태
+        setSelectDday={handleDdaySelect}  // 선택된 날짜를 부모 컴포넌트로 전달하는 함수
+        closeModal={() => setSelectDday(false)}  // 모달 닫기 함수 전달
+        themeStyles={themeStyles}
+        todoId={todoId}
+        initialDate={selectedDdayDate || new Date()}
       />
     </>
   );

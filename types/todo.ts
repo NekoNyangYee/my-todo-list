@@ -9,4 +9,5 @@ export interface Todo {
     date: string;
     is_dday: boolean;
     text_color: string;
+    dday_date?: string | null;  // D-Day로 선택된 날짜 (optional로 설정)
 }

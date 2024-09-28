@@ -33,8 +33,15 @@ export const fetchTodos = async <T extends Todo>(userId: string, setTodos: (todo
     setTodos(data);
 };
 
-export const fetchTodosForDate = async <T extends Todo>(userId: string, date: Date, setTodos: (todos: Array<T>) => void): Promise<void> => {
+export const fetchTodosForDate = async <T extends Todo>(
+    userId: string,
+    date: Date,
+    setTodos: (todos: Array<T>) => void
+): Promise<void> => {
+    // 한국 시간으로 변환하여 날짜를 문자열로 변환
     const koreanDateString = new Date(date.getTime() + (9 * 60 * 60 * 1000)).toISOString().split('T')[0];
+
+    // supabase에서 데이터를 가져오는 부분
     const { data, error } = await supabase
         .from('todos')
         .select('*')
@@ -44,9 +51,11 @@ export const fetchTodosForDate = async <T extends Todo>(userId: string, date: Da
     if (error) {
         console.error('Error fetching todos:', error);
     } else {
-        setTodos(data as Array<T>); // 여기 수정됨
+        // 데이터를 Array<T>로 캐스팅하여 setTodos에 전달
+        setTodos(data as Array<T>);
     }
 };
+
 
 export const archiveTodos = async <T extends Todo>(userId: string, setTodos: (todos: Array<T>) => void, setUncompletedTodos: (todos: Array<T>) => void): Promise<void> => {
     const { data: todos, error: fetchError } = await supabase
@@ -109,35 +118,35 @@ export const deleteTodo = async <T extends Todo>(userId: string, id: string, set
     await fetchTodosForDate(userId, selectedDate, setTodos);
 };
 
-export const updateTodo = async (userId: string, todoId: string, content: string, isDday: boolean, color: string, setTodos: any, selectedDate: Date) => {
-    // 현재 todo의 original_order 값을 가져옵니다.
-    const { data: currentTodo, error: fetchError } = await supabase
-        .from('todos')
-        .select('original_order')
-        .eq('id', todoId)
-        .eq('user_id', userId)
-        .single();
+export const updateTodo = async (
+    userId: string,
+    todoId: string,
+    content: string,
+    isDday: boolean,
+    color: string,
+    ddayDate: Date | null,  // 선택된 D-Day 날짜
+    setTodos: (todos: Todo[]) => void,  // Todo[] 타입을 받는 함수
+    selectedDate: Date
+) => {
+    // ddayDate가 Date 객체인지 확인 후 처리
+    const formattedDdayDate = ddayDate instanceof Date ? ddayDate.toISOString().split('T')[0] : null;
 
-    if (fetchError) {
-        console.error('Error fetching todo original order:', fetchError);
-        return;
-    }
-
-    const { original_order } = currentTodo;
-
-    // original_order 값을 유지하면서 content, is_dday, color 값을 업데이트합니다.
     const { data, error } = await supabase
         .from('todos')
-        .update({ content, is_dday: isDday, text_color: color, original_order })
+        .update({
+            content: content,
+            is_dday: isDday,  // is_dday 업데이트
+            text_color: color,
+            dday_date: formattedDdayDate  // dday_date 업데이트
+        })
         .eq('id', todoId)
         .eq('user_id', userId);
 
     if (error) {
-        console.error('Error updating todo:', error);
-        return;
+        console.error('할 일 업데이트 중 오류 발생:', error);
+    } else {
+        await fetchTodosForDate(userId, selectedDate, setTodos);  // setTodos 호출
     }
-
-    await fetchTodosForDate(userId, selectedDate, setTodos);
 };
 
 export const toggleTodo = async <T extends Todo>(userId: string, id: string, isComplete: boolean, setTodos: (todos: Array<T>) => void, selectedDate: Date): Promise<void> => {
@@ -300,3 +309,89 @@ export const updateTodoColor = async <T extends Todo>(userId: string, todoId: st
         console.error('Unexpected error updating todo color:', error);
     }
 };
+
+export const saveDday = async (todoId: string, selectedDate: Date) => {
+    const formattedDate = selectedDate.toISOString().split('T')[0];
+
+    try {
+        const { data, error } = await supabase
+            .from('todos')
+            .update({ dday_date: formattedDate, is_dday: true, date: formattedDate }) // date도 디데이 날짜로 업데이트
+            .eq('id', todoId);
+
+        if (error) {
+            console.error('Supabase 업데이트 중 오류 발생:', error);
+            return { success: false, error };
+        }
+
+        console.log('D-Day 날짜가 성공적으로 저장되었습니다:', data);
+        return { success: true, data };
+    } catch (error) {
+        console.error('D-Day 날짜 저장 중 오류 발생:', error);
+        return { success: false, error };
+    }
+};
+
+export const fetchDdayDate = async (todoId: string): Promise<string | null> => {
+    const { data, error } = await supabase
+        .from('todos')
+        .select('dday_date')  // 'dday_date'만 선택
+        .eq('id', todoId)
+        .single();  // 단일 결과를 기대
+
+    if (error || !data) {
+        console.error('Error fetching dday_date:', error || 'No data found');
+        return null;
+    }
+
+    console.log('Fetched D-Day date:', data.dday_date);  // 반환된 D-Day 날짜 확인
+    return data.dday_date;  // 'YYYY-MM-DD' 형식의 D-Day 날짜 반환
+};
+
+
+export const calculateDday = (ddayString: string): string => {
+    if (!ddayString) {
+        return 'D-Day 정보 없음';
+    }
+
+    const ddayDate = dayjs(ddayString, 'YYYY-MM-DD');
+    const today = dayjs();
+
+    const differenceInDays = ddayDate.diff(today, 'day');
+
+    if (differenceInDays > 0) {
+        return `D-${differenceInDays}`;
+    } else if (differenceInDays < 0) {
+        return `D+${Math.abs(differenceInDays)}`;
+    } else {
+        return 'D-Day';
+    }
+};
+
+export const getLastInsertedTodoId = async (userId: string) => {
+    const { data, error } = await supabase
+        .from('todos')
+        .select('id')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+    if (error || !data || data.length === 0) {
+        console.error('Error fetching last inserted todo ID:', error);
+        return null;
+    }
+
+    return data[0].id;
+};
+
+export const handleDdayCalculation = async (todoId: string) => {
+    const ddayString = await fetchDdayDate(todoId); // Supabase에서 D-Day 날짜를 조회
+
+    if (ddayString) {
+        const ddayResult = calculateDday(ddayString); // D-Day 계산
+        console.log('계산된 D-Day:', ddayResult); // 계산 결과 출력
+    } else {
+        console.log('D-Day 정보가 없습니다.');
+    }
+};
+

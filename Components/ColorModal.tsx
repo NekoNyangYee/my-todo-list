@@ -109,7 +109,7 @@ interface ColorModalProps {
     currentColor: string | null;
 }
 
-const ColorModal: React.FC<ColorModalProps> = ({ isOpen, onClose, onColorSelect, currentColor }) => {
+const ColorModal = <T extends ColorModalProps>({ isOpen, onClose, onColorSelect, currentColor }: T) => {
     const [selectedColor, setSelectedColor] = useState<string>(currentColor || '');
     const { themeStyles } = useTheme();
 

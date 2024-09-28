@@ -5,7 +5,7 @@ import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import { supabase } from '@components/lib/supabaseClient';
 import styled from '@emotion/styled';
-import { fetchDdayTodos, fetchTodosForDate } from '@components/util/todoUtil';
+import { fetchDdayDate, fetchDdayTodos, fetchTodosForDate } from '@components/util/todoUtil';
 import { Todo } from '@components/types/todo';
 import { useTodoStore } from '@components/Store/useAuthTodoStore';
 import moment from 'moment';
@@ -435,8 +435,6 @@ const CalendarStyled = styled(Calendar) <{ themeStyles: any }>`
   }
 `;
 
-
-
 const NoTodoListText = styled.p<{ themeStyles: any }>`
   text-align: center;
   color: #7a7a7a;
@@ -661,6 +659,7 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
   const [showColorModal, setShowColorModal] = useState<boolean>(false);
   const [selectedInputIndex, setSelectedInputIndex] = useState<number | null>(null);
   const [colors, setColors] = useState<string[]>([]);
+  const [ddayResult, setDdayResult] = useState<string | null>(null);
   const modalContentRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -753,6 +752,55 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
     fetchAllTodos();
   }, [user]);
 
+  const handleDdayCalculation = async (todoId: string) => {
+    const ddayString = await fetchDdayDate(todoId); // D-Day 날짜 조회
+    console.log('Fetched D-Day date:', ddayString); // 불러온 D-Day 날짜 로그 확인
+
+    if (ddayString) {
+      const result = calculateDday(ddayString); // D-Day 계산
+      console.log('계산된 D-Day:', result); // 계산된 D-Day 결과 출력
+      setDdayResult(result);  // 계산된 결과를 상태로 설정
+    } else {
+      console.log('D-Day 정보가 없습니다.');
+      setDdayResult('D-Day 정보 없음'); // 정보가 없을 경우
+    }
+  };
+
+
+
+  const calculateDday = (dday: Todo | string): string => {
+    let ddayDate;
+
+    if (typeof dday === 'string') {
+      ddayDate = dayjs(dday, 'YYYY-MM-DD');
+    } else {
+      ddayDate = dayjs(dday.date, 'YYYY-MM-DD');
+    }
+
+    const today = dayjs(); // 오늘 날짜
+    const differenceInDays = ddayDate.diff(today, 'day');
+
+    if (differenceInDays > 0) {
+      return `D-${differenceInDays}`; // 미래 날짜일 경우
+    } else if (differenceInDays < 0) {
+      return `D+${Math.abs(differenceInDays)}`; // 과거 날짜일 경우
+    } else {
+      return 'D-Day'; // 오늘 날짜일 경우
+    }
+  };
+
+  const renderDdayTodos = () => {
+    return ddayTodos.map(todo => {
+      const ddayLabel = ddayResult || 'D-Day 정보 없음';  // ddayResult 사용
+      return (
+        <DdayItem key={todo.id} themeStyles={themeStyles}>
+          <span>{todo.content}</span>
+          <DdayCount themeStyles={themeStyles}>{ddayLabel}</DdayCount>  {/* D-Day 결과 출력 */}
+        </DdayItem>
+      );
+    });
+  };
+
   const handleInputChange = (index: number, value: string) => {
     setInputs(index, value);
     if (isDday.length < inputs.length) {
@@ -808,9 +856,7 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
       return;
     }
 
-    const nonEmptyInputs = inputs.filter((input) => input.trim() !== '');
-    const filteredIsDday = inputs.map((input, index) => input.trim() !== '' ? isDday[index] : null).filter(item => item !== null);
-
+    const nonEmptyInputs = inputs.filter(input => input.trim() !== '');
     if (nonEmptyInputs.length === 0) {
       alert('할 일을 입력해주세요.');
       return;
@@ -819,6 +865,7 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
     const koreanDateString = dayjs(selectedDate).format('YYYY-MM-DD');
 
     try {
+      // Supabase에 할 일을 삽입
       const { data, error } = await supabase
         .from('todos')
         .insert(nonEmptyInputs.map((content, index) => ({
@@ -828,33 +875,39 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
           is_priority: false,
           created_at: dayjs().toISOString(),
           date: koreanDateString,
-          is_dday: filteredIsDday[index],
+          is_dday: isDday[index],  // D-Day 여부 저장
           original_order: index,
           text_color: colors[index] || '',
-        })));
+        })))
+        .select('id');  // ID만 반환받음
 
       if (error) {
         console.error('Error saving todos:', error);
-      } else {
-        resetInputs();
-        setColors([themeStyles.colors.text]); // colors 배열 초기화 및 기본 색상 설정
-        setTimeout(() => {
-          setShowAddTodoModal(false);
-        }, 100);
-        alert('저장되었습니다');
-
-        setDatesWithTodos(prev => new Set(prev).add(koreanDateString));
-        setColors([]);
-
-        await fetchTodosForDate(user.id, selectedDate, setTodos);
-        setShowTodoModal(true);
-        await fetchDdayTodos(user.id, setDdayTodos);
-        localStorage.setItem('todoColors', JSON.stringify([themeStyles.colors.text])); // 기본 색상 저장
+        return;
       }
+
+      // 마지막에 삽입된 todo의 ID를 가져옴
+      const lastTodoId = data ? data[0].id : null;
+
+      if (lastTodoId) {
+        await handleDdayCalculation(lastTodoId);  // D-Day 계산 수행
+      }
+
+      alert('저장되었습니다');
+
+      resetInputs();
+      setColors([themeStyles.colors.text]); // colors 배열 초기화 및 기본 색상 설정
+      setTimeout(() => {
+        setShowAddTodoModal(false);
+      }, 100);
+
+      await fetchTodosForDate(user.id, selectedDate, setTodos); // 할 일 목록 갱신
+      await fetchDdayTodos(user.id, setDdayTodos);  // D-Day 목록 업데이트
     } catch (e) {
       console.error('Unexpected error:', e);
     }
   };
+
 
   const handleDateClick = async (value: Date | Date[]) => {
     let selected: Dayjs;
@@ -1218,10 +1271,6 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
                       style={{ color: editColor || themeStyles.colors.text }} // 수정된 부분
                     />
                     <InputOptionContainer>
-                      <DDayBtn onClick={() => setEditIsDday(!editIsDday)} themeStyles={themeStyles} isDday={editIsDday}>
-                        {editIsDday ? <CheckDdayIcon /> : null}
-                        디데이
-                      </DDayBtn>
                       <SelectColorBtn onClick={() => setShowColorModal(true)} themeStyles={themeStyles}>
                         <ColorOptionIcon color={editColor} themeStyles={themeStyles} /> {/* 수정된 부분 */}
                         색상 설정
@@ -1286,19 +1335,7 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
             <NoDdayText themeStyles={themeStyles}>D-day 일정이 없습니다.</NoDdayText>
           ) : (
             <ul>
-              {ddayTodos.map((todo) => {
-                const todoDate = dayjs(todo.date).startOf('day');
-                const today = dayjs().startOf('day');
-                const diffDays = todoDate.diff(today, 'day');
-                const dDayLabel = diffDays > 0 ? `D-${diffDays}` : `D+${Math.abs(diffDays)}`;
-
-                return (
-                  <DdayItem key={todo.id} themeStyles={themeStyles}>
-                    <span>{todo.content}</span>
-                    <DdayCount themeStyles={themeStyles}>{dDayLabel === "D+0" ? "D-day" : dDayLabel}</DdayCount>
-                  </DdayItem>
-                );
-              })}
+              {renderDdayTodos()}
             </ul>
           )}
         </WantSelectListText>

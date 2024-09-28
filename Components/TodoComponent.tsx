@@ -1450,8 +1450,14 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
                     style={{ color: colors[index] || themeStyles.colors.text }}
                   />
                   <InputOptionContainer>
-                    <DDayBtn onClick={openDdayModal} themeStyles={themeStyles} isDday={isDday[index]}>
-                      디데이 {selectedDdayDate ? formatSelectedDate(selectedDdayDate) : (todos[index]?.dday_date ? formatSelectedDate(new Date(todos[index].dday_date)) : '날짜 선택')}
+                    <DDayBtn
+                      onClick={() => openDdayModal()}
+                      themeStyles={themeStyles}
+                      isDday={isDday[index]}
+                    >
+                      {selectedDdayDate ? formatSelectedDate(selectedDdayDate) : (
+                        todos[index]?.dday_date ? formatSelectedDate(new Date(todos[index]?.dday_date)) : '날짜 선택'
+                      )}
                     </DDayBtn>
 
                     <SelectColorBtn onClick={() => openColorModal(index)} themeStyles={themeStyles}>

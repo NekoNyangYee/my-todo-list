@@ -1422,7 +1422,7 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
               </ListContainer>
             )}
             <AddToDoBtnContainer>
-              {isEditMode && (
+              {!isEditMode && (
                 <AddToDoBtn onClick={() => {
                   setShowInput(!showInput)
                   setColors([]);

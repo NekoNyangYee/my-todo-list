@@ -9,10 +9,34 @@ import timezone from 'dayjs/plugin/timezone';
 import styled from "@emotion/styled";
 import { Theme } from "@components/types/theme";
 import moment from "moment";
+import { keyframes } from "@emotion/react";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.tz.setDefault('Asia/Seoul');
+
+const fadeInModal = keyframes`
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+`;
+
+const fadeOutModal = keyframes`
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+`;
+
 
 const ModalOverlay = styled.div`
    position: fixed;
@@ -27,13 +51,14 @@ const ModalOverlay = styled.div`
    z-index: 1000;
 `;
 
-const ModalContent = styled.div<{ themeStyles: Theme }>`
+const ModalContent = styled.div<{ themeStyles: Theme, isOpen: boolean }>`
    background-color: ${({ themeStyles }) => themeStyles.colors.background};
-   padding: 20px;
+   padding: 1rem;
    border-radius: 12px;
-   width: 500px; 
+   width: 50vh; 
    max-height: 90vh; 
    overflow: auto;
+  animation: ${({ isOpen }) => (isOpen ? fadeInModal : fadeOutModal)} 0.2s;
 `;
 
 const CalendarStyled = styled(Calendar) <{ themeStyles: any }>`
@@ -43,7 +68,7 @@ const CalendarStyled = styled(Calendar) <{ themeStyles: any }>`
   flex-direction: column;
   width: 100%;
   height: auto;
-  min-height: 400px; /* 최소 높이 */
+  min-height: 300px; /* 최소 높이 */
   max-height: 600px; /* 최대 높이 */
   padding: 1rem;
   max-width: 100%;
@@ -61,7 +86,7 @@ const CalendarStyled = styled(Calendar) <{ themeStyles: any }>`
     justify-content: flex-start;
     align-items: center;
     flex-direction: column;
-    height: 80px;
+    height: 60px;
     border-radius: 8px;
     color: ${({ themeStyles }) => themeStyles.colors.text};
     transition: background-color 0.2s, color 0.2s;
@@ -143,6 +168,12 @@ const CalendarStyled = styled(Calendar) <{ themeStyles: any }>`
   }
 `;
 
+const ButtonContainer = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+`;
+
 const Button = styled.button<{ primary?: boolean }>`
     margin: 10px;
     padding: 8px 16px;
@@ -157,58 +188,64 @@ const Button = styled.button<{ primary?: boolean }>`
 `;
 
 interface SelectDdayModalProps {
-    isOpen: boolean;
-    setSelectDday: (date: Date | null) => void;  // 선택한 날짜를 부모 컴포넌트로 전달
-    closeModal: () => void;  // 모달을 닫는 함수
-    themeStyles: Theme;
-    todoId: string;
-    initialDate: Date | null;
+  isOpen: boolean;
+  setSelectDday: (date: Date | null) => void;
+  closeModal: () => void;
+  themeStyles: Theme;
+  todoId: string;
+  initialDate: Date | null;
 }
 
 const SelectDdayModal: React.FC<SelectDdayModalProps> = ({ isOpen, setSelectDday, closeModal, themeStyles, initialDate }) => {
-    const [selectedDate, setSelectedDate] = useState<Date | null>(new Date()); // 기본값을 오늘 날짜로 설정
+  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date()); // 기본값을 오늘 날짜로 설정
+  const [activeStartDate, setActiveStartDate] = useState<Date | undefined>(new Date());
 
-    useEffect(() => {
-        setSelectedDate(initialDate);  // 모달을 열 때 초기 날짜를 설정
-    }, [initialDate]);
 
-    // 날짜 변경 핸들러
-    const handleDateChange = (value: Date | Date[] | null) => {
-        if (value && !Array.isArray(value)) {
-            setSelectedDate(value); // 단일 날짜일 경우 상태 업데이트
-        }
-    };
+  useEffect(() => {
+    setSelectedDate(initialDate);  // 모달을 열 때 초기 날짜를 설정
+    setActiveStartDate(initialDate || undefined);  // 초기 날짜에 포커스 설정
+  }, [initialDate]);
 
-    // 저장 버튼 클릭 시
-    const handleDdaySave = async () => {
-        if (selectedDate) {
-            const formattedDate = dayjs(selectedDate).format('YYYY-MM-DD');
-            setSelectDday(selectedDate);
-            console.log('저장할 날짜:', formattedDate);
-            closeModal();
-        }
-    };
 
-    if (!isOpen) return null; // 모달이 열려있지 않으면 아무것도 렌더링하지 않음
+  // 날짜 변경 핸들러
+  const handleDateChange = (value: Date | Date[] | null) => {
+    if (value && !Array.isArray(value)) {
+      setSelectedDate(value); // 단일 날짜일 경우 상태 업데이트
+      setActiveStartDate(value);
+    }
+  };
 
-    return (
-        <ModalOverlay>
-            <ModalContent themeStyles={themeStyles}>
-                <h2>디데이 날짜 선택</h2>
-                <CalendarStyled
-                    onClickDay={handleDateChange} // 날짜 변경 시 실행되는 함수
-                    value={selectedDate} // 현재 선택된 날짜
-                    selectRange={false} // 단일 날짜만 선택 가능
-                    formatDay={(locale, date) => dayjs(date).format("DD")} // dayjs로 날짜 포맷
-                    themeStyles={themeStyles} // 스타일 전달
-                />
-                <div>
-                    <Button primary onClick={handleDdaySave}>선택</Button> {/* 선택 버튼 클릭 시 */}
-                    <Button onClick={closeModal}>취소</Button> {/* 취소 버튼 클릭 시 모달 닫기 */}
-                </div>
-            </ModalContent>
-        </ModalOverlay>
-    );
+  // 저장 버튼 클릭 시
+  const handleDdaySave = async () => {
+    if (selectedDate) {
+      const formattedDate = dayjs(selectedDate).format('YYYY-MM-DD');
+      setSelectDday(selectedDate);
+      console.log('저장할 날짜:', formattedDate);
+      closeModal();
+    }
+  };
+
+  if (!isOpen) return null; // 모달이 열려있지 않으면 아무것도 렌더링하지 않음
+
+  return (
+    <ModalOverlay>
+      <ModalContent themeStyles={themeStyles} isOpen={isOpen}>
+        <h2>디데이 날짜 선택</h2>
+        <CalendarStyled
+          onClickDay={handleDateChange}
+          value={selectedDate}
+          selectRange={false}
+          formatDay={(locale, date) => dayjs(date).format("DD")}
+          themeStyles={themeStyles}
+          activeStartDate={activeStartDate}
+        />
+        <ButtonContainer>
+          <Button onClick={closeModal}>취소</Button>
+          <Button primary onClick={handleDdaySave}>선택</Button>
+        </ButtonContainer>
+      </ModalContent>
+    </ModalOverlay>
+  );
 };
 
 export default SelectDdayModal;

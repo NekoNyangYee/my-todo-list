@@ -790,8 +790,6 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
       const additionalInputs = Array(3 - inputs.length).fill('');
       additionalInputs.forEach(() => addInput());
     }
-    // isDday 배열을 inputs 길이에 맞춰 초기화
-    setIsDday(inputs.map(() => false));
   }, [inputs, addInput, isEditMode]);
 
 
@@ -1061,6 +1059,7 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
 
   const toggleEdit = () => {
     setIsEditing(!isEditing);
+    setIsEditMode(!isEditMode);
 
     if (isEditing) {
       setSelectedTodos([]);
@@ -1234,29 +1233,37 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
     }
   };
 
-  const openDdayModal = (index: number) => {
+  const openDdayModal = (index: number, selectedDate: Date | null) => {
     setSelectedInputIndex(index);  // 선택된 인덱스를 상태로 저장
     setSelectDday(true);  // D-Day 선택 모달 열기
+    setSelectedDdayDate(selectedDate);
   };
   const todoId = user ? user.id : 'defaultTodoId';
 
   const handleDdaySelect = (index: number, date: Date | null) => {
     setDdayDates(prevDdayDates => {
+      if (!prevDdayDates || !Array.isArray(prevDdayDates)) {
+        return [];  // ddayDates가 초기화되지 않았으면 빈 배열 반환
+      }
+
       const newDdayDates = [...prevDdayDates];
-      newDdayDates[index] = date;
+      newDdayDates[index] = date;  // 새로운 날짜를 설정
       return newDdayDates;
     });
   };
 
+
+
   const formatSelectedDate = (index: number) => {
     const date = ddayDates[index];
-    if (!date) return '날짜 선택';
+    if (!date) return '디데이 선택'; // 이 부분이 null 값을 처리
     return date.toLocaleDateString('ko-KR', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
     });
   };
+
 
   const handleDdayCalculation = async (todoId: string) => {
     const ddayString = await fetchDdayDate(todoId); // D-Day 날짜 조회
@@ -1332,7 +1339,6 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
                               </PriorityButton>
                             )}
                             {todo.content}
-                            {/* 디데이 날짜가 있으면 D-Day를 표시 */}
                             {todo.dday_date && (
                               <div>
                                 {calculateDday(todo.dday_date)}
@@ -1416,15 +1422,18 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
               </ListContainer>
             )}
             <AddToDoBtnContainer>
-              <AddToDoBtn onClick={() => {
-                setShowInput(!showInput)
-                setColors([]);
-                setDdayDates(Array(3).fill(null));
-              }}
-                isOpen={showInput}
-              >
-                <AddIcon />
-              </AddToDoBtn>
+              {isEditMode && (
+                <AddToDoBtn onClick={() => {
+                  setShowInput(!showInput)
+                  setColors([]);
+                  setDdayDates(Array(3).fill(null));
+                }}
+                  isOpen={showInput}
+                >
+                  <AddIcon />
+                </AddToDoBtn>
+              )}
+
             </AddToDoBtnContainer>
           </ProgressTodoContainer>
 
@@ -1489,7 +1498,7 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
                   />
                   <InputOptionContainer>
                     <DDayBtn
-                      onClick={() => openDdayModal(index)}  // index를 인자로 전달
+                      onClick={() => openDdayModal(index, ddayDates[index])}  // index를 인자로 전달
                       isDday={isDday[index]}  // 각 항목의 isDday 상태를 전달
                       themeStyles={themeStyles}  // themeStyles 전달
                     >

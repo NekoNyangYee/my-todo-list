@@ -1180,7 +1180,7 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
     resetInputs(selectedTodoContents.length);
     selectedTodoContents.forEach((content, index) => setInputs(index, content));
 
-    setIsEditMode(isEditMode);
+    setIsEditMode(true);
     setShowInput(true);
     setShowDropdown(null);
 
@@ -1421,18 +1421,16 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
               </ListContainer>
             )}
             <AddToDoBtnContainer>
-              {!isEditMode && (
-                <AddToDoBtn onClick={() => {
-                  setShowInput(!showInput)
-                  setColors([]);
-                  setDdayDates(Array(3).fill(null));
-                }}
-                  isOpen={showInput}
-                >
-                  <AddIcon />
-                </AddToDoBtn>
-              )}
-
+              <AddToDoBtn onClick={() => {
+                setShowInput(!showInput)
+                setColors([]);
+                setDdayDates(Array(3).fill(null));
+                setIsEditMode(false);
+              }}
+                isOpen={showInput}
+              >
+                <AddIcon />
+              </AddToDoBtn>
             </AddToDoBtnContainer>
           </ProgressTodoContainer>
 

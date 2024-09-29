@@ -906,7 +906,6 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
       setSelectedTodos(allTodoIds);
     }
     setIsAllSelected(!isAllSelected);
-    setIsEditMode(false);
   };
 
   const saveTodosHandler = async () => {
@@ -1038,7 +1037,7 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
       if (confirm('창을 나가면 입력한 내용이 저장되지 않습니다. 정말 닫으시겠습니까?')) {
         alert('입력한 내용이 저장되지 않았습니다.');
         setTimeout(() => {
-          setIsEditMode(false);
+          setIsEditMode(isEditMode);
         }, 100);
       } else {
         return;
@@ -1181,7 +1180,7 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
     resetInputs(selectedTodoContents.length);
     selectedTodoContents.forEach((content, index) => setInputs(index, content));
 
-    setIsEditMode(true);
+    setIsEditMode(isEditMode);
     setShowInput(true);
     setShowDropdown(null);
 

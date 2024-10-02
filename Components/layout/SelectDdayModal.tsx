@@ -52,13 +52,18 @@ const ModalOverlay = styled.div`
 `;
 
 const ModalContent = styled.div<{ themeStyles: Theme, isOpen: boolean }>`
-   background-color: ${({ themeStyles }) => themeStyles.colors.background};
-   padding: 1rem;
-   border-radius: 12px;
-   width: 50vh; 
-   max-height: 90vh; 
-   overflow: auto;
+  background-color: ${({ themeStyles }) => themeStyles.colors.background};
+  padding: 1rem;
+  border-radius: 12px;
+  max-width: 572px;
+  width: 100%;
+  max-height: 90vh; 
+  overflow: auto;
   animation: ${({ isOpen }) => (isOpen ? fadeInModal : fadeOutModal)} 0.2s;
+
+  @media (max-width: 1224px) {
+    max-width: 80%;
+  }
 `;
 
 const CalendarStyled = styled(Calendar) <{ themeStyles: any }>`
@@ -174,18 +179,43 @@ const ButtonContainer = styled.div`
   align-items: center;
 `;
 
-const Button = styled.button<{ primary?: boolean }>`
-    margin: 10px;
-    padding: 8px 16px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    background-color: ${({ primary }) => (primary ? "#4CAF50" : "#f44336")};
-    color: white;
-    &:hover {
-        background-color: ${({ primary }) => (primary ? "#45a049" : "#d32f2f")};
-    }
+const CancelBtn = styled.button<{ themeStyles: any }>`
+  padding: 12px 1.6rem;
+  background-color: transparent;
+  color: #aeaeae;
+  font-size: 0.8rem;
+  border: none;
+  cursor: pointer;
+  border-radius: 8px;
+  outline: none;
+  transition: background-color 0.2s, color 0.2s;
+  font-weight: bold;
+
+  &:hover {
+    background-color: ${({ themeStyles }) => themeStyles.colors.inputBackground};
+  }
 `;
+
+const SaveTodoBtn = styled.button`
+  padding: 12px 1.6rem;
+  background-color: #0075ff;
+  color: #ffffff;
+  font-size: 0.8rem;
+  border: none;
+  cursor: pointer;
+  border-radius: 8px;
+  outline: none;
+  transition: background-color 0.2s, color 0.2s;
+  font-weight: bold;
+
+  &:hover {
+    background-color: #0055cc;
+  }
+`;
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+dayjs.tz.setDefault("Asia/Seoul");
 
 interface SelectDdayModalProps {
   isOpen: boolean;
@@ -196,31 +226,28 @@ interface SelectDdayModalProps {
   initialDate: Date | null;
 }
 
-const SelectDdayModal: React.FC<SelectDdayModalProps> = ({ isOpen, setSelectDday, closeModal, themeStyles, initialDate }) => {
-  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date()); // 기본값을 오늘 날짜로 설정
-  const [activeStartDate, setActiveStartDate] = useState<Date | undefined>(new Date());
-
+const SelectDdayModal = <T extends SelectDdayModalProps>({ isOpen, setSelectDday, closeModal, themeStyles, initialDate }: T) => {
+  const [value, onChange] = useState<Date>(dayjs().toDate()); // 기본값을 오늘 날짜로 설정
+  const [activeStartDate, setActiveStartDate] = useState<Date | undefined>(initialDate || new Date());
 
   useEffect(() => {
-    setSelectedDate(initialDate);  // 모달을 열 때 초기 날짜를 설정
-    setActiveStartDate(initialDate || undefined);  // 초기 날짜에 포커스 설정
+    onChange(initialDate || dayjs().toDate());  // 모달을 열 때 초기 날짜를 설정
+    setActiveStartDate(initialDate || new Date());  // 초기 날짜에 포커스 설정
   }, [initialDate]);
 
-
-  // 날짜 변경 핸들러
-  const handleDateChange = (value: Date | Date[] | null) => {
-    if (value && !Array.isArray(value)) {
-      setSelectedDate(value); // 단일 날짜일 경우 상태 업데이트
-      setActiveStartDate(value);
-    }
+  // 날짜 클릭 핸들러
+  const handleDateClick = (value: Date | Date[]) => {
+    onChange(value as Date); // 날짜 변경 시 value 업데이트
+    setActiveStartDate(value as Date);
   };
 
   // 저장 버튼 클릭 시
   const handleDdaySave = async () => {
-    if (selectedDate) {
-      const formattedDate = dayjs(selectedDate).format('YYYY-MM-DD');
-      setSelectDday(selectedDate);
-      console.log('저장할 날짜:', formattedDate);
+    if (value) {
+      // 한국 시간으로 맞춰 저장
+      const formattedDate = dayjs(value).tz("Asia/Seoul").format('YYYY-MM-DD'); // 한국 시간으로 날짜 저장
+      setSelectDday(value);
+      console.log('저장할 날짜 (한국 시간):', formattedDate);
       closeModal();
     }
   };
@@ -232,16 +259,19 @@ const SelectDdayModal: React.FC<SelectDdayModalProps> = ({ isOpen, setSelectDday
       <ModalContent themeStyles={themeStyles} isOpen={isOpen}>
         <h2>디데이 날짜 선택</h2>
         <CalendarStyled
-          onClickDay={handleDateChange}
-          value={selectedDate}
-          selectRange={false}
-          formatDay={(locale, date) => dayjs(date).format("DD")}
-          themeStyles={themeStyles}
-          activeStartDate={activeStartDate}
+          onClickDay={handleDateClick}  // 날짜 클릭 시 핸들러 호출
+          value={value}  // 선택된 날짜 표시
+          formatDay={(locale, date) => moment(date).format("DD")}  // 날짜 포맷 설정
+          themeStyles={themeStyles}  // 테마 스타일 적용
         />
+        <p>{value ? value.toLocaleDateString("ko-KR", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        }) : "선택한 날짜에 오류가 있어요."}</p>
         <ButtonContainer>
-          <Button onClick={closeModal}>취소</Button>
-          <Button primary onClick={handleDdaySave}>선택</Button>
+          <CancelBtn onClick={closeModal} themeStyles={themeStyles}>취소</CancelBtn>
+          <SaveTodoBtn onClick={handleDdaySave}>선택</SaveTodoBtn>
         </ButtonContainer>
       </ModalContent>
     </ModalOverlay>

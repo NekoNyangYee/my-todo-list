@@ -935,7 +935,7 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
               setDdayResult(result);
 
               // 수정된 todo의 날짜를 새로운 D-Day 날짜로 이동
-              await updateTodoDate(user.id, todoId, ddayDate);  // 날짜 업데이트 함수 호출
+              await updateTodoDate(user.id, todoId, ddayDate.toISOString());  // 날짜 업데이트 함수 호출
               await fetchTodosForDate(user.id, ddayDate, setTodos);  // 새로운 날짜로 할 일 목록 갱신
               setTargetDate(ddayDate);
             }
@@ -956,6 +956,10 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
         const ddayDatesArray = inputs.map((_, index) => ddayDates[index] || null);  // 각 항목의 D-Day 날짜 배열 생성
         const isDdayArray = ddayDatesArray.map(ddayDate => ddayDate ? true : false);  // D-Day 여부 배열
 
+        const formattedDdayDates = ddayDatesArray.map(date =>
+          date ? dayjs(date).tz("Asia/Seoul").format('YYYY-MM-DD') : null
+        );
+
         // 한 번의 saveTodos 호출로 모든 할 일 저장
         const lastTodoId = await saveTodos(
           user.id,
@@ -970,18 +974,14 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
         );
 
         // 첫 번째 항목의 D-Day 처리 (필요에 따라 수정 가능)
-        const firstDdayDate = ddayDatesArray[0];  // 첫 번째 할 일의 D-Day 날짜
-        if (firstDdayDate && lastTodoId) {
-          await saveDday(lastTodoId, firstDdayDate);  // D-Day 저장
-          await handleDdayCalculation(lastTodoId);  // D-Day 계산 및 처리
-
-          const ddayString = firstDdayDate.toISOString().split('T')[0];
+        if (formattedDdayDates[0] && lastTodoId) {
+          await saveDday(lastTodoId, dayjs(formattedDdayDates[0]).toDate());
+          const ddayString = formattedDdayDates[0];
           setDdayResult(await calculateDday(ddayString));
 
-          // 새로 추가된 todo도 선택된 D-Day 날짜로 이동
-          await updateTodoDate(user.id, lastTodoId, firstDdayDate);  // 날짜 업데이트 함수 호출
-          await fetchTodosForDate(user.id, firstDdayDate, setTodos);  // D-Day 날짜로 할 일 목록 갱신
-          setTargetDate(firstDdayDate);  // D-Day 날짜로 이동
+          await updateTodoDate(user.id, lastTodoId, formattedDdayDates[0]);
+          await fetchTodosForDate(user.id, dayjs(formattedDdayDates[0]).toDate(), setTodos);
+          setTargetDate(dayjs(formattedDdayDates[0]).toDate());
         }
         setAnimateOut(true);
         setTimeout(() => {
@@ -1233,25 +1233,30 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
   };
 
   const openDdayModal = (index: number, selectedDate: Date | null) => {
-    setSelectedInputIndex(index);  // 선택된 인덱스를 상태로 저장
-    setSelectDday(true);  // D-Day 선택 모달 열기
-    setSelectedDdayDate(selectedDate);
+    if (inputs[index] === '') {
+      alert('할 일을 먼저 입력해야 D-Day 설정이 가능해요.');
+      return;
+    } else {
+      setSelectedInputIndex(index);  // 선택된 인덱스를 상태로 저장
+      setSelectDday(true);  // D-Day 선택 모달 열기
+      setSelectedDdayDate(selectedDate);
+    }
   };
   const todoId = user ? user.id : 'defaultTodoId';
 
   const handleDdaySelect = (index: number, date: Date | null) => {
     setDdayDates(prevDdayDates => {
-      if (!prevDdayDates || !Array.isArray(prevDdayDates)) {
-        return [];  // ddayDates가 초기화되지 않았으면 빈 배열 반환
-      }
-
       const newDdayDates = [...prevDdayDates];
-      newDdayDates[index] = date;  // 새로운 날짜를 설정
+      newDdayDates[index] = date;  // 선택된 날짜를 설정
       return newDdayDates;
     });
+
+    if (date) {
+      const ddayString = date.toISOString().split('T')[0];
+      const ddayResult = calculateDday(ddayString);  // D-Day 계산 결과 저장
+      setDdayResult(ddayResult);
+    }
   };
-
-
 
   const formatSelectedDate = (index: number) => {
     const date = ddayDates[index];
@@ -1531,11 +1536,11 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
       />
       <SelectDdayModal
         isOpen={selectDday}
-        setSelectDday={(date: Date | null) => handleDdaySelect(selectedInputIndex!, date)}  // 선택된 인덱스를 미리 처리
+        setSelectDday={(date: Date | null) => handleDdaySelect(selectedInputIndex!, date)}  // 선택된 인덱스에 따라 D-Day 업데이트
         closeModal={() => setSelectDday(false)}
         themeStyles={themeStyles}
         todoId={todoId}
-        initialDate={selectedDdayDate || new Date()}
+        initialDate={selectedDdayDate || new Date()}  // 선택된 날짜 또는 오늘 날짜로 초기화
       />
     </>
   );

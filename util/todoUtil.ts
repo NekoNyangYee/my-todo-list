@@ -301,12 +301,11 @@ export const updateTodoColor = async <T extends Todo>(userId: string, todoId: st
 };
 
 export const saveDday = async (todoId: string, selectedDate: Date) => {
-    const formattedDate = selectedDate.toISOString().split('T')[0];
-
+    const formattedDate = dayjs(selectedDate).tz("Asia/Seoul").format('YYYY-MM-DD');
     try {
         const { data, error } = await supabase
             .from('todos')
-            .update({ dday_date: formattedDate, is_dday: true, date: formattedDate }) // date도 디데이 날짜로 업데이트
+            .update({ dday_date: formattedDate, is_dday: true, date: formattedDate })
             .eq('id', todoId);
 
         if (error) {
@@ -374,13 +373,13 @@ export const getLastInsertedTodoId = async (userId: string) => {
     return data[0].id;
 };
 
-export const updateTodoDate = async (userId: string, todoId: string, newDate: Date) => {
+export const updateTodoDate = async (userId: string, todoId: string, newDate: string) => {
     try {
         const { error } = await supabase
-            .from('todos')  // 'todos' 테이블에서
-            .update({ date: newDate.toISOString().split('T')[0] })  // 새로운 날짜로 업데이트
-            .eq('user_id', userId)  // 해당 사용자의
-            .eq('id', todoId);  // 해당 할 일 ID에 맞는 항목을 찾아 업데이트
+            .from('todos')
+            .update({ date: newDate })
+            .eq('user_id', userId)
+            .eq('id', todoId);
 
         if (error) {
             console.error('Error updating todo date:', error);

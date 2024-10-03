@@ -973,7 +973,7 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
 
     const { data, error } = await supabase
       .from('todos')
-      .update({ date: koreanTodayString })
+      .update({ date: koreanTodayString, is_dday: false, dday_date: null })
       .eq('id', todoId);
 
     if (error) {

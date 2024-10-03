@@ -129,7 +129,7 @@ export const updateTodo = async (
     selectedDate: Date
 ) => {
     // ddayDate가 Date 객체인지 확인 후 처리
-    const formattedDdayDate = ddayDate instanceof Date ? ddayDate.toISOString().split('T')[0] : null;
+    const formattedDdayDate = ddayDate ? dayjs(ddayDate).tz("Asia/Seoul").format('YYYY-MM-DD') : null;  // 한국 시간으로 변환
 
     const { data, error } = await supabase
         .from('todos')

@@ -244,10 +244,8 @@ const SelectDdayModal = <T extends SelectDdayModalProps>({ isOpen, setSelectDday
   // 저장 버튼 클릭 시
   const handleDdaySave = async () => {
     if (value) {
-      // 한국 시간으로 맞춰 저장
       const formattedDate = dayjs(value).tz("Asia/Seoul").format('YYYY-MM-DD'); // 한국 시간으로 날짜 저장
       setSelectDday(value);
-      console.log('저장할 날짜 (한국 시간):', formattedDate);
       closeModal();
     }
   };

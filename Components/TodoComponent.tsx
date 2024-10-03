@@ -915,7 +915,7 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
         await Promise.all(
           selectedTodos.map(async (todoId, index) => {
             const ddayDate = ddayDates[index] || null;
-            const isDday = ddayDate ? true : false;
+            const isDday = !!ddayDate;
 
             await updateTodo(
               user.id,
@@ -930,12 +930,12 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
 
             if (ddayDate) {
               // D-Day 계산 및 상태 업데이트
-              const ddayString = ddayDate.toISOString().split('T')[0];
+              const ddayString = dayjs(ddayDate).tz("Asia/Seoul").format('YYYY-MM-DD'); // 한국 시간으로 변환
               const result = calculateDday(ddayString);
               setDdayResult(result);
 
               // 수정된 todo의 날짜를 새로운 D-Day 날짜로 이동
-              await updateTodoDate(user.id, todoId, ddayDate.toISOString());  // 날짜 업데이트 함수 호출
+              await updateTodoDate(user.id, todoId, ddayString);  // 한국 시간으로 저장
               await fetchTodosForDate(user.id, ddayDate, setTodos);  // 새로운 날짜로 할 일 목록 갱신
               setTargetDate(ddayDate);
             }
@@ -954,7 +954,7 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
       } else {
         // 새로운 할 일을 저장할 때
         const ddayDatesArray = inputs.map((_, index) => ddayDates[index] || null);  // 각 항목의 D-Day 날짜 배열 생성
-        const isDdayArray = ddayDatesArray.map(ddayDate => ddayDate ? true : false);  // D-Day 여부 배열
+        const isDdayArray = ddayDatesArray.map(ddayDate => !!ddayDate);  // D-Day 여부 배열
 
         const formattedDdayDates = ddayDatesArray.map(date =>
           date ? dayjs(date).tz("Asia/Seoul").format('YYYY-MM-DD') : null
@@ -975,13 +975,14 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
 
         // 첫 번째 항목의 D-Day 처리 (필요에 따라 수정 가능)
         if (formattedDdayDates[0] && lastTodoId) {
-          await saveDday(lastTodoId, dayjs(formattedDdayDates[0]).toDate());
+          const firstDdayDate = dayjs(formattedDdayDates[0]).tz("Asia/Seoul").toDate();  // 한국 시간으로 변환
+          await saveDday(lastTodoId, firstDdayDate);  // 한국 시간으로 저장
           const ddayString = formattedDdayDates[0];
           setDdayResult(await calculateDday(ddayString));
 
-          await updateTodoDate(user.id, lastTodoId, formattedDdayDates[0]);
-          await fetchTodosForDate(user.id, dayjs(formattedDdayDates[0]).toDate(), setTodos);
-          setTargetDate(dayjs(formattedDdayDates[0]).toDate());
+          await updateTodoDate(user.id, lastTodoId, ddayString);  // 한국 시간으로 저장
+          await fetchTodosForDate(user.id, firstDdayDate, setTodos);
+          setTargetDate(firstDdayDate);
         }
         setAnimateOut(true);
         setTimeout(() => {
@@ -997,7 +998,6 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
       await fetchDdayTodos(user.id, setDdayTodos);  // D-Day 목록 갱신
     }
   };
-
 
   const handleKeyPress = (index: number, event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
@@ -1260,24 +1260,13 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
 
   const formatSelectedDate = (index: number) => {
     const date = ddayDates[index];
+    console.log('선택된 날짜:', date);
     if (!date) return '디데이 선택'; // 이 부분이 null 값을 처리
     return date.toLocaleDateString('ko-KR', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
     });
-  };
-
-
-  const handleDdayCalculation = async (todoId: string) => {
-    const ddayString = await fetchDdayDate(todoId); // D-Day 날짜 조회
-
-    if (ddayString) {
-      const ddayResult = calculateDday(ddayString); // D-Day 계산
-      console.log('계산된 D-Day:', ddayResult); // 계산된 D-Day 결과 출력
-    } else {
-      console.log('D-Day 정보가 없습니다.');
-    }
   };
 
   return (

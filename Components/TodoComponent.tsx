@@ -929,7 +929,7 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
 
             if (ddayDate) {
               // D-Day 계산 및 상태 업데이트
-              const ddayString = ddayDate.toISOString().split('T')[0];
+              const ddayString = dayjs(ddayDate).tz().format('YYYY-MM-DD');
               const result = calculateDday(ddayString);
               setDdayResult(result);
 
@@ -971,7 +971,7 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
               );
 
               if (ddayDate && todoId) {
-                const ddayString = ddayDate.toISOString().split('T')[0];
+                const ddayString = dayjs(ddayDate).tz().format('YYYY-MM-DD');
                 await saveDday(todoId, ddayDate);
                 const result = calculateDday(ddayString);
                 setDdayResult(result);
@@ -1255,7 +1255,7 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
     });
 
     if (date) {
-      const ddayString = date.toISOString().split('T')[0];
+      const ddayString = dayjs(date).tz().format('YYYY-MM-DD');
       const ddayResult = calculateDday(ddayString);  // D-Day 계산 후 업데이트
       setDdayResult(ddayResult);
     }

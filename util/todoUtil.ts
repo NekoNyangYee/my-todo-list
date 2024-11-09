@@ -38,10 +38,8 @@ export const fetchTodosForDate = async <T extends Todo>(
     date: Date,
     setTodos: (todos: Array<T>) => void
 ): Promise<void> => {
-    // 한국 시간으로 변환하여 날짜를 문자열로 변환
-    const koreanDateString = new Date(date.getTime() + (9 * 60 * 60 * 1000)).toISOString().split('T')[0];
+    const koreanDateString = dayjs(date).tz().format('YYYY-MM-DD');
 
-    // supabase에서 데이터를 가져오는 부분
     const { data, error } = await supabase
         .from('todos')
         .select('*')
@@ -51,11 +49,9 @@ export const fetchTodosForDate = async <T extends Todo>(
     if (error) {
         console.error('Error fetching todos:', error);
     } else {
-        // 데이터를 Array<T>로 캐스팅하여 setTodos에 전달
         setTodos(data as Array<T>);
     }
 };
-
 
 export const archiveTodos = async <T extends Todo>(userId: string, setTodos: (todos: Array<T>) => void, setUncompletedTodos: (todos: Array<T>) => void): Promise<void> => {
     const { data: todos, error: fetchError } = await supabase
@@ -124,20 +120,19 @@ export const updateTodo = async (
     content: string,
     isDday: boolean,
     color: string,
-    ddayDate: Date | null,  // 선택된 D-Day 날짜
-    setTodos: (todos: Todo[]) => void,  // Todo[] 타입을 받는 함수
+    ddayDate: Date | null,
+    setTodos: (todos: Todo[]) => void,
     selectedDate: Date
 ) => {
-    // ddayDate가 Date 객체인지 확인 후 처리
-    const formattedDdayDate = ddayDate ? dayjs(ddayDate).tz("Asia/Seoul").format('YYYY-MM-DD') : null;  // 한국 시간으로 변환
+    const formattedDdayDate = ddayDate ? dayjs(ddayDate).tz().format('YYYY-MM-DD') : null;
 
     const { data, error } = await supabase
         .from('todos')
         .update({
-            content: content,
-            is_dday: isDday,  // is_dday 업데이트
+            content,
+            is_dday: isDday,
             text_color: color,
-            dday_date: formattedDdayDate  // dday_date 업데이트
+            dday_date: formattedDdayDate,
         })
         .eq('id', todoId)
         .eq('user_id', userId);
@@ -145,7 +140,7 @@ export const updateTodo = async (
     if (error) {
         console.error('할 일 업데이트 중 오류 발생:', error);
     } else {
-        await fetchTodosForDate(userId, selectedDate, setTodos);  // setTodos 호출
+        await fetchTodosForDate(userId, selectedDate, setTodos);
     }
 };
 
@@ -182,7 +177,7 @@ export const saveTodos = async <T extends Todo>(
     inputs: string[],
     isDday: boolean[],
     colors: string[],
-    ddayDates: (Date | null)[],  // 추가: ddayDates를 매개변수로 받음
+    ddayDates: (Date | null)[],
     setTodos: (todos: Array<T>) => void,
     resetInputs: () => void,
     setAnimateOut: (animate: boolean) => void,
@@ -193,7 +188,7 @@ export const saveTodos = async <T extends Todo>(
     const nonEmptyInputs = inputs.filter(input => input.trim() !== '');
     const filteredIsDday = isDday.filter((_, index) => inputs[index].trim() !== '');
     const filteredColors = colors.filter((_, index) => inputs[index].trim() !== '');
-    const filteredDdayDates = ddayDates.filter((_, index) => inputs[index].trim() !== '');  // ddayDates 필터링
+    const filteredDdayDates = ddayDates.filter((_, index) => inputs[index].trim() !== '');
 
     if (nonEmptyInputs.length === 0) {
         alert('할 일을 입력해주세요.');
@@ -202,9 +197,7 @@ export const saveTodos = async <T extends Todo>(
         alert('저장되었습니다.');
     }
 
-    const dateString = new Date(selectedDate.getTime() - selectedDate.getTimezoneOffset() * 60000)
-        .toISOString()
-        .split('T')[0];
+    const dateString = dayjs(selectedDate).tz().format('YYYY-MM-DD');
 
     const { data: existingTodos } = await supabase
         .from('todos')
@@ -222,9 +215,9 @@ export const saveTodos = async <T extends Todo>(
             is_priority: false,
             is_dday: filteredIsDday[index],
             text_color: filteredColors[index],
-            created_at: new Date().toISOString(),
+            created_at: dayjs().tz().format(),
             date: dateString,
-            dday_date: filteredDdayDates[index] ? dayjs(filteredDdayDates[index]).format('YYYY-MM-DD') : null,  // dday_date 저장
+            dday_date: filteredDdayDates[index] ? dayjs(filteredDdayDates[index]).tz().format('YYYY-MM-DD') : null,
         })))
         .select('id');
 
@@ -236,7 +229,6 @@ export const saveTodos = async <T extends Todo>(
     const lastTodoId = data?.[0]?.id || null;
     return lastTodoId;
 };
-
 
 export const fetchAndMoveUncompletedTodos = async <T extends Todo>(userId: string, setUncompletedTodos: (todos: Array<T>) => void): Promise<void> => {
     const { data: uncompletedTodos, error } = await supabase

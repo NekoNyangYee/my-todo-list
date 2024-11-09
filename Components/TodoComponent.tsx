@@ -517,8 +517,7 @@ const DotMenuBtn = styled.button<{ isDropDownOpen: boolean, themeStyles: any }>`
 
 const DropdownMenu = styled.div<{ isDropDownOpen: boolean, themeStyles: any, index: number }>`
   position: absolute;
-  top: ${({ index }) => (index >= 2 ? 'auto' : '100%')};
-  bottom: ${({ index }) => (index > 2 ? '110%' : 'auto')};
+  top: 100%;
   right: 0;
   background: ${({ themeStyles }) => themeStyles.colors.containerBackground};
   border: 1px solid ${({ themeStyles }) => themeStyles.colors.inputBorder};
@@ -930,13 +929,13 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
 
             if (ddayDate) {
               // D-Day 계산 및 상태 업데이트
-              const ddayString = dayjs(ddayDate).tz("Asia/Seoul").format('YYYY-MM-DD'); // 한국 시간으로 변환
+              const ddayString = ddayDate.toISOString().split('T')[0];
               const result = calculateDday(ddayString);
               setDdayResult(result);
 
               // 수정된 todo의 날짜를 새로운 D-Day 날짜로 이동
-              await updateTodoDate(user.id, todoId, ddayString);  // 한국 시간으로 저장
-              await fetchTodosForDate(user.id, ddayDate, setTodos);  // 새로운 날짜로 할 일 목록 갱신
+              await updateTodoDate(user.id, todoId, ddayString);
+              await fetchTodosForDate(user.id, ddayDate, setTodos);
               setTargetDate(ddayDate);
             }
           })
@@ -953,51 +952,53 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
         }, 100);
       } else {
         // 새로운 할 일을 저장할 때
-        const ddayDatesArray = inputs.map((_, index) => ddayDates[index] || null);  // 각 항목의 D-Day 날짜 배열 생성
-        const isDdayArray = ddayDatesArray.map(ddayDate => !!ddayDate);  // D-Day 여부 배열
+        await Promise.all(
+          inputs.map(async (input, index) => {
+            if (input.trim() !== '') {
+              const ddayDate = ddayDates[index] || null;
+              const isDday = !!ddayDate;
+              const todoId = await saveTodos(
+                user.id,
+                [input],
+                [isDday],
+                [colors[index]],
+                [ddayDate],
+                setTodos,
+                resetInputs,
+                setAnimateOut,
+                setShowInput,
+                selectedDate
+              );
 
-        const formattedDdayDates = ddayDatesArray.map(date =>
-          date ? dayjs(date).tz("Asia/Seoul").format('YYYY-MM-DD') : null
+              if (ddayDate && todoId) {
+                const ddayString = ddayDate.toISOString().split('T')[0];
+                await saveDday(todoId, ddayDate);
+                const result = calculateDday(ddayString);
+                setDdayResult(result);
+
+                await updateTodoDate(user.id, todoId, ddayString);
+                await fetchTodosForDate(user.id, ddayDate, setTodos);
+                setTargetDate(ddayDate);
+              }
+            }
+          })
         );
 
-        // 한 번의 saveTodos 호출로 모든 할 일 저장
-        const lastTodoId = await saveTodos(
-          user.id,
-          inputs,
-          isDdayArray,  // D-Day 여부 배열
-          colors,
-          setTodos,
-          resetInputs,
-          setAnimateOut,
-          setShowInput,
-          selectedDate
-        );
-
-        // 첫 번째 항목의 D-Day 처리 (필요에 따라 수정 가능)
-        if (formattedDdayDates[0] && lastTodoId) {
-          const firstDdayDate = dayjs(formattedDdayDates[0]).tz("Asia/Seoul").toDate();  // 한국 시간으로 변환
-          await saveDday(lastTodoId, firstDdayDate);  // 한국 시간으로 저장
-          const ddayString = formattedDdayDates[0];
-          setDdayResult(await calculateDday(ddayString));
-
-          await updateTodoDate(user.id, lastTodoId, ddayString);  // 한국 시간으로 저장
-          await fetchTodosForDate(user.id, firstDdayDate, setTodos);
-          setTargetDate(firstDdayDate);
-        }
         setAnimateOut(true);
         setTimeout(() => {
-          setShowInput(false);  // 모달 닫기
+          setShowInput(false); // 모달 닫기
           resetInputs();
           setAnimateOut(false);
         }, 100);
         localStorage.setItem('todoColors', JSON.stringify(colors));
       }
 
-      setColors([]);  // 색상 초기화
-      await fetchTodosForDate(user.id, selectedDate, setTodos);  // 현재 날짜에 맞는 할 일 목록 갱신
-      await fetchDdayTodos(user.id, setDdayTodos);  // D-Day 목록 갱신
+      setColors([]); // 색상 초기화
+      await fetchTodosForDate(user.id, selectedDate, setTodos); // 현재 날짜에 맞는 할 일 목록 갱신
+      await fetchDdayTodos(user.id, setDdayTodos); // D-Day 목록 갱신
     }
   };
+
 
   const handleKeyPress = (index: number, event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
@@ -1245,22 +1246,23 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
   const todoId = user ? user.id : 'defaultTodoId';
 
   const handleDdaySelect = (index: number, date: Date | null) => {
-    setDdayDates(prevDdayDates => {
+    console.log(`handleDdaySelect 호출 - index: ${index}, date: ${date}`);
+    setDdayDates((prevDdayDates) => {
       const newDdayDates = [...prevDdayDates];
-      newDdayDates[index] = date;  // 선택된 날짜를 설정
+      newDdayDates[index] = date;  // 인덱스에 맞는 날짜 업데이트
+      console.log('업데이트된 ddayDates:', newDdayDates);
       return newDdayDates;
     });
 
     if (date) {
       const ddayString = date.toISOString().split('T')[0];
-      const ddayResult = calculateDday(ddayString);  // D-Day 계산 결과 저장
+      const ddayResult = calculateDday(ddayString);  // D-Day 계산 후 업데이트
       setDdayResult(ddayResult);
     }
   };
 
   const formatSelectedDate = (index: number) => {
     const date = ddayDates[index];
-    console.log('선택된 날짜:', date);
     if (!date) return '디데이 선택'; // 이 부분이 null 값을 처리
     return date.toLocaleDateString('ko-KR', {
       year: 'numeric',
@@ -1489,13 +1491,12 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
                   />
                   <InputOptionContainer>
                     <DDayBtn
-                      onClick={() => openDdayModal(index, ddayDates[index])}  // index를 인자로 전달
-                      isDday={isDday[index]}  // 각 항목의 isDday 상태를 전달
-                      themeStyles={themeStyles}  // themeStyles 전달
+                      onClick={() => openDdayModal(index, ddayDates[index])}
+                      isDday={isDday[index]}
+                      themeStyles={themeStyles}
                     >
-                      {formatSelectedDate(index)}  {/* 각 인덱스에 맞는 디데이 날짜를 표시 */}
+                      {formatSelectedDate(index)}
                     </DDayBtn>
-
                     <SelectColorBtn onClick={() => openColorModal(index)} themeStyles={themeStyles}>
                       <ColorOptionIcon color={colors[index]} themeStyles={themeStyles} />
                       색상 설정

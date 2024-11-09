@@ -182,19 +182,22 @@ export const saveTodos = async <T extends Todo>(
     inputs: string[],
     isDday: boolean[],
     colors: string[],
+    ddayDates: (Date | null)[],  // 추가: ddayDates를 매개변수로 받음
     setTodos: (todos: Array<T>) => void,
     resetInputs: () => void,
     setAnimateOut: (animate: boolean) => void,
     setShowInput: (show: boolean) => void,
     selectedDate: Date
-): Promise<string | null> => {  // ID 반환을 위해 반환 타입을 string으로 설정
+): Promise<string | null> => {
+    // 내용이 있는 인풋만 필터링
     const nonEmptyInputs = inputs.filter(input => input.trim() !== '');
     const filteredIsDday = isDday.filter((_, index) => inputs[index].trim() !== '');
     const filteredColors = colors.filter((_, index) => inputs[index].trim() !== '');
+    const filteredDdayDates = ddayDates.filter((_, index) => inputs[index].trim() !== '');  // ddayDates 필터링
 
     if (nonEmptyInputs.length === 0) {
         alert('할 일을 입력해주세요.');
-        return null;  // 할 일이 없으면 null 반환
+        return null;
     } else {
         alert('저장되었습니다.');
     }
@@ -205,7 +208,7 @@ export const saveTodos = async <T extends Todo>(
 
     const { data: existingTodos } = await supabase
         .from('todos')
-        .select('id')  // 반환 타입을 명시적으로 설정
+        .select('id')
         .eq('user_id', userId);
 
     const currentOrder = existingTodos ? existingTodos.length : 0;
@@ -221,17 +224,16 @@ export const saveTodos = async <T extends Todo>(
             text_color: filteredColors[index],
             created_at: new Date().toISOString(),
             date: dateString,
-            original_order: currentOrder + index,
+            dday_date: filteredDdayDates[index] ? dayjs(filteredDdayDates[index]).format('YYYY-MM-DD') : null,  // dday_date 저장
         })))
-        .select('id');  // 'id' 필드만 선택
+        .select('id');
 
     if (error) {
         console.error('Error saving todos:', error);
         return null;
     }
 
-    // 마지막으로 추가된 할 일의 ID만 반환 (객체에서 id 값 추출)
-    const lastTodoId = data?.[0]?.id || null;  // ID 반환 또는 null 반환
+    const lastTodoId = data?.[0]?.id || null;
     return lastTodoId;
 };
 
@@ -302,6 +304,7 @@ export const updateTodoColor = async <T extends Todo>(userId: string, todoId: st
 
 export const saveDday = async (todoId: string, selectedDate: Date) => {
     const formattedDate = dayjs(selectedDate).tz("Asia/Seoul").format('YYYY-MM-DD');
+    console.log('저장할 D-Day 날짜:', formattedDate); // 로그 추가
     try {
         const { data, error } = await supabase
             .from('todos')
@@ -343,8 +346,11 @@ export const calculateDday = (ddayString: string): string => {
         return 'D-Day 정보 없음';
     }
 
-    const ddayDate = dayjs(ddayString, 'YYYY-MM-DD');
-    const today = dayjs();
+    console.log('D-Day 계산을 위한 선택한 날짜:', ddayString);
+    console.log('D-Day 계산을 위한 오늘 날짜:', dayjs().format('YYYY-MM-DD')); // 현재 날짜 출력
+
+    const ddayDate = dayjs(ddayString, 'YYYY-MM-DD').startOf('day');
+    const today = dayjs().startOf('day'); // 오늘 날짜도 'day' 기준으로 비교
 
     const differenceInDays = ddayDate.diff(today, 'day');
 

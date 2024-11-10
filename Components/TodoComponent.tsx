@@ -909,6 +909,12 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
 
   const saveTodosHandler = async () => {
     if (user) {
+      // 입력칸이 비어있으면 수정 못하게 하기
+      if (isEditMode && inputs.every(input => input.trim() === '')) {
+        alert('내용을 입력해주세요.');
+        return; // 저장 로직 중단
+      }
+
       if (isEditMode) {
         // 수정 모드일 때
         await Promise.all(
@@ -1156,14 +1162,14 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
     }
   };
 
-  const handleEditTodo = (todoId?: string) => {
-    let selectedTodo;
+  const handleEditTodo = (todoId: string | undefined) => {
+    let selectedTodo: Todo[];
 
     if (todoId) {
-      selectedTodo = todos.filter(todo => todo.id === todoId && !todo.is_complete);
+      selectedTodo = todos.filter((todo: Todo) => todo.id === todoId && !todo.is_complete);
       setSelectedTodos([todoId]);
     } else {
-      selectedTodo = todos.filter(todo => selectedTodos.includes(todo.id) && !todo.is_complete);
+      selectedTodo = todos.filter((todo: Todo) => selectedTodos.includes(todo.id) && !todo.is_complete);
     }
 
     if (selectedTodo.length === 0) {
@@ -1171,11 +1177,16 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
       return;
     }
 
-    selectedTodo.sort((a, b) => a.original_order - b.original_order);
+    selectedTodo.sort((a: Todo, b: Todo) => a.original_order - b.original_order);
 
-    const selectedTodoContents = selectedTodo.map(todo => todo.content);
-    const selectedTodoDdays = selectedTodo.map(todo => todo.is_dday);
-    const selectedTodoColors = selectedTodo.map(todo => todo.text_color); // 수정할 때 선택된 투두의 색상 가져오기
+    const selectedTodoContents: string[] = selectedTodo.map((todo: Todo) => todo.content);
+    const selectedTodoDdays: boolean[] = selectedTodo.map((todo: Todo) => todo.is_dday);
+    const selectedTodoColors: string[] = selectedTodo.map((todo: Todo) => todo.text_color || ''); // null 값을 빈 문자열로 처리
+
+    // 선택된 일정의 dday_date를 가져오기, 문자열을 Date 객체로 변환
+    const selectedTodoDates: (Date | null)[] = selectedTodo.map((todo: Todo) =>
+      todo.dday_date ? new Date(todo.dday_date) : null
+    );
 
     // 선택된 일정의 개수에 맞게 inputs 배열 설정
     resetInputs(selectedTodoContents.length);
@@ -1185,10 +1196,13 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
     setShowInput(true);
     setShowDropdown(null);
 
-    // setIsDday와 colors를 inputs와 함께 설정
+    // setIsDday, colors, ddayDates를 설정
     setTimeout(() => {
       setIsDday(selectedTodoDdays);
-      setColors(selectedTodoColors); // 선택된 투두의 색상 설정
+      setColors(selectedTodoColors);
+      if (selectedTodoDates.length > 0) {
+        setDdayDates(selectedTodoDates);
+      }
     }, 0);
   };
 
@@ -1298,7 +1312,7 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
                       <CompletedBtn onClick={completeSelectedTodos} disabled={selectedTodos.length === 0} themeStyles={themeStyles}>
                         <CheckDdayIcon />
                       </CompletedBtn>
-                      <EditUpdateBtn onClick={() => handleEditTodo()} disabled={selectedTodos.length === 0} themeStyles={themeStyles}>
+                      <EditUpdateBtn onClick={() => handleEditTodo(undefined)} disabled={selectedTodos.length === 0} themeStyles={themeStyles}>
                         <EditIcon />
                       </EditUpdateBtn>
                       <EditDeleteBtn onClick={deleteSelectedTodosHandler} disabled={selectedTodos.length === 0} themeStyles={themeStyles}>

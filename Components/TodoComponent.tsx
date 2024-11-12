@@ -1111,23 +1111,6 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
     }
   }, [user]);
 
-  const handleDdayChange = (index: number) => {
-    setIsDday(prevIsDday => {
-      const newIsDday = [...prevIsDday];
-      newIsDday[index] = !newIsDday[index];
-      return newIsDday;
-    });
-
-    if (inputs[index] === '') {
-      alert('할 일을 먼저 입력해야 디데이 설정이 가능해요.');
-      setIsDday(prevIsDday => {
-        const newIsDday = [...prevIsDday];
-        newIsDday[index] = false;
-        return newIsDday;
-      });
-    }
-  };
-
   useEffect(() => {
     inputs.forEach((input, index) => {
       if (input === '' && isDday[index]) {

@@ -296,7 +296,6 @@ export const updateTodoColor = async <T extends Todo>(userId: string, todoId: st
 
 export const saveDday = async (todoId: string, selectedDate: Date) => {
     const formattedDate = dayjs(selectedDate).tz("Asia/Seoul").format('YYYY-MM-DD');
-    console.log('저장할 D-Day 날짜:', formattedDate); // 로그 추가
     try {
         const { data, error } = await supabase
             .from('todos')
@@ -308,7 +307,6 @@ export const saveDday = async (todoId: string, selectedDate: Date) => {
             return { success: false, error };
         }
 
-        console.log('D-Day 날짜가 성공적으로 저장되었습니다:', data);
         return { success: true, data };
     } catch (error) {
         console.error('D-Day 날짜 저장 중 오류 발생:', error);

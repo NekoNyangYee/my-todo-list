@@ -1235,10 +1235,14 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
       console.error('선택한 일정이 없습니다.');
       return;
     }
-
-    setSelectedInputIndex(index);  // 선택된 인덱스를 상태로 저장
-    setSelectedDdayDate(selectedDate || null); // 선택된 날짜
-    setSelectDday(true);  // D-Day 모달 열기
+    if (inputs[index] === '') {
+      alert('할 일을 먼저 입력해야 D-Day 설정이 가능해요.');
+      return;
+    } else {
+      setSelectedInputIndex(index);  // 선택된 인덱스를 상태로 저장
+      setSelectedDdayDate(selectedDate || null); // 선택된 날짜
+      setSelectDday(true);  // D-Day 모달 열기
+    }
   };
 
 

@@ -308,9 +308,13 @@ const SelectDdayModal = <T extends SelectDdayModalProps>({
   // 모달 열릴 때 초기화
   useEffect(() => {
     if (isOpen && todoId) {
-      fetchDdayStatus();
+      fetchDdayStatus(); // D-Day 상태 초기화
+    } else if (!isOpen) {
+      setDdayOption(false); // 상태 초기화
+      onChange(initialDate || null); // 날짜 초기화
     }
   }, [isOpen, todoId]);
+
 
   // 모달 닫힐 때 상태 초기화
   useEffect(() => {
@@ -334,7 +338,8 @@ const SelectDdayModal = <T extends SelectDdayModalProps>({
 
   const handleDdaySave = async () => {
     if (value) {
-      setSelectDday(value); // 선택된 날짜 부모로 전달
+      await updateDdayStatus(ddayOption); // D-Day 상태 업데이트
+      setSelectDday(value); // 선택된 날짜를 부모로 전달
       closeModal();
     }
   };

@@ -1238,21 +1238,16 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
   };
 
   const openDdayModal = (index: number, selectedDate: Date | null) => {
-    const todo = todos[index]; // 해당 투두 가져오기
-    if (!todo) {
-      console.error('선택한 일정이 없습니다.');
-      return;
-    }
     if (inputs[index] === '') {
       alert('할 일을 먼저 입력해야 D-Day 설정이 가능해요.');
       return;
-    } else {
-      setSelectedInputIndex(index);  // 선택된 인덱스를 상태로 저장
-      setSelectedDdayDate(selectedDate || null); // 선택된 날짜
-      setSelectDday(true);  // D-Day 모달 열기
     }
-  };
 
+    // 상태 업데이트
+    setSelectedInputIndex(index);
+    setSelectedDdayDate(selectedDate || null);
+    setSelectDday(true); // D-Day 모달 열기
+  };
 
   const todoId = user ? user.id : 'defaultTodoId';
 

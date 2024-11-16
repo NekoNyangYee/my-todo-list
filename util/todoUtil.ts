@@ -18,12 +18,15 @@ export const deleteCompletedTodos = async <T extends Todo>(userId: string, setTo
     }
 };
 
-export const fetchTodos = async <T extends Todo>(userId: string, setTodos: (todos: Array<T>) => void): Promise<void> => {
+export const fetchTodos = async <T extends Todo>(
+    userId: string,
+    setTodos: (todos: Array<T>) => void
+): Promise<void> => {
     const { data, error } = await supabase
         .from('todos')
         .select('*')
         .eq('user_id', userId)
-        .order('original_order', { ascending: true });
+        .order('original_order', { ascending: true }); // original_order로 정렬
 
     if (error) {
         console.error('Error fetching todos:', error);
@@ -44,14 +47,16 @@ export const fetchTodosForDate = async <T extends Todo>(
         .from('todos')
         .select('*')
         .eq('user_id', userId)
-        .eq('date', koreanDateString);
+        .eq('date', koreanDateString)
+        .order('original_order', { ascending: true }); // original_order로 정렬
 
     if (error) {
-        console.error('Error fetching todos:', error);
+        console.error('Error fetching todos for date:', error);
     } else {
         setTodos(data as Array<T>);
     }
 };
+
 
 export const archiveTodos = async <T extends Todo>(userId: string, setTodos: (todos: Array<T>) => void, setUncompletedTodos: (todos: Array<T>) => void): Promise<void> => {
     const { data: todos, error: fetchError } = await supabase
@@ -199,10 +204,16 @@ export const saveTodos = async <T extends Todo>(
 
     const dateString = dayjs(selectedDate).tz().format('YYYY-MM-DD');
 
-    const { data: existingTodos } = await supabase
+    // 기존 할 일 개수 가져오기
+    const { data: existingTodos, error: fetchError } = await supabase
         .from('todos')
         .select('id')
         .eq('user_id', userId);
+
+    if (fetchError) {
+        console.error('Error fetching todos for original_order:', fetchError);
+        return null;
+    }
 
     const currentOrder = existingTodos ? existingTodos.length : 0;
 
@@ -218,6 +229,7 @@ export const saveTodos = async <T extends Todo>(
             created_at: dayjs().tz().format(),
             date: dateString,
             dday_date: filteredDdayDates[index] ? dayjs(filteredDdayDates[index]).tz().format('YYYY-MM-DD') : null,
+            original_order: currentOrder + index, // 새로 추가되는 순서
         })))
         .select('id');
 

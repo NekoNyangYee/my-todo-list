@@ -10,6 +10,7 @@ import styled from "@emotion/styled";
 import { Theme } from "@components/types/theme";
 import moment from "moment";
 import { keyframes } from "@emotion/react";
+import { supabase } from "@components/lib/supabaseClient";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -57,9 +58,10 @@ const ModalContent = styled.div<{ themeStyles: Theme, isOpen: boolean }>`
   border-radius: 12px;
   max-width: 572px;
   width: 100%;
-  max-height: 90vh; 
+  max-height: 80vh; 
   overflow: auto;
   animation: ${({ isOpen }) => (isOpen ? fadeInModal : fadeOutModal)} 0.2s;
+  border: 1px solid ${({ themeStyles }) => themeStyles.colors.inputBorder};
 
   @media (max-width: 1224px) {
     max-width: 80%;
@@ -197,6 +199,7 @@ const CancelBtn = styled.button<{ themeStyles: any }>`
 `;
 
 const SaveTodoBtn = styled.button`
+  width: 100%;
   padding: 12px 1.6rem;
   background-color: #0075ff;
   color: #ffffff;
@@ -213,6 +216,21 @@ const SaveTodoBtn = styled.button`
   }
 `;
 
+const DdayOptionContainer = styled.div<{ themeStyles: any }>`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: ${({ themeStyles }) => themeStyles.colors.containerBackground};
+  border-radius: 8px;
+  padding: 1rem;
+
+  & p {
+    font-size: 1rem;
+    color: ${({ themeStyles }) => themeStyles.colors.text};
+    margin: 0;
+  }
+`;
+
 dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.tz.setDefault("Asia/Seoul");
@@ -222,55 +240,144 @@ interface SelectDdayModalProps {
   setSelectDday: (date: Date | null) => void;
   closeModal: () => void;
   themeStyles: Theme;
-  todoId: string;
+  todoId: string | null;
   initialDate: Date | null;
 }
 
-const SelectDdayModal = <T extends SelectDdayModalProps>({ isOpen, setSelectDday, closeModal, themeStyles, initialDate }: T) => {
-  const [value, onChange] = useState<Date>(dayjs().toDate()); // 기본값을 오늘 날짜로 설정
-  const [activeStartDate, setActiveStartDate] = useState<Date | undefined>(initialDate || new Date());
+const SelectDdayModal = <T extends SelectDdayModalProps>({
+  isOpen,
+  setSelectDday,
+  closeModal,
+  themeStyles,
+  initialDate,
+  todoId,
+}: T) => {
+  const [value, onChange] = useState<Date | null>(initialDate || null); // 날짜 상태
+  const [ddayOption, setDdayOption] = useState<boolean>(false); // D-Day 활성화 상태
 
-  useEffect(() => {
-    onChange(initialDate || dayjs().toDate());  // 모달을 열 때 초기 날짜를 설정
-    setActiveStartDate(initialDate || new Date());  // 초기 날짜에 포커스 설정
-  }, [initialDate]);
+  // Supabase 업데이트 함수
+  const updateDdayStatus = async (isDday: boolean) => {
+    if (!todoId) return;
 
-  // 날짜 클릭 핸들러
-  const handleDateClick = (value: Date | Date[]) => {
-    onChange(value as Date); // 날짜 변경 시 value 업데이트
-    setActiveStartDate(value as Date);
+    try {
+      const { error } = await supabase
+        .from("todos")
+        .update({
+          is_dday: isDday,
+          dday_date: isDday ? value : null, // D-Day 활성화 여부에 따라 날짜 설정
+        })
+        .eq("id", todoId);
+
+      if (error) {
+        console.error("Error updating D-Day status:", error);
+      } else {
+        console.log(`D-Day updated: is_dday=${isDday}, dday_date=${isDday ? value : null}`);
+      }
+    } catch (err) {
+      console.error("Unexpected error updating D-Day status:", err);
+    }
   };
 
-  // 저장 버튼 클릭 시
+  // D-Day 상태 로드
+  const fetchDdayStatus = async () => {
+    if (!todoId) return;
+
+    try {
+      const { data, error } = await supabase
+        .from("todos")
+        .select("is_dday, dday_date")
+        .eq("id", todoId)
+        .single();
+
+      if (error) {
+        console.error("Error fetching D-Day status:", error);
+        return;
+      }
+
+      setDdayOption(data?.is_dday || false); // 체크박스 상태 업데이트
+      if (data?.dday_date) {
+        onChange(dayjs(data.dday_date).toDate()); // 날짜 설정
+      } else {
+        onChange(null); // 날짜 초기화
+      }
+    } catch (err) {
+      console.error("Unexpected error fetching D-Day status:", err);
+    }
+  };
+
+  // 모달 열릴 때 초기화
+  useEffect(() => {
+    if (isOpen && todoId) {
+      fetchDdayStatus();
+    }
+  }, [isOpen, todoId]);
+
+  // 모달 닫힐 때 상태 초기화
+  useEffect(() => {
+    if (!isOpen) {
+      setDdayOption(false);
+      onChange(initialDate || null); // 날짜 초기화
+    }
+  }, [isOpen, initialDate]);
+
+  // 체크박스 상태 변경
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const isChecked = e.target.checked;
+    setDdayOption(isChecked); // 로컬 상태 업데이트
+
+    if (!isChecked) {
+      onChange(null); // 날짜 초기화
+      setSelectDday(null); // 부모에 null 전달
+    }
+  };
+
+
   const handleDdaySave = async () => {
     if (value) {
-      const formattedDate = dayjs(value).tz("Asia/Seoul").format('YYYY-MM-DD'); // 한국 시간으로 날짜 저장
-      setSelectDday(value);
+      setSelectDday(value); // 선택된 날짜 부모로 전달
       closeModal();
     }
   };
 
-  if (!isOpen) return null; // 모달이 열려있지 않으면 아무것도 렌더링하지 않음
+  const formatButtonText = () => {
+    return value
+      ? value.toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" })
+      : "디데이 선택"; // 버튼 텍스트 동적 변경
+  };
+
+  if (!isOpen) return null;
 
   return (
     <ModalOverlay>
       <ModalContent themeStyles={themeStyles} isOpen={isOpen}>
-        <h2>디데이 날짜 선택</h2>
-        <CalendarStyled
-          onClickDay={handleDateClick}  // 날짜 클릭 시 핸들러 호출
-          value={value}  // 선택된 날짜 표시
-          formatDay={(locale, date) => moment(date).format("DD")}  // 날짜 포맷 설정
-          themeStyles={themeStyles}  // 테마 스타일 적용
-        />
-        <p>{value ? value.toLocaleDateString("ko-KR", {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        }) : "선택한 날짜에 오류가 있어요."}</p>
-        <ButtonContainer>
-          <CancelBtn onClick={closeModal} themeStyles={themeStyles}>취소</CancelBtn>
-          <SaveTodoBtn onClick={handleDdaySave}>선택</SaveTodoBtn>
-        </ButtonContainer>
+        <CancelBtn onClick={closeModal} themeStyles={themeStyles}>
+          취소
+        </CancelBtn>
+        <DdayOptionContainer themeStyles={themeStyles}>
+          <p>디데이 캘린더</p>
+          <input
+            type="checkbox"
+            checked={ddayOption}
+            onChange={handleCheckboxChange} // 체크박스 상태 업데이트
+            id="autoRelease"
+            name="autoRelease"
+          />
+        </DdayOptionContainer>
+        {ddayOption && (
+          <>
+            <h2>디데이 날짜 선택</h2>
+            <CalendarStyled
+              onClickDay={(date) => onChange(date)} // 날짜 선택
+              value={value}
+              formatDay={(locale, date) => moment(date).format("DD")}
+              themeStyles={themeStyles}
+            />
+            <p>{formatButtonText()}</p>
+            <ButtonContainer>
+              <SaveTodoBtn onClick={handleDdaySave}>선택</SaveTodoBtn>
+            </ButtonContainer>
+          </>
+        )}
       </ModalContent>
     </ModalOverlay>
   );

@@ -1100,7 +1100,6 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
     return todos.sort((a, b) => a.original_order - b.original_order);
   };
 
-
   const importantTodos = sortTodos(todos.filter(todo => todo.is_priority && !todo.is_complete));
   const nonImportantTodos = sortTodos(todos.filter(todo => !todo.is_priority && !todo.is_complete));
   const completedTodos = sortTodos(todos.filter(todo => todo.is_complete));
@@ -1231,36 +1230,54 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
   };
 
   const openDdayModal = (index: number, selectedDate: Date | null) => {
-    if (inputs[index] === '') {
-      alert('할 일을 먼저 입력해야 D-Day 설정이 가능해요.');
+    const todo = todos[index]; // 해당 투두 가져오기
+    if (!todo) {
+      console.error('선택한 일정이 없습니다.');
       return;
-    } else {
-      setSelectedInputIndex(index);  // 선택된 인덱스를 상태로 저장
-      setSelectDday(true);  // D-Day 선택 모달 열기
-      setSelectedDdayDate(selectedDate);
     }
+
+    setSelectedInputIndex(index);  // 선택된 인덱스를 상태로 저장
+    setSelectedDdayDate(selectedDate || null); // 선택된 날짜
+    setSelectDday(true);  // D-Day 모달 열기
   };
+
+
   const todoId = user ? user.id : 'defaultTodoId';
 
   const handleDdaySelect = (index: number, date: Date | null) => {
-    console.log(`handleDdaySelect 호출 - index: ${index}, date: ${date}`);
+    // ddayDates 업데이트
     setDdayDates((prevDdayDates) => {
       const newDdayDates = [...prevDdayDates];
-      newDdayDates[index] = date;  // 인덱스에 맞는 날짜 업데이트
-      console.log('업데이트된 ddayDates:', newDdayDates);
+      newDdayDates[index] = date; // 선택된 날짜로 업데이트
       return newDdayDates;
     });
 
-    if (date) {
-      const ddayString = dayjs(date).tz().format('YYYY-MM-DD');
-      const ddayResult = calculateDday(ddayString);  // D-Day 계산 후 업데이트
-      setDdayResult(ddayResult);
+    // isDday 업데이트
+    setIsDday((prevIsDday) => {
+      const newIsDday = [...prevIsDday];
+      newIsDday[index] = !!date; // 날짜가 있으면 true, 없으면 false
+      return newIsDday;
+    });
+
+    // Supabase 업데이트 (선택 사항)
+    const todoId = todos[index]?.id;
+    if (todoId && user) {
+      updateTodo(
+        user.id,
+        todoId,
+        todos[index].content,
+        !!date,
+        todos[index].text_color,
+        date,
+        setTodos,
+        selectedDate
+      );
     }
   };
 
   const formatSelectedDate = (index: number) => {
     const date = ddayDates[index];
-    if (!date) return '디데이 선택'; // 이 부분이 null 값을 처리
+    if (!date) return '디데이 선택'; // null 값 처리
     return date.toLocaleDateString('ko-KR', {
       year: 'numeric',
       month: 'long',
@@ -1523,12 +1540,13 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
       />
       <SelectDdayModal
         isOpen={selectDday}
-        setSelectDday={(date: Date | null) => handleDdaySelect(selectedInputIndex!, date)}  // 선택된 인덱스에 따라 D-Day 업데이트
+        setSelectDday={(date: Date | null) => handleDdaySelect(selectedInputIndex!, date)}
         closeModal={() => setSelectDday(false)}
         themeStyles={themeStyles}
-        todoId={todoId}
-        initialDate={selectedDdayDate || new Date()}  // 선택된 날짜 또는 오늘 날짜로 초기화
+        todoId={selectedInputIndex !== null ? todos[selectedInputIndex]?.id : null} // 현재 선택된 todo의 id
+        initialDate={selectedDdayDate || new Date()}
       />
+
     </>
   );
 };

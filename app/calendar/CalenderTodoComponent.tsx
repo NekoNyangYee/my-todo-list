@@ -1401,9 +1401,10 @@ const CalenderTodoComponent: React.FC<CalenderTodoComponentProps> = ({ user }) =
         setSelectDday={handleDdaySelectForAdd}
         closeModal={() => setSelectDday(false)}
         themeStyles={themeStyles}
-        initialDate={selectedDdayDate || new Date()} // 선택된 날짜 또는 오늘 날짜로 초기화
-        todoId={editTodoId || 'defaultTodoId'} // `editTodoId`가 있는 경우 해당 값을, 없으면 기본값을 전달
+        todoId={selectedInputIndex !== null ? todos[selectedInputIndex]?.id : null} // 현재 선택된 todo의 id
+        initialDate={selectedDdayDate || new Date()}
       />
+
 
     </Container>
   );

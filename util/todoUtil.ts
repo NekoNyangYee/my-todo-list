@@ -189,7 +189,6 @@ export const saveTodos = async <T extends Todo>(
     setShowInput: (show: boolean) => void,
     selectedDate: Date
 ): Promise<string | null> => {
-    // 내용이 있는 인풋만 필터링
     const nonEmptyInputs = inputs.filter(input => input.trim() !== '');
     const filteredIsDday = isDday.filter((_, index) => inputs[index].trim() !== '');
     const filteredColors = colors.filter((_, index) => inputs[index].trim() !== '');
@@ -198,13 +197,10 @@ export const saveTodos = async <T extends Todo>(
     if (nonEmptyInputs.length === 0) {
         alert('할 일을 입력해주세요.');
         return null;
-    } else {
-        alert('저장되었습니다.');
     }
 
     const dateString = dayjs(selectedDate).tz().format('YYYY-MM-DD');
 
-    // 기존 할 일 개수 가져오기
     const { data: existingTodos, error: fetchError } = await supabase
         .from('todos')
         .select('id')

@@ -946,7 +946,7 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
             }
           })
         );
-        alert('수정되었습니다.');
+        alert('수정되었습니다.'); // 수정 모드에서 메시지 한 번만 호출
         setAnimateOut(true);
         setTimeout(() => {
           setIsEditing(false);
@@ -958,6 +958,7 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
         }, 100);
       } else {
         // 새로운 할 일을 저장할 때
+        let anyTodoSaved = false; // 저장이 발생했는지 여부
         await Promise.all(
           inputs.map(async (input, index) => {
             if (input.trim() !== '') {
@@ -976,6 +977,10 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
                 selectedDate
               );
 
+              if (todoId) {
+                anyTodoSaved = true; // 저장이 성공적으로 이루어짐
+              }
+
               if (ddayDate && todoId) {
                 const ddayString = dayjs(ddayDate).tz().format('YYYY-MM-DD');
                 await saveDday(todoId, ddayDate);
@@ -989,6 +994,10 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
             }
           })
         );
+
+        if (anyTodoSaved) {
+          alert('저장되었습니다.'); // 저장이 성공적으로 이루어진 경우에만 호출
+        }
 
         setAnimateOut(true);
         setTimeout(() => {
@@ -1004,7 +1013,6 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
       await fetchDdayTodos(user.id, setDdayTodos); // D-Day 목록 갱신
     }
   };
-
 
   const handleKeyPress = (index: number, event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
@@ -1352,11 +1360,6 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
                               </PriorityButton>
                             )}
                             {todo.content}
-                            {todo.dday_date && (
-                              <div>
-                                {calculateDday(todo.dday_date)}
-                              </div>
-                            )}
                           </TodoList>
                           <DotMenuBtnWrapper>
                             {!isEditing && (

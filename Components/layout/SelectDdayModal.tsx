@@ -338,11 +338,19 @@ const SelectDdayModal = <T extends SelectDdayModalProps>({
 
   const handleDdaySave = async () => {
     if (value) {
-      await updateDdayStatus(ddayOption); // D-Day 상태 업데이트
+      console.log(
+        `D-Day 저장 전: value=${value}, ddayOption=${ddayOption}, todoId=${todoId}`
+      );
       setSelectDday(value); // 선택된 날짜를 부모로 전달
-      closeModal();
+      closeModal(); // 모달 닫기
+      console.log(
+        `D-Day 저장 완료: value=${value}, ddayOption=${ddayOption}, todoId=${todoId}`
+      );
+    } else {
+      console.warn('날짜가 선택되지 않았습니다.');
     }
   };
+
 
   const formatButtonText = () => {
     return value

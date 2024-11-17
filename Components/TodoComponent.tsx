@@ -870,12 +870,15 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
         ? prevSelectedTodos.filter((todoId) => todoId !== id)
         : [...prevSelectedTodos, id];
 
-      const allTodoIds = [...importantTodos, ...nonImportantTodos].map((todo) => todo.id);
-      setIsAllSelected(newSelectedTodos.length === allTodoIds.length);
+      console.log('Checkbox 상태 변경:', {
+        newSelectedTodos,
+        todos,
+      });
 
       return newSelectedTodos;
     });
   };
+
 
   const deleteSelectedTodosHandler = async () => {
     if (selectedTodos.length === 0) {
@@ -1038,7 +1041,8 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
     if (inputs.every((input, index) => input === todos[index]?.content)) {
       setColors([]); // 선택한 색상을 초기화
       setAnimateOut(true);
-      setSelectedTodos([]);
+      setSelectedTodos([]); // 선택된 일정 초기화
+      setSelectedInputIndex(null); // 단일 일정 index 초기화
       setIsAllSelected(false);
       setTimeout(() => {
         setShowInput(false);
@@ -1061,7 +1065,8 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
 
     setColors([]); // 선택한 색상을 초기화
     setAnimateOut(true);
-    setSelectedTodos([]);
+    setSelectedTodos([]); // 선택된 일정 초기화
+    setSelectedInputIndex(null); // 단일 일정 index 초기화
     setIsAllSelected(false);
     setTimeout(() => {
       setShowInput(false);
@@ -1069,7 +1074,6 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
       resetInputs();
     }, 100);
   };
-
 
   const toggleEdit = () => {
     setIsEditing(!isEditing);
@@ -1090,7 +1094,12 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
     if (inputs.length >= 20) {
       alert('한번에 최대 20개까지 추가할 수 있어요.');
     } else {
-      addInput();
+      addInput(); // 입력 필드 추가
+
+      // ddayDates 배열도 동기화
+      setDdayDates((prevDdayDates) => [...prevDdayDates, null]);
+      setIsDday((prevIsDday) => [...prevIsDday, false]);
+
       setTimeout(() => {
         if (modalContentRef.current) {
           modalContentRef.current.scrollTo({
@@ -1101,6 +1110,7 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
       }, 100);
     }
   };
+
 
   const date: Date = new Date(selectedDate);
 
@@ -1156,10 +1166,27 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
     let selectedTodo: Todo[];
 
     if (todoId) {
+      // 단일 일정 수정
       selectedTodo = todos.filter((todo: Todo) => todo.id === todoId && !todo.is_complete);
       setSelectedTodos([todoId]);
+
+      // 정확한 인덱스를 계산
+      const selectedTodoIndex = todos.findIndex((todo: Todo) => todo.id === todoId);
+      setSelectedInputIndex(selectedTodoIndex); // 선택된 인덱스를 상태로 저장
+
+      console.log(`수정할 일정의 인덱스 (단일): ${selectedTodoIndex}`);
     } else {
+      // 여러 일정 수정
       selectedTodo = todos.filter((todo: Todo) => selectedTodos.includes(todo.id) && !todo.is_complete);
+
+      // 여러 일정 수정에서는 selectedInputIndex를 null로 설정
+      setSelectedInputIndex(null);
+
+      console.log(
+        `수정할 일정의 인덱스 (여러): ${selectedTodos.map((id) =>
+          todos.findIndex((todo) => todo.id === id)
+        )}`
+      );
     }
 
     if (selectedTodo.length === 0) {
@@ -1171,14 +1198,12 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
 
     const selectedTodoContents: string[] = selectedTodo.map((todo: Todo) => todo.content);
     const selectedTodoDdays: boolean[] = selectedTodo.map((todo: Todo) => todo.is_dday);
-    const selectedTodoColors: string[] = selectedTodo.map((todo: Todo) => todo.text_color || ''); // null 값을 빈 문자열로 처리
+    const selectedTodoColors: string[] = selectedTodo.map((todo: Todo) => todo.text_color || '');
 
-    // 선택된 일정의 dday_date를 가져오기, 문자열을 Date 객체로 변환
     const selectedTodoDates: (Date | null)[] = selectedTodo.map((todo: Todo) =>
       todo.dday_date ? new Date(todo.dday_date) : null
     );
 
-    // 선택된 일정의 개수에 맞게 inputs 배열 설정
     resetInputs(selectedTodoContents.length);
     selectedTodoContents.forEach((content, index) => setInputs(index, content));
 
@@ -1186,7 +1211,6 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
     setShowInput(true);
     setShowDropdown(null);
 
-    // setIsDday, colors, ddayDates를 설정
     setTimeout(() => {
       setIsDday(selectedTodoDdays);
       setColors(selectedTodoColors);
@@ -1238,24 +1262,50 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
   };
 
   const openDdayModal = (index: number, selectedDate: Date | null) => {
-    if (inputs[index] === '') {
-      alert('할 일을 먼저 입력해야 D-Day 설정이 가능해요.');
+    // 할 일 추가 모드에서는 inputs를 기준으로 처리
+    if (!isEditMode) {
+      setSelectedInputIndex(index); // index를 그대로 사용
+      setSelectedDdayDate(selectedDate || null);
+      setSelectDday(true);
+
+      console.log(
+        `D-Day 모달 열기 (할 일 추가): selectedInputIndex=${index}, 날짜=${selectedDate}, inputsIndex=${index}`
+      );
       return;
     }
 
-    // 상태 업데이트
-    setSelectedInputIndex(index);
+    // 수정 모드에서는 기존 로직 사용
+    let actualIndex;
+    if (selectedTodos.length === 1) {
+      actualIndex = todos.findIndex((todo) => todo.id === selectedTodos[0]);
+    } else {
+      actualIndex = todos.findIndex((todo) => todo.id === selectedTodos[index]);
+    }
+
+    if (actualIndex === -1) {
+      console.error(
+        `D-Day 모달 열기: 해당하는 인덱스를 찾을 수 없습니다. Index=${index}, selectedTodos=${selectedTodos}, todos=${todos}`
+      );
+      return;
+    }
+
+    setSelectedInputIndex(actualIndex);
     setSelectedDdayDate(selectedDate || null);
-    setSelectDday(true); // D-Day 모달 열기
+    setSelectDday(true);
+
+    console.log(
+      `D-Day 모달 열기: selectedInputIndex=${actualIndex}, 날짜=${selectedDate}, inputsIndex=${index}`
+    );
   };
+
 
   const todoId = user ? user.id : 'defaultTodoId';
 
   const handleDdaySelect = (index: number, date: Date | null) => {
-    // ddayDates 업데이트
     setDdayDates((prevDdayDates) => {
       const newDdayDates = [...prevDdayDates];
-      newDdayDates[index] = date; // 선택된 날짜로 업데이트
+      newDdayDates[index] = date;
+      console.log(`D-Day 날짜 업데이트: index=${index}, date=${date}`);
       return newDdayDates;
     });
 
@@ -1263,10 +1313,17 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
     setIsDday((prevIsDday) => {
       const newIsDday = [...prevIsDday];
       newIsDday[index] = !!date; // 날짜가 있으면 true, 없으면 false
+      console.log(`D-Day 활성화 상태 업데이트: index=${index}, isDday=${!!date}`);
       return newIsDday;
     });
 
-    // Supabase 업데이트 (선택 사항)
+    console.log(
+      `D-Day 선택: index=${index}, date=${date}, isDday=${!!date}, ddayDates=${JSON.stringify(
+        ddayDates
+      )}`
+    );
+
+    // Supabase 업데이트
     const todoId = todos[index]?.id;
     if (todoId && user) {
       updateTodo(
@@ -1507,7 +1564,10 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
                   />
                   <InputOptionContainer>
                     <DDayBtn
-                      onClick={() => openDdayModal(index, ddayDates[index])}
+                      onClick={() => {
+                        console.log(`DDay 버튼 클릭: Index=${index}, 선택된 날짜=${ddayDates[index]}`);
+                        openDdayModal(index, ddayDates[index]);
+                      }}
                       isDday={isDday[index]}
                       themeStyles={themeStyles}
                     >
@@ -1542,13 +1602,16 @@ const TodoComponent = <T extends TodoComponentProps>({ user, selectedDate }: T) 
       />
       <SelectDdayModal
         isOpen={selectDday}
-        setSelectDday={(date: Date | null) => handleDdaySelect(selectedInputIndex!, date)}
+        setSelectDday={(date: Date | null) => {
+          if (selectedInputIndex !== null) {
+            handleDdaySelect(selectedInputIndex, date); // 정확한 인덱스로 업데이트
+          }
+        }}
         closeModal={() => setSelectDday(false)}
         themeStyles={themeStyles}
         todoId={selectedInputIndex !== null ? todos[selectedInputIndex]?.id : null} // 현재 선택된 todo의 id
         initialDate={selectedDdayDate || new Date()}
       />
-
     </>
   );
 };

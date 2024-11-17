@@ -394,5 +394,3 @@ export const updateTodoDate = async (userId: string, todoId: string, newDate: st
         console.error('Unexpected error updating todo date:', error);
     }
 };
-
-
